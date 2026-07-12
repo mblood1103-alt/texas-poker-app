@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /rooms/{roomId} {
+      allow create: if request.auth != null && request.auth.token.email != null && request.resource.data.ownerEmail == request.auth.token.email;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.token.email != null && resource.data.ownerEmail == request.auth.token.email && request.resource.data.ownerEmail == resource.data.ownerEmail;
+    }
+  }
+}
