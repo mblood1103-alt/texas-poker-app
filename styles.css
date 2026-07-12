@@ -2,13 +2,3 @@
 .history-title{margin-top:22px}.game-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #e2e8f0}.game-row small{color:#64748b}.game-row button{flex:0 0 auto}@media(max-width:560px){.game-row{align-items:flex-start}.game-row button{font-size:14px}}
 
 .txlist{padding-left:0;list-style:none}.tx-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #e2e8f0}.tx-actions{display:flex;gap:6px;flex:0 0 auto}.tiny{min-height:32px;padding:5px 8px;font-size:13px}@media(max-width:560px){.tx-row{align-items:flex-start;flex-direction:column}.tx-actions{width:100%}.tx-actions button{flex:1}}
-
-.favorite-manager{margin-top:10px;border:1px solid #e2e8f0;border-radius:14px;padding:10px 12px}
-.favorite-manager summary{font-weight:700;cursor:pointer}
-.favorite-add-row{display:flex;gap:8px;margin-top:10px}
-.favorite-add-row input{flex:1}
-.favorite-add-row button{flex:0 0 auto}
-.favorite-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.favorite-chip{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:5px 6px 5px 12px}
-.favorite-chip span{font-weight:600}
-@media(max-width:560px){.favorite-add-row{flex-direction:column}.favorite-add-row button{width:100%}.favorite-chip{width:100%;justify-content:space-between}}
