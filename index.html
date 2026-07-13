@@ -7,8 +7,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
-  <link rel="manifest" href="manifest.webmanifest?v=8">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="manifest" href="manifest.webmanifest?v=9">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
   <header class="top">
@@ -43,11 +43,12 @@
           <div>
             <h2 id="roomTitle"></h2>
             <p id="gameDate" class="muted"></p>
+            <p id="gameState" class="game-state active"></p>
           </div>
           <button id="switchBtn" class="secondary small">切換群組</button>
         </div>
 
-        <div class="owner-only player-add">
+        <div id="playerAddArea" class="owner-only player-add">
           <select id="favoriteSelect">
             <option value="">常用玩家</option>
           </select>
@@ -55,7 +56,7 @@
           <button id="addPlayerBtn">新增玩家</button>
         </div>
 
-        <details class="owner-only favorite-manager">
+        <details id="favoriteManager" class="owner-only favorite-manager">
           <summary>管理常用玩家</summary>
           <div class="favorite-add-row">
             <input id="favoriteName" placeholder="輸入常用玩家名稱">
@@ -89,6 +90,8 @@
         <p id="differenceHint" class="hint"></p>
         <div class="owner-only actions">
           <button id="finishBtn">完成本局</button>
+          <button id="editCurrentBtn" class="secondary hidden">修改本局</button>
+          <button id="finishEditBtn" class="secondary hidden">完成修改</button>
           <button id="newGameBtn" class="secondary">開新局</button>
         </div>
       </section>
@@ -105,7 +108,7 @@
         <div id="report"></div>
 
         <h2 class="history-title">牌局紀錄</h2>
-        <p class="hint">房主可刪除測試局或輸入錯誤的牌局。</p>
+        <p class="hint">房主可修改已完成的牌局，追加玩家、買入及拿回金額；空白牌局不會列入紀錄或統計。</p>
         <div id="gameHistory"></div>
       </section>
     </section>
@@ -148,6 +151,6 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=8"></script>
+  <script type="module" src="app.js?v=9"></script>
 </body>
 </html>
