@@ -45,7 +45,13 @@ async function createOrOpenOwnerRoom(code){
   });
 }
 async function enterOwnerRoom(code){roomCode=clean(code);if(!roomCode)return alert("請輸入群組代碼");await createOrOpenOwnerRoom(roomCode);localStorage.setItem("ownerRoom",roomCode);subscribe()}
-async function enterViewerRoom(code,name){roomCode=clean(code);viewerName=name.trim();if(!roomCode||!viewerName)return alert("請輸入名稱與群組代碼");localStorage.setItem("viewerRoom",roomCode);localStorage.setItem("viewerName",viewerName);subscribe();recordViewerAccess().catch(e=>console.warn("查看紀錄寫入失敗，但不影響觀看帳目：",e))}
+async function enterViewerRoom(code,name){
+  roomCode=clean(code);viewerName=name.trim();
+  if(!roomCode||!viewerName)return alert("請輸入名稱與群組代碼");
+  localStorage.setItem("viewerRoom",roomCode);localStorage.setItem("viewerName",viewerName);
+  subscribe();
+  try{await recordViewerAccess()}catch(e){console.warn("查看紀錄寫入失敗，但不影響觀看帳目：",e)}
+}
 function subscribe(){
   if(unsubscribe)unsubscribe();setStatus("正在同步…");
   unsubscribe=onSnapshot(doc(db,"rooms",roomCode),snap=>{
@@ -69,7 +75,21 @@ async function addFavorite(){const n=$("favoriteName").value.trim();if(!n)return
 async function removeFavorite(name){if(!confirm(`確定將「${name}」從常用玩家移除嗎？\n\n過去牌局與統計不會被刪除。`))return;await mutate(d=>{d.favorites=(d.favorites||[]).filter(n=>n!==name)})}
 function renderFavorites(){const list=$("favoriteList");if(!list)return;const names=[...(roomData?.favorites||[])].sort((a,b)=>a.localeCompare(b,"zh-Hant"));list.innerHTML=names.map(n=>`<div class="favorite-chip"><span>${escapeHtml(n)}</span><button class="danger tiny remove-favorite" data-name="${escapeHtml(n)}">移除</button></div>`).join("")||"<p class='muted'>尚未設定常用玩家</p>";list.querySelectorAll(".remove-favorite").forEach(btn=>btn.onclick=()=>removeFavorite(btn.dataset.name))}
 
-async function recordViewerAccess(){if(!user?.uid||!roomCode)return;const ref=doc(db,"rooms",roomCode,"viewerLogs",user.uid);await runTransaction(db,async tx=>{const snap=await tx.get(ref),now=new Date().toISOString();if(snap.exists()){const d=snap.data();tx.update(ref,{displayName:viewerName,lastSeen:now,visitCount:Number(d.visitCount||0)+1,updatedAt:serverTimestamp()})}else tx.set(ref,{uid:user.uid,displayName:viewerName,firstSeen:now,lastSeen:now,visitCount:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()})})}
+async function recordViewerAccess(){
+  const viewerUser=auth.currentUser||user;
+  if(!viewerUser?.uid)throw new Error("匿名登入尚未完成");
+  if(!roomCode)throw new Error("群組代碼不存在");
+  const ref=doc(db,"rooms",roomCode,"viewerLogs",viewerUser.uid);
+  await runTransaction(db,async tx=>{
+    const snap=await tx.get(ref),now=new Date().toISOString();
+    if(snap.exists()){
+      const d=snap.data();
+      tx.update(ref,{displayName:viewerName,lastSeen:now,visitCount:Number(d.visitCount||0)+1,updatedAt:serverTimestamp()});
+    }else{
+      tx.set(ref,{uid:viewerUser.uid,displayName:viewerName,firstSeen:now,lastSeen:now,visitCount:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    }
+  });
+}
 function subscribeViewerLogs(){if(viewerLogUnsubscribe)viewerLogUnsubscribe();const box=$("viewerLogList");if(!box||!isOwner)return;viewerLogUnsubscribe=onSnapshot(collection(db,"rooms",roomCode,"viewerLogs"),snap=>{const rows=snap.docs.map(d=>d.data()).sort((a,b)=>new Date(b.lastSeen||0)-new Date(a.lastSeen||0));box.innerHTML=rows.map(v=>{const seen=v.lastSeen?new Date(v.lastSeen).toLocaleString("zh-TW",{hour12:false}):"—",short=(v.uid||"").slice(0,8);return `<div class="viewer-log-row"><div><b>${escapeHtml(v.displayName||"未填名稱")}</b><br><small>裝置 ${short}…・查看 ${Number(v.visitCount||1)} 次</small></div><small>${seen}</small></div>`}).join("")||"<p class='muted'>尚無查看紀錄</p>"},e=>{console.error(e);box.innerHTML="<p class='muted'>無法讀取查看紀錄</p>"})}
 async function clearViewerLogs(){if(!isOwner)return alert("只有房主可以清空查看紀錄");if(!confirm("確定清空全部查看紀錄嗎？\n\n這不會影響牌局資料。"))return;const snap=await getDocs(collection(db,"rooms",roomCode,"viewerLogs")),batch=writeBatch(db);snap.forEach(d=>batch.delete(d.ref));await batch.commit()}
 
@@ -183,7 +203,10 @@ function renderReport(){
 }
 
 $("googleBtn").onclick=async()=>{const provider=new GoogleAuthProvider();try{const r=await signInWithPopup(auth,provider),c=prompt("請輸入妳要管理的群組代碼");if(c)await enterOwnerRoom(c)}catch(e){if(e.code?.includes("popup"))await signInWithRedirect(auth,provider);else alert(e.message)}};
-$("viewerBtn").onclick=async()=>{try{if(!auth.currentUser)await signInAnonymously(auth);await enterViewerRoom($("roomCode").value,$("viewerName").value)}catch(e){console.error(e);alert(`無法觀看帳目：${e.message||"請稍後再試"}`)}};
+$("viewerBtn").onclick=async()=>{try{
+  if(!auth.currentUser){const credential=await signInAnonymously(auth);user=credential.user}else user=auth.currentUser;
+  await enterViewerRoom($("roomCode").value,$("viewerName").value)
+}catch(e){console.error(e);alert(`無法觀看帳目：${e.message||"請稍後再試"}`)}};
 $("addPlayerBtn").onclick=addPlayer;$("addFavoriteBtn").onclick=addFavorite;$("clearViewerLogsBtn").onclick=()=>clearViewerLogs().catch(e=>alert(e.message));
 $("finishBtn").onclick=async()=>{
   if(!canEditCurrent())return;
@@ -206,6 +229,6 @@ $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.re
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=13",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=14",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));
