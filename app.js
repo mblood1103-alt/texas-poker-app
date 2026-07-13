@@ -10,6 +10,7 @@ const makeId=()=>crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.ran
 const clean=s=>s.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,"").slice(0,24);
 let user=null,roomData=null,roomCode="",isOwner=false,unsubscribe=null,viewerLogUnsubscribe=null,viewerName="";
 let editingGameId=sessionStorage.getItem("editingGameId")||"";
+let historyDateFilter="";
 
 const buyinTotal=p=>(p.transactions||[]).reduce((s,t)=>s+Number(t.amount||0),0);
 const gameTotals=g=>({
@@ -179,10 +180,41 @@ function rangeLabel(range,now){
 async function editGame(gameId){if(!isOwner)return alert("只有房主可以修改牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return alert("找不到這一局");editingGameId=gameId;sessionStorage.setItem("editingGameId",gameId);await mutate(d=>{d.currentGameId=gameId});window.scrollTo({top:0,behavior:"smooth"})}
 function finishEditing(){editingGameId="";sessionStorage.removeItem("editingGameId");render();alert("修改已完成，這一局已重新鎖定。")}
 function deleteGame(gameId){if(!isOwner)return alert("只有房主可以刪除牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return;const when=new Date(target.startedAt).toLocaleString("zh-TW",{hour12:false});if(!confirm(`確定永久刪除 ${when} 的牌局嗎？\n\n刪除後無法復原，該局也會從日／週／月／年排行榜移除。`))return;mutate(d=>{d.games=(d.games||[]).filter(g=>g.id!==gameId);if(editingGameId===gameId){editingGameId="";sessionStorage.removeItem("editingGameId")}if(d.currentGameId===gameId){const remaining=d.games||[];if(remaining.length)d.currentGameId=remaining[remaining.length-1].id;else{const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};d.games=[g];d.currentGameId=g.id}}}).catch(e=>alert(e.message))}
+function localDateKey(value){
+  const d=new Date(value);if(Number.isNaN(d.getTime()))return "";
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function dateFromInput(value){
+  const [y,m,d]=String(value||"").split("-").map(Number);
+  if(!y||!m||!d)return null;
+  return new Date(y,m-1,d);
+}
+function shiftHistoryDate(days){
+  let base=dateFromInput(historyDateFilter)||new Date();
+  base.setDate(base.getDate()+days);
+  historyDateFilter=localDateKey(base);
+  $("historyDate").value=historyDateFilter;
+  renderGameHistory();
+}
+function gameDetailHtml(g){
+  const players=(g.players||[]).map(p=>{
+    const buy=buyinTotal(p),cash=Number(p.cashout||0),profit=cash-buy;
+    const tx=(p.transactions||[]).map(t=>`<li>${new Date(t.at).toLocaleString("zh-TW",{hour12:false})}・${money(t.amount)}</li>`).join("")||"<li>無買入紀錄</li>";
+    return `<div class="history-player"><div class="history-player-head"><b>${escapeHtml(p.name)}</b><span class="${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</span></div><small>投入 ${money(buy)}・拿回 ${money(cash)}</small><details><summary>買入明細</summary><ul>${tx}</ul></details></div>`;
+  }).join("")||"<p class='muted'>這局沒有玩家資料</p>";
+  return `<div class="game-detail">${players}</div>`;
+}
 function renderGameHistory(){
   const box=$("gameHistory");if(!box)return;
-  const games=(roomData.games||[]).filter(g=>!isGameEmpty(g)).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt));
-  box.innerHTML=games.map(g=>{const {buy,cash}=gameTotals(g),diff=cash-buy,isCurrent=g.id===roomData.currentGameId,state=g.endedAt?"已完成":"進行中";return `<div class="game-row"><div><b>${new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false})}</b><br><small>${g.players?.length||0} 位玩家・投入 ${money(buy)}・差額 ${diff>=0?"+":""}${money(diff)}・${state}${isCurrent?"・目前顯示":""}</small></div>${isOwner?`<div class="game-actions">${g.endedAt?`<button class="secondary small edit-game" data-game-id="${g.id}">修改此局</button>`:""}<button class="danger small delete-game" data-game-id="${g.id}">刪除此局</button></div>`:""}</div>`}).join("")||"<p class='muted'>尚無牌局紀錄</p>";
+  const allGames=(roomData.games||[]).filter(g=>!isGameEmpty(g)).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt));
+  const games=historyDateFilter?allGames.filter(g=>localDateKey(g.startedAt)===historyDateFilter):allGames;
+  const totalBuy=games.reduce((sum,g)=>sum+gameTotals(g).buy,0);
+  const completed=games.filter(g=>g.endedAt).length;
+  const label=historyDateFilter?`${historyDateFilter.replaceAll("-","/")}：${games.length} 局（已完成 ${completed} 局）・總投入 ${money(totalBuy)}`:`全部紀錄：${games.length} 局（已完成 ${completed} 局）・總投入 ${money(totalBuy)}`;
+  $("historySummary").textContent=label;
+  box.innerHTML=games.map(g=>{const {buy,cash}=gameTotals(g),diff=cash-buy,isCurrent=g.id===roomData.currentGameId,state=g.endedAt?"已完成":"進行中";return `<article class="game-history-item"><div class="game-row"><div><b>${new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false})}</b><br><small>${g.players?.length||0} 位玩家・投入 ${money(buy)}・拿回 ${money(cash)}・差額 ${diff>=0?"+":""}${money(diff)}・${state}${isCurrent?"・目前顯示":""}</small></div><div class="game-actions"><button class="secondary small view-game" data-game-id="${g.id}" type="button">查看明細</button>${isOwner&&g.endedAt?`<button class="secondary small edit-game" data-game-id="${g.id}">修改此局</button>`:""}${isOwner?`<button class="danger small delete-game" data-game-id="${g.id}">刪除此局</button>`:""}</div></div><div id="detail-${g.id}" class="hidden">${gameDetailHtml(g)}</div></article>`}).join("")||`<p class='muted'>${historyDateFilter?"這一天沒有牌局紀錄":"尚無牌局紀錄"}</p>`;
+  box.querySelectorAll(".view-game").forEach(btn=>btn.onclick=()=>{const detail=document.getElementById(`detail-${btn.dataset.gameId}`);const opening=detail.classList.contains("hidden");detail.classList.toggle("hidden",!opening);btn.textContent=opening?"收起明細":"查看明細"});
   box.querySelectorAll(".edit-game").forEach(btn=>btn.onclick=()=>editGame(btn.dataset.gameId));box.querySelectorAll(".delete-game").forEach(btn=>btn.onclick=()=>deleteGame(btn.dataset.gameId));
 }
 function renderReport(){
@@ -224,11 +256,17 @@ $("finishBtn").onclick=async()=>{
 };
 $("editCurrentBtn").onclick=()=>currentGame()&&editGame(currentGame().id);$("finishEditBtn").onclick=finishEditing;
 $("newGameBtn").onclick=()=>{if(!isOwner)return;const g=currentGame();if(g&&!g.endedAt&&!isGameEmpty(g)&&!confirm("目前這局尚未完成，仍要直接開新局嗎？舊資料會保留。"))return;if(g&&!g.endedAt&&isGameEmpty(g))return alert("目前已經是空白新局，不需要再開一局。");if(!confirm("確定開新局？只有按下這個按鈕才會建立新的牌局時間。"))return;clearEditingMode();mutate(d=>{const ng={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};d.games=d.games||[];d.games.push(ng);d.currentGameId=ng.id})};
-$("range").onchange=()=>{renderReport();renderGameHistory()};$("favoriteSelect").onchange=()=>$("playerName").value=$("favoriteSelect").value;
+$("range").onchange=()=>{renderReport();renderGameHistory()};
+$("historyDate").onchange=()=>{historyDateFilter=$("historyDate").value;renderGameHistory()};
+$("historyPrevBtn").onclick=()=>shiftHistoryDate(-1);
+$("historyTodayBtn").onclick=()=>{historyDateFilter=localDateKey(new Date());$("historyDate").value=historyDateFilter;renderGameHistory()};
+$("historyNextBtn").onclick=()=>shiftHistoryDate(1);
+$("historyAllBtn").onclick=()=>{historyDateFilter="";$("historyDate").value="";renderGameHistory()};
+$("favoriteSelect").onchange=()=>$("playerName").value=$("favoriteSelect").value;
 $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.removeItem("viewerRoom");sessionStorage.removeItem("editingGameId");location.reload()};$("logoutBtn").onclick=()=>signOut(auth).then(()=>location.reload());
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=14",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=15",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));

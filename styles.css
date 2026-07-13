@@ -33,3 +33,20 @@
 .rank-main small{display:block;color:#64748b;margin-top:4px;line-height:1.45}
 .rank-profit{font-size:18px;white-space:nowrap;text-align:right}
 @media(max-width:560px){.ranking-row{grid-template-columns:46px minmax(0,1fr);gap:8px}.rank-profit{grid-column:2;text-align:left;margin-top:-2px}.rank-badge{text-align:left}}
+
+/* v15：指定日期查詢歷史牌局 */
+.history-filter{margin:12px 0;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px}
+.history-filter label{margin:0 0 6px;font-weight:700;color:#475569}
+.history-filter input{width:100%;background:#fff}
+.history-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}
+.history-nav button{width:100%;font-size:14px;padding:7px 5px}
+.history-summary{margin:8px 0 2px}
+.game-history-item{border-bottom:1px solid #e2e8f0}
+.game-history-item .game-row{border-bottom:0}
+.game-detail{padding:0 0 12px}
+.history-player{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:11px;margin:8px 0}
+.history-player-head{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.history-player small{display:block;color:#64748b;margin-top:4px}
+.history-player details{margin-top:7px}
+.history-player ul{margin:8px 0 0;padding-left:22px;color:#475569}
+@media(max-width:560px){.history-nav{grid-template-columns:repeat(2,1fr)}.game-actions{width:118px}.game-row>div:first-child{min-width:0}}

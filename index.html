@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
-  <link rel="manifest" href="manifest.webmanifest?v=13">
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="manifest" href="manifest.webmanifest?v=15">
+  <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
   <header class="top">
@@ -102,7 +102,19 @@
         <div id="report" class="ranking-list"></div>
 
         <h2 class="history-title">牌局紀錄</h2>
-        <p class="hint">排行榜只計算已完成牌局；房主可修改已完成的牌局，追加玩家、買入及拿回金額。空白牌局不會列入紀錄或統計。</p>
+        <p class="hint">可選擇指定日期查看當天歷史牌局；排行榜只計算已完成牌局。房主可修改牌局，觀看者只能查看。</p>
+
+        <div class="history-filter">
+          <label for="historyDate">指定日期</label>
+          <input id="historyDate" type="date" aria-label="選擇牌局日期">
+          <div class="history-nav">
+            <button id="historyPrevBtn" class="secondary small" type="button">前一天</button>
+            <button id="historyTodayBtn" class="secondary small" type="button">今天</button>
+            <button id="historyNextBtn" class="secondary small" type="button">後一天</button>
+            <button id="historyAllBtn" class="secondary small" type="button">全部紀錄</button>
+          </div>
+        </div>
+        <p id="historySummary" class="hint history-summary"></p>
         <div id="gameHistory"></div>
       </section>
 
@@ -156,6 +168,6 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=13"></script>
+  <script type="module" src="app.js?v=15"></script>
 </body>
 </html>
