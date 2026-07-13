@@ -45,7 +45,7 @@ async function createOrOpenOwnerRoom(code){
   });
 }
 async function enterOwnerRoom(code){roomCode=clean(code);if(!roomCode)return alert("請輸入群組代碼");await createOrOpenOwnerRoom(roomCode);localStorage.setItem("ownerRoom",roomCode);subscribe()}
-async function enterViewerRoom(code,name){roomCode=clean(code);viewerName=name.trim();if(!roomCode||!viewerName)return alert("請輸入名稱與群組代碼");localStorage.setItem("viewerRoom",roomCode);localStorage.setItem("viewerName",viewerName);await recordViewerAccess();subscribe()}
+async function enterViewerRoom(code,name){roomCode=clean(code);viewerName=name.trim();if(!roomCode||!viewerName)return alert("請輸入名稱與群組代碼");localStorage.setItem("viewerRoom",roomCode);localStorage.setItem("viewerName",viewerName);subscribe();recordViewerAccess().catch(e=>console.warn("查看紀錄寫入失敗，但不影響觀看帳目：",e))}
 function subscribe(){
   if(unsubscribe)unsubscribe();setStatus("正在同步…");
   unsubscribe=onSnapshot(doc(db,"rooms",roomCode),snap=>{
@@ -140,7 +140,7 @@ function renderReport(){
 }
 
 $("googleBtn").onclick=async()=>{const provider=new GoogleAuthProvider();try{const r=await signInWithPopup(auth,provider),c=prompt("請輸入妳要管理的群組代碼");if(c)await enterOwnerRoom(c)}catch(e){if(e.code?.includes("popup"))await signInWithRedirect(auth,provider);else alert(e.message)}};
-$("viewerBtn").onclick=async()=>{if(!auth.currentUser)await signInAnonymously(auth);await enterViewerRoom($("roomCode").value,$("viewerName").value)};
+$("viewerBtn").onclick=async()=>{try{if(!auth.currentUser)await signInAnonymously(auth);await enterViewerRoom($("roomCode").value,$("viewerName").value)}catch(e){console.error(e);alert(`無法觀看帳目：${e.message||"請稍後再試"}`)}};
 $("addPlayerBtn").onclick=addPlayer;$("addFavoriteBtn").onclick=addFavorite;$("clearViewerLogsBtn").onclick=()=>clearViewerLogs().catch(e=>alert(e.message));
 $("finishBtn").onclick=async()=>{
   if(!canEditCurrent())return;
@@ -163,6 +163,6 @@ $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.re
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=10",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=11",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));
