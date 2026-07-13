@@ -264,18 +264,37 @@ function renderGameHistory(){
 }
 function renderReport(){
   const range=$("range").value,now=new Date(),map=new Map();
-  $("reportPeriod").textContent=`${rangeLabel(range,now)}｜依總盈虧由高到低排序`;
-  (roomData.games||[]).filter(g=>g.endedAt&&gameMatchesRange(g,range,now)&&!isGameEmpty(g)).forEach(g=>(g.players||[]).forEach(p=>{
-    const r=map.get(p.name)||{games:0,buyin:0,cashout:0};
-    r.games++;r.buyin+=buyinTotal(p);r.cashout+=Number(p.cashout||0);map.set(p.name,r);
-  }));
-  const rows=[...map].sort((a,b)=>{
-    const pa=b[1].cashout-b[1].buyin,pb=a[1].cashout-a[1].buyin;
-    return pa-pb||b[1].cashout-a[1].cashout||a[0].localeCompare(b[0],"zh-Hant");
+  const periodGames=(roomData.games||[]).filter(g=>g.endedAt&&gameMatchesRange(g,range,now)&&!isGameEmpty(g));
+  const totalGames=periodGames.length;
+  $("reportPeriod").textContent=`${rangeLabel(range,now)}｜共 ${totalGames} 局已完成牌局`;
+
+  periodGames.forEach(g=>{
+    const seenInGame=new Set();
+    (g.players||[]).forEach(p=>{
+      const name=String(p.name||"").trim();if(!name)return;
+      const r=map.get(name)||{games:0,buyin:0,cashout:0};
+      if(!seenInGame.has(name)){r.games++;seenInGame.add(name)}
+      r.buyin+=buyinTotal(p);r.cashout+=Number(p.cashout||0);map.set(name,r);
+    });
   });
-  $("report").innerHTML=rows.map(([n,r],i)=>{
-    const profit=r.cashout-r.buyin,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
-    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+
+  const profitRows=[...map].sort((a,b)=>{
+    const profitB=b[1].cashout-b[1].buyin,profitA=a[1].cashout-a[1].buyin;
+    return profitB-profitA||b[1].cashout-a[1].cashout||b[1].games-a[1].games||a[0].localeCompare(b[0],"zh-Hant");
+  });
+  $("report").innerHTML=profitRows.map(([n,r],i)=>{
+    const profit=r.cashout-r.buyin,attendance=totalGames?Math.round(r.games/totalGames*100):0,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
+    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small class="attendance-meta">出勤 ${r.games}/${totalGames} 局・${attendance}%</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+  }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
+
+  const attendanceRows=[...map].sort((a,b)=>{
+    const rateB=totalGames?b[1].games/totalGames:0,rateA=totalGames?a[1].games/totalGames:0;
+    const profitB=b[1].cashout-b[1].buyin,profitA=a[1].cashout-a[1].buyin;
+    return rateB-rateA||b[1].games-a[1].games||profitB-profitA||a[0].localeCompare(b[0],"zh-Hant");
+  });
+  $("attendanceReport").innerHTML=attendanceRows.map(([n,r],i)=>{
+    const attendance=totalGames?Math.round(r.games/totalGames*100):0,profit=r.cashout-r.buyin,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
+    return `<div class="ranking-row attendance-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>出勤 ${r.games}/${totalGames} 局・該期間盈虧 ${profit>=0?"+":""}${money(profit)}</small></div><b class="attendance-rate">${attendance}%</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 }
 
@@ -313,6 +332,6 @@ $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.re
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=17",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=18",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));

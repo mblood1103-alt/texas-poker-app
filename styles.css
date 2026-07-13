@@ -74,3 +74,14 @@
 .calendar-legend{display:flex;align-items:center;justify-content:center;gap:7px;margin:9px 0 3px;color:#64748b;font-size:13px}
 .calendar-dot{width:9px;height:9px;border-radius:50%;background:#f59e0b}
 @media(max-width:380px){.history-calendar,.calendar-weekdays{gap:3px}.calendar-day{min-height:44px;font-size:15px}.calendar-toolbar strong{font-size:18px}}
+
+
+/* v18：盈虧排行榜＋出勤排行榜 */
+.ranking-block{margin-top:10px}
+.ranking-block+.ranking-block{margin-top:22px;padding-top:18px;border-top:2px dashed #e2e8f0}
+.ranking-heading{font-size:18px;margin:0 0 3px}
+.ranking-note{margin:0 0 7px}
+.attendance-meta{font-weight:700;color:#8a5a00!important}
+.attendance-rate{font-size:20px;white-space:nowrap;text-align:right;color:#0f766e}
+.attendance-row{background:linear-gradient(90deg,rgba(240,253,250,.75),transparent);border-radius:12px;padding-left:6px;padding-right:6px}
+@media(max-width:560px){.attendance-rate{grid-column:2;text-align:left;margin-top:-2px}}

@@ -99,7 +99,18 @@
           </select>
         </div>
         <p id="reportPeriod" class="hint ranking-period"></p>
-        <div id="report" class="ranking-list"></div>
+
+        <div class="ranking-block">
+          <h3 class="ranking-heading">盈虧排行榜</h3>
+          <p class="hint ranking-note">依總盈虧由高到低排序，並同步顯示出勤率。</p>
+          <div id="report" class="ranking-list"></div>
+        </div>
+
+        <div class="ranking-block attendance-block">
+          <h3 class="ranking-heading">出勤排行榜</h3>
+          <p class="hint ranking-note">出勤率＝玩家參加的已完成牌局數 ÷ 該期間全部已完成牌局數。</p>
+          <div id="attendanceReport" class="ranking-list"></div>
+        </div>
 
         <h2 class="history-title">牌局紀錄</h2>
         <p class="hint">可選擇指定日期查看當天歷史牌局；排行榜只計算已完成牌局。房主可修改牌局，觀看者只能查看。</p>
@@ -178,6 +189,6 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=17"></script>
+  <script type="module" src="app.js?v=18"></script>
 </body>
 </html>
