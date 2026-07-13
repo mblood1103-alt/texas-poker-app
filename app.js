@@ -11,6 +11,7 @@ const clean=s=>s.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,"").slice(0,24);
 let user=null,roomData=null,roomCode="",isOwner=false,unsubscribe=null,viewerLogUnsubscribe=null,viewerName="";
 let editingGameId=sessionStorage.getItem("editingGameId")||"";
 let historyDateFilter="";
+let calendarMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
 
 const buyinTotal=p=>(p.transactions||[]).reduce((s,t)=>s+Number(t.amount||0),0);
 const gameTotals=g=>({
@@ -194,8 +195,34 @@ function shiftHistoryDate(days){
   let base=dateFromInput(historyDateFilter)||new Date();
   base.setDate(base.getDate()+days);
   historyDateFilter=localDateKey(base);
+  calendarMonth=new Date(base.getFullYear(),base.getMonth(),1);
   $("historyDate").value=historyDateFilter;
   renderGameHistory();
+}
+function shiftCalendarMonth(months){
+  calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+months,1);
+  renderGameHistory();
+}
+function renderHistoryCalendar(allGames){
+  const grid=$("historyCalendar"),title=$("calendarMonthTitle");if(!grid||!title)return;
+  const year=calendarMonth.getFullYear(),month=calendarMonth.getMonth();
+  title.textContent=`${year} 年 ${month+1} 月`;
+  const counts=new Map();
+  allGames.forEach(g=>{const key=localDateKey(g.startedAt);if(!key)return;counts.set(key,(counts.get(key)||0)+1)});
+  const firstDay=new Date(year,month,1).getDay();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const todayKey=localDateKey(new Date());
+  const cells=[];
+  for(let i=0;i<firstDay;i++)cells.push('<span class="calendar-empty" aria-hidden="true"></span>');
+  for(let day=1;day<=daysInMonth;day++){
+    const key=`${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const count=counts.get(key)||0;
+    const selected=key===historyDateFilter,today=key===todayKey;
+    const label=count?`${year}年${month+1}月${day}日，有 ${count} 局牌局`:`${year}年${month+1}月${day}日，沒有牌局`;
+    cells.push(`<button class="calendar-day${selected?" selected":""}${today?" today":""}${count?" has-game":""}" type="button" data-date="${key}" aria-label="${label}" aria-pressed="${selected}"><span>${day}</span>${count?`<i title="${count} 局">${count>1?count:""}</i>`:""}</button>`);
+  }
+  grid.innerHTML=cells.join("");
+  grid.querySelectorAll(".calendar-day").forEach(btn=>btn.onclick=()=>{historyDateFilter=btn.dataset.date;const d=dateFromInput(historyDateFilter);calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);$("historyDate").value=historyDateFilter;renderGameHistory()});
 }
 function gameDetailHtml(g){
   const players=(g.players||[]).map(p=>{
@@ -208,6 +235,7 @@ function gameDetailHtml(g){
 function renderGameHistory(){
   const box=$("gameHistory");if(!box)return;
   const allGames=(roomData.games||[]).filter(g=>!isGameEmpty(g)).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt));
+  renderHistoryCalendar(allGames);
   const games=historyDateFilter?allGames.filter(g=>localDateKey(g.startedAt)===historyDateFilter):allGames;
   const totalBuy=games.reduce((sum,g)=>sum+gameTotals(g).buy,0);
   const completedGames=games.filter(g=>g.endedAt);
@@ -274,16 +302,17 @@ $("finishBtn").onclick=async()=>{
 $("editCurrentBtn").onclick=()=>currentGame()&&editGame(currentGame().id);$("finishEditBtn").onclick=finishEditing;
 $("newGameBtn").onclick=()=>{if(!isOwner)return;const g=currentGame();if(g&&!g.endedAt&&!isGameEmpty(g)&&!confirm("目前這局尚未完成，仍要直接開新局嗎？舊資料會保留。"))return;if(g&&!g.endedAt&&isGameEmpty(g))return alert("目前已經是空白新局，不需要再開一局。");if(!confirm("確定開新局？只有按下這個按鈕才會建立新的牌局時間。"))return;clearEditingMode();mutate(d=>{const ng={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};d.games=d.games||[];d.games.push(ng);d.currentGameId=ng.id})};
 $("range").onchange=()=>{renderReport();renderGameHistory()};
-$("historyDate").onchange=()=>{historyDateFilter=$("historyDate").value;renderGameHistory()};
 $("historyPrevBtn").onclick=()=>shiftHistoryDate(-1);
-$("historyTodayBtn").onclick=()=>{historyDateFilter=localDateKey(new Date());$("historyDate").value=historyDateFilter;renderGameHistory()};
+$("historyTodayBtn").onclick=()=>{const now=new Date();historyDateFilter=localDateKey(now);calendarMonth=new Date(now.getFullYear(),now.getMonth(),1);$("historyDate").value=historyDateFilter;renderGameHistory()};
 $("historyNextBtn").onclick=()=>shiftHistoryDate(1);
 $("historyAllBtn").onclick=()=>{historyDateFilter="";$("historyDate").value="";renderGameHistory()};
+$("calendarPrevMonthBtn").onclick=()=>shiftCalendarMonth(-1);
+$("calendarNextMonthBtn").onclick=()=>shiftCalendarMonth(1);
 $("favoriteSelect").onchange=()=>$("playerName").value=$("favoriteSelect").value;
 $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.removeItem("viewerRoom");sessionStorage.removeItem("editingGameId");location.reload()};$("logoutBtn").onclick=()=>signOut(auth).then(()=>location.reload());
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=16",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=17",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));

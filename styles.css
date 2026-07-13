@@ -37,7 +37,6 @@
 /* v15：指定日期查詢歷史牌局 */
 .history-filter{margin:12px 0;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px}
 .history-filter label{margin:0 0 6px;font-weight:700;color:#475569}
-.history-filter input{width:100%;background:#fff}
 .history-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}
 .history-nav button{width:100%;font-size:14px;padding:7px 5px}
 .history-summary{margin:8px 0 2px}
@@ -54,3 +53,24 @@
 .history-ranking{margin:14px 0 18px;padding:14px;background:#fffdf7;border:1px solid #fde68a;border-radius:16px}
 .history-ranking h3{margin:0 0 4px;font-size:20px}
 .history-ranking .hint{margin:0 0 6px}
+
+/* v17 自訂牌局月曆 */
+.calendar-toolbar{display:grid;grid-template-columns:46px 1fr 46px;align-items:center;gap:8px;margin-bottom:10px}
+.calendar-toolbar strong{text-align:center;font-size:20px;color:#0f172a}
+.calendar-toolbar button{width:46px;height:42px;padding:0;font-size:28px;line-height:1}
+.calendar-weekdays,.history-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.calendar-weekdays{margin-bottom:5px;color:#64748b;font-size:13px;font-weight:700;text-align:center}
+.calendar-weekdays span{padding:5px 0}
+.calendar-empty{min-height:48px}
+.calendar-day{position:relative;min-width:0;min-height:48px;padding:6px 2px;border:1px solid transparent;border-radius:12px;background:#fff;color:#0f172a;font-size:16px;font-weight:700;box-shadow:none}
+.calendar-day:hover{background:#f1f5f9}
+.calendar-day.today{border-color:#94a3b8}
+.calendar-day.selected{background:#0f172a;color:#fff;border-color:#0f172a}
+.calendar-day.has-game{background:#fff7d6;border-color:#f4c95d}
+.calendar-day.has-game.selected{background:#0f172a;border-color:#0f172a}
+.calendar-day i{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;min-width:8px;height:8px;padding:0 2px;border-radius:999px;background:#f59e0b;color:#fff;font-size:8px;font-style:normal;line-height:1}
+.calendar-day i:not(:empty){min-width:16px;height:16px;bottom:2px}
+.calendar-day.selected i{background:#fbbf24;color:#0f172a}
+.calendar-legend{display:flex;align-items:center;justify-content:center;gap:7px;margin:9px 0 3px;color:#64748b;font-size:13px}
+.calendar-dot{width:9px;height:9px;border-radius:50%;background:#f59e0b}
+@media(max-width:380px){.history-calendar,.calendar-weekdays{gap:3px}.calendar-day{min-height:44px;font-size:15px}.calendar-toolbar strong{font-size:18px}}

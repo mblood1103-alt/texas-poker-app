@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
-  <link rel="manifest" href="manifest.webmanifest?v=16">
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="manifest" href="manifest.webmanifest?v=17">
+  <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
   <header class="top">
@@ -105,8 +105,17 @@
         <p class="hint">可選擇指定日期查看當天歷史牌局；排行榜只計算已完成牌局。房主可修改牌局，觀看者只能查看。</p>
 
         <div class="history-filter">
-          <label for="historyDate">指定日期</label>
-          <input id="historyDate" type="date" aria-label="選擇牌局日期">
+          <div class="calendar-toolbar">
+            <button id="calendarPrevMonthBtn" class="secondary small" type="button" aria-label="上一個月">‹</button>
+            <strong id="calendarMonthTitle">月份</strong>
+            <button id="calendarNextMonthBtn" class="secondary small" type="button" aria-label="下一個月">›</button>
+          </div>
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div id="historyCalendar" class="history-calendar" aria-label="牌局日期月曆"></div>
+          <p class="calendar-legend"><span class="calendar-dot"></span> 有牌局紀錄</p>
+          <input id="historyDate" type="hidden">
           <div class="history-nav">
             <button id="historyPrevBtn" class="secondary small" type="button">前一天</button>
             <button id="historyTodayBtn" class="secondary small" type="button">今天</button>
@@ -169,6 +178,6 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=16"></script>
+  <script type="module" src="app.js?v=17"></script>
 </body>
 </html>
