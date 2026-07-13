@@ -50,3 +50,7 @@
 .history-player details{margin-top:7px}
 .history-player ul{margin:8px 0 0;padding-left:22px;color:#475569}
 @media(max-width:560px){.history-nav{grid-template-columns:repeat(2,1fr)}.game-actions{width:118px}.game-row>div:first-child{min-width:0}}
+
+.history-ranking{margin:14px 0 18px;padding:14px;background:#fffdf7;border:1px solid #fde68a;border-radius:16px}
+.history-ranking h3{margin:0 0 4px;font-size:20px}
+.history-ranking .hint{margin:0 0 6px}

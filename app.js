@@ -210,9 +210,26 @@ function renderGameHistory(){
   const allGames=(roomData.games||[]).filter(g=>!isGameEmpty(g)).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt));
   const games=historyDateFilter?allGames.filter(g=>localDateKey(g.startedAt)===historyDateFilter):allGames;
   const totalBuy=games.reduce((sum,g)=>sum+gameTotals(g).buy,0);
-  const completed=games.filter(g=>g.endedAt).length;
+  const completedGames=games.filter(g=>g.endedAt);
+  const completed=completedGames.length;
   const label=historyDateFilter?`${historyDateFilter.replaceAll("-","/")}：${games.length} 局（已完成 ${completed} 局）・總投入 ${money(totalBuy)}`:`全部紀錄：${games.length} 局（已完成 ${completed} 局）・總投入 ${money(totalBuy)}`;
   $("historySummary").textContent=label;
+
+  const rankingMap=new Map();
+  completedGames.forEach(g=>(g.players||[]).forEach(p=>{
+    const r=rankingMap.get(p.name)||{games:0,buyin:0,cashout:0};
+    r.games++;r.buyin+=buyinTotal(p);r.cashout+=Number(p.cashout||0);rankingMap.set(p.name,r);
+  }));
+  const rankingRows=[...rankingMap].sort((a,b)=>{
+    const profitB=b[1].cashout-b[1].buyin,profitA=a[1].cashout-a[1].buyin;
+    return profitB-profitA||b[1].cashout-a[1].cashout||a[0].localeCompare(b[0],"zh-Hant");
+  });
+  const rankingTitle=historyDateFilter?`${historyDateFilter.replaceAll("-","/")} 當日排名`:`全部歷史排名`;
+  $("historyRanking").innerHTML=`<h3>${rankingTitle}</h3><p class="hint">依已完成牌局的總盈虧由高到低排序</p><div class="ranking-list">${rankingRows.map(([n,r],i)=>{
+    const profit=r.cashout-r.buyin,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
+    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+  }).join("")||"<p class='muted'>這個日期尚無已完成牌局可排名</p>"}</div>`;
+
   box.innerHTML=games.map(g=>{const {buy,cash}=gameTotals(g),diff=cash-buy,isCurrent=g.id===roomData.currentGameId,state=g.endedAt?"已完成":"進行中";return `<article class="game-history-item"><div class="game-row"><div><b>${new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false})}</b><br><small>${g.players?.length||0} 位玩家・投入 ${money(buy)}・拿回 ${money(cash)}・差額 ${diff>=0?"+":""}${money(diff)}・${state}${isCurrent?"・目前顯示":""}</small></div><div class="game-actions"><button class="secondary small view-game" data-game-id="${g.id}" type="button">查看明細</button>${isOwner&&g.endedAt?`<button class="secondary small edit-game" data-game-id="${g.id}">修改此局</button>`:""}${isOwner?`<button class="danger small delete-game" data-game-id="${g.id}">刪除此局</button>`:""}</div></div><div id="detail-${g.id}" class="hidden">${gameDetailHtml(g)}</div></article>`}).join("")||`<p class='muted'>${historyDateFilter?"這一天沒有牌局紀錄":"尚無牌局紀錄"}</p>`;
   box.querySelectorAll(".view-game").forEach(btn=>btn.onclick=()=>{const detail=document.getElementById(`detail-${btn.dataset.gameId}`);const opening=detail.classList.contains("hidden");detail.classList.toggle("hidden",!opening);btn.textContent=opening?"收起明細":"查看明細"});
   box.querySelectorAll(".edit-game").forEach(btn=>btn.onclick=()=>editGame(btn.dataset.gameId));box.querySelectorAll(".delete-game").forEach(btn=>btn.onclick=()=>deleteGame(btn.dataset.gameId));
@@ -267,6 +284,6 @@ $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.re
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=15",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=16",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));
