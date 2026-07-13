@@ -7,8 +7,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
-  <link rel="manifest" href="manifest.webmanifest?v=7">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="manifest" href="manifest.webmanifest?v=8">
+  <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
   <header class="top">
@@ -68,6 +68,17 @@
         <div id="players"></div>
       </section>
 
+      <section class="card owner-only">
+        <div class="between">
+          <div>
+            <h2>查看紀錄</h2>
+            <p class="hint">只顯示對方輸入的名稱、匿名裝置代碼與查看時間；不代表真實身分。</p>
+          </div>
+          <button id="clearViewerLogsBtn" class="danger small">清空紀錄</button>
+        </div>
+        <div id="viewerLogList"></div>
+      </section>
+
       <section class="card">
         <h2>本局驗帳</h2>
         <div class="totals">
@@ -107,7 +118,10 @@
           <h3 class="pname"></h3>
           <small class="pmeta muted"></small>
         </div>
-        <button class="owner-control danger small deleteBtn">刪除</button>
+        <div class="owner-control player-tools">
+          <button class="secondary small renameBtn">修改名稱</button>
+          <button class="danger small deleteBtn">刪除</button>
+        </div>
       </div>
 
       <div class="totals">
@@ -134,6 +148,6 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=7"></script>
+  <script type="module" src="app.js?v=8"></script>
 </body>
 </html>

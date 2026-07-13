@@ -12,3 +12,9 @@
 .favorite-chip{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:5px 6px 5px 12px}
 .favorite-chip span{font-weight:600}
 @media(max-width:560px){.favorite-add-row{flex-direction:column}.favorite-add-row button{width:100%}.favorite-chip{width:100%;justify-content:space-between}}
+
+.player-tools{display:flex;gap:6px}
+.viewer-log-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #e2e8f0}
+.viewer-log-row:last-child{border-bottom:0}
+.viewer-log-row small{color:#64748b}
+@media(max-width:560px){.viewer-log-row{align-items:flex-start}.player-tools{flex-direction:column}}
