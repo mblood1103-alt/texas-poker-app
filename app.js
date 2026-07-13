@@ -125,22 +125,40 @@ function render(){
   renderReport();renderGameHistory();
 }
 
+function startOfWeek(date){
+  const d=new Date(date);
+  d.setHours(0,0,0,0);
+  const day=d.getDay();
+  const daysFromMonday=day===0?6:day-1;
+  d.setDate(d.getDate()-daysFromMonday);
+  return d;
+}
 function gameMatchesRange(g,range,now){
   const d=new Date(g.startedAt);
   if(Number.isNaN(d.getTime()))return false;
   if(range==="day")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+  if(range==="week"){
+    const start=startOfWeek(now),end=new Date(start);
+    end.setDate(end.getDate()+7);
+    return d>=start&&d<end;
+  }
   if(range==="month")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
   if(range==="year")return d.getFullYear()===now.getFullYear();
   return true;
 }
 function rangeLabel(range,now){
   if(range==="day")return `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} 日排行榜`;
+  if(range==="week"){
+    const start=startOfWeek(now),end=new Date(start);
+    end.setDate(end.getDate()+6);
+    return `${start.getFullYear()}/${start.getMonth()+1}/${start.getDate()}－${end.getFullYear()}/${end.getMonth()+1}/${end.getDate()} 週排行榜`;
+  }
   if(range==="month")return `${now.getFullYear()} 年 ${now.getMonth()+1} 月排行榜`;
   return `${now.getFullYear()} 年排行榜`;
 }
 async function editGame(gameId){if(!isOwner)return alert("只有房主可以修改牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return alert("找不到這一局");editingGameId=gameId;sessionStorage.setItem("editingGameId",gameId);await mutate(d=>{d.currentGameId=gameId});window.scrollTo({top:0,behavior:"smooth"})}
 function finishEditing(){editingGameId="";sessionStorage.removeItem("editingGameId");render();alert("修改已完成，這一局已重新鎖定。")}
-function deleteGame(gameId){if(!isOwner)return alert("只有房主可以刪除牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return;const when=new Date(target.startedAt).toLocaleString("zh-TW",{hour12:false});if(!confirm(`確定永久刪除 ${when} 的牌局嗎？\n\n刪除後無法復原，該局也會從日／月／年排行榜移除。`))return;mutate(d=>{d.games=(d.games||[]).filter(g=>g.id!==gameId);if(editingGameId===gameId){editingGameId="";sessionStorage.removeItem("editingGameId")}if(d.currentGameId===gameId){const remaining=d.games||[];if(remaining.length)d.currentGameId=remaining[remaining.length-1].id;else{const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};d.games=[g];d.currentGameId=g.id}}}).catch(e=>alert(e.message))}
+function deleteGame(gameId){if(!isOwner)return alert("只有房主可以刪除牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return;const when=new Date(target.startedAt).toLocaleString("zh-TW",{hour12:false});if(!confirm(`確定永久刪除 ${when} 的牌局嗎？\n\n刪除後無法復原，該局也會從日／週／月／年排行榜移除。`))return;mutate(d=>{d.games=(d.games||[]).filter(g=>g.id!==gameId);if(editingGameId===gameId){editingGameId="";sessionStorage.removeItem("editingGameId")}if(d.currentGameId===gameId){const remaining=d.games||[];if(remaining.length)d.currentGameId=remaining[remaining.length-1].id;else{const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};d.games=[g];d.currentGameId=g.id}}}).catch(e=>alert(e.message))}
 function renderGameHistory(){
   const box=$("gameHistory");if(!box)return;
   const games=(roomData.games||[]).filter(g=>!isGameEmpty(g)).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt));
@@ -188,6 +206,6 @@ $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.re
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=12",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=13",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));

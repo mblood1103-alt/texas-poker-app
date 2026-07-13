@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
-  <link rel="manifest" href="manifest.webmanifest?v=12">
-  <link rel="stylesheet" href="styles.css?v=12">
+  <link rel="manifest" href="manifest.webmanifest?v=13">
+  <link rel="stylesheet" href="styles.css?v=13">
 </head>
 <body>
   <header class="top">
@@ -72,17 +72,6 @@
         <div id="players"></div>
       </section>
 
-      <section class="card owner-only">
-        <div class="between">
-          <div>
-            <h2>查看紀錄</h2>
-            <p class="hint">只顯示對方輸入的名稱、匿名裝置代碼與查看時間；不代表真實身分。</p>
-          </div>
-          <button id="clearViewerLogsBtn" class="danger small">清空紀錄</button>
-        </div>
-        <div id="viewerLogList"></div>
-      </section>
-
       <section class="card">
         <h2>本局驗帳</h2>
         <div class="totals">
@@ -104,6 +93,7 @@
           <h2>累積統計</h2>
           <select id="range" aria-label="排行榜期間">
             <option value="day">日排行榜</option>
+            <option value="week">週排行榜</option>
             <option value="month" selected>月排行榜</option>
             <option value="year">年排行榜</option>
           </select>
@@ -114,6 +104,17 @@
         <h2 class="history-title">牌局紀錄</h2>
         <p class="hint">排行榜只計算已完成牌局；房主可修改已完成的牌局，追加玩家、買入及拿回金額。空白牌局不會列入紀錄或統計。</p>
         <div id="gameHistory"></div>
+      </section>
+
+      <section class="card owner-only">
+        <div class="between">
+          <div>
+            <h2>查看紀錄</h2>
+            <p class="hint">只顯示對方輸入的名稱、匿名裝置代碼與查看時間；不代表真實身分。</p>
+          </div>
+          <button id="clearViewerLogsBtn" class="danger small">清空紀錄</button>
+        </div>
+        <div id="viewerLogList"></div>
       </section>
     </section>
   </main>
@@ -155,6 +156,6 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=12"></script>
+  <script type="module" src="app.js?v=13"></script>
 </body>
 </html>

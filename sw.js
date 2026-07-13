@@ -1,5 +1,5 @@
-const C="dezhou-ranking-v12";
-const ASSETS=["./","./index.html","./styles.css?v=12","./app.js?v=12","./manifest.webmanifest?v=12"];
+const C="dezhou-ranking-v13";
+const ASSETS=["./","./index.html","./styles.css?v=13","./app.js?v=13","./manifest.webmanifest?v=13"];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)))});
 self.addEventListener("activate",e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k))))])));
 self.addEventListener("fetch",e=>{
