@@ -18,3 +18,7 @@
 .viewer-log-row:last-child{border-bottom:0}
 .viewer-log-row small{color:#64748b}
 @media(max-width:560px){.viewer-log-row{align-items:flex-start}.player-tools{flex-direction:column}}
+
+.game-state{display:inline-block;margin:2px 0 0;padding:6px 10px;border-radius:999px;font-size:13px;font-weight:700}.game-state.active{background:#dbeafe;color:#1e40af}.game-state.completed{background:#fef3c7;color:#92400e}.game-actions{display:flex;gap:6px;flex:0 0 auto}.game-actions button{white-space:nowrap}@media(max-width:560px){.game-actions{flex-direction:column;width:112px}.game-actions button{width:100%}}
+
+.player.locked{background:#f8fafc}.player.locked .pname{padding-right:4px}.player.locked details{margin-top:8px}.player button:disabled,.player input:disabled{opacity:.45;pointer-events:none}
