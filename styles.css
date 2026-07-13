@@ -22,3 +22,14 @@
 .game-state{display:inline-block;margin:2px 0 0;padding:6px 10px;border-radius:999px;font-size:13px;font-weight:700}.game-state.active{background:#dbeafe;color:#1e40af}.game-state.completed{background:#fef3c7;color:#92400e}.game-actions{display:flex;gap:6px;flex:0 0 auto}.game-actions button{white-space:nowrap}@media(max-width:560px){.game-actions{flex-direction:column;width:112px}.game-actions button{width:100%}}
 
 .player.locked{background:#f8fafc}.player.locked .pname{padding-right:4px}.player.locked details{margin-top:8px}.player button:disabled,.player input:disabled{opacity:.45;pointer-events:none}
+
+/* v12：已完成牌局收起玩家區，並加入日／月／年排行榜 */
+.ranking-period{margin:-6px 0 8px}
+.ranking-list{border-top:1px solid #e2e8f0}
+.ranking-row{display:grid;grid-template-columns:56px minmax(0,1fr) auto;align-items:center;gap:10px;padding:14px 0;border-bottom:1px solid #e2e8f0}
+.rank-badge{font-weight:800;text-align:center;white-space:nowrap}
+.rank-main{min-width:0}
+.rank-main b{display:block;font-size:17px;overflow-wrap:anywhere}
+.rank-main small{display:block;color:#64748b;margin-top:4px;line-height:1.45}
+.rank-profit{font-size:18px;white-space:nowrap;text-align:right}
+@media(max-width:560px){.ranking-row{grid-template-columns:46px minmax(0,1fr);gap:8px}.rank-profit{grid-column:2;text-align:left;margin-top:-2px}.rank-badge{text-align:left}}

@@ -93,6 +93,8 @@ function render(){
   document.querySelectorAll(".owner-only").forEach(x=>x.classList.toggle("hidden",!isOwner));if(isOwner)subscribeViewerLogs();
   $("roomTitle").textContent=`群組：${roomCode}`;
   const g=currentGame(),completed=!!g?.endedAt,editable=canEditCurrent();
+  // 已完成且未進入修改模式時，整個玩家操作版面收起，避免誤觸。
+  $("currentGameCard").classList.toggle("hidden",completed&&!isEditing());
   $("gameDate").textContent=g?new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false}):"";
   $("gameState").className=`game-state ${completed&&!isEditing()?"completed":"active"}`;
   $("gameState").textContent=completed?(isEditing()?"正在修改已完成牌局":"本局已完成，操作已鎖定"):("目前牌局進行中");
@@ -123,20 +125,43 @@ function render(){
   renderReport();renderGameHistory();
 }
 
-function gameMatchesRange(g,range,now){const d=new Date(g.startedAt);return range==="all"||range==="year"&&d.getFullYear()===now.getFullYear()||range==="month"&&d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()}
+function gameMatchesRange(g,range,now){
+  const d=new Date(g.startedAt);
+  if(Number.isNaN(d.getTime()))return false;
+  if(range==="day")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+  if(range==="month")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+  if(range==="year")return d.getFullYear()===now.getFullYear();
+  return true;
+}
+function rangeLabel(range,now){
+  if(range==="day")return `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} 日排行榜`;
+  if(range==="month")return `${now.getFullYear()} 年 ${now.getMonth()+1} 月排行榜`;
+  return `${now.getFullYear()} 年排行榜`;
+}
 async function editGame(gameId){if(!isOwner)return alert("只有房主可以修改牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return alert("找不到這一局");editingGameId=gameId;sessionStorage.setItem("editingGameId",gameId);await mutate(d=>{d.currentGameId=gameId});window.scrollTo({top:0,behavior:"smooth"})}
 function finishEditing(){editingGameId="";sessionStorage.removeItem("editingGameId");render();alert("修改已完成，這一局已重新鎖定。")}
-function deleteGame(gameId){if(!isOwner)return alert("只有房主可以刪除牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return;const when=new Date(target.startedAt).toLocaleString("zh-TW",{hour12:false});if(!confirm(`確定永久刪除 ${when} 的牌局嗎？\n\n刪除後無法復原，該局也會從月／年統計移除。`))return;mutate(d=>{d.games=(d.games||[]).filter(g=>g.id!==gameId);if(editingGameId===gameId){editingGameId="";sessionStorage.removeItem("editingGameId")}if(d.currentGameId===gameId){const remaining=d.games||[];if(remaining.length)d.currentGameId=remaining[remaining.length-1].id;else{const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};d.games=[g];d.currentGameId=g.id}}}).catch(e=>alert(e.message))}
+function deleteGame(gameId){if(!isOwner)return alert("只有房主可以刪除牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return;const when=new Date(target.startedAt).toLocaleString("zh-TW",{hour12:false});if(!confirm(`確定永久刪除 ${when} 的牌局嗎？\n\n刪除後無法復原，該局也會從日／月／年排行榜移除。`))return;mutate(d=>{d.games=(d.games||[]).filter(g=>g.id!==gameId);if(editingGameId===gameId){editingGameId="";sessionStorage.removeItem("editingGameId")}if(d.currentGameId===gameId){const remaining=d.games||[];if(remaining.length)d.currentGameId=remaining[remaining.length-1].id;else{const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};d.games=[g];d.currentGameId=g.id}}}).catch(e=>alert(e.message))}
 function renderGameHistory(){
-  const box=$("gameHistory");if(!box)return;const range=$("range").value,now=new Date();
-  const games=(roomData.games||[]).filter(g=>gameMatchesRange(g,range,now)&&!isGameEmpty(g)).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt));
+  const box=$("gameHistory");if(!box)return;
+  const games=(roomData.games||[]).filter(g=>!isGameEmpty(g)).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt));
   box.innerHTML=games.map(g=>{const {buy,cash}=gameTotals(g),diff=cash-buy,isCurrent=g.id===roomData.currentGameId,state=g.endedAt?"已完成":"進行中";return `<div class="game-row"><div><b>${new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false})}</b><br><small>${g.players?.length||0} 位玩家・投入 ${money(buy)}・差額 ${diff>=0?"+":""}${money(diff)}・${state}${isCurrent?"・目前顯示":""}</small></div>${isOwner?`<div class="game-actions">${g.endedAt?`<button class="secondary small edit-game" data-game-id="${g.id}">修改此局</button>`:""}<button class="danger small delete-game" data-game-id="${g.id}">刪除此局</button></div>`:""}</div>`}).join("")||"<p class='muted'>尚無牌局紀錄</p>";
   box.querySelectorAll(".edit-game").forEach(btn=>btn.onclick=()=>editGame(btn.dataset.gameId));box.querySelectorAll(".delete-game").forEach(btn=>btn.onclick=()=>deleteGame(btn.dataset.gameId));
 }
 function renderReport(){
   const range=$("range").value,now=new Date(),map=new Map();
-  (roomData.games||[]).filter(g=>gameMatchesRange(g,range,now)&&!isGameEmpty(g)).forEach(g=>(g.players||[]).forEach(p=>{const r=map.get(p.name)||{games:0,buyin:0,cashout:0};r.games++;r.buyin+=buyinTotal(p);r.cashout+=Number(p.cashout||0);map.set(p.name,r)}));
-  $("report").innerHTML=[...map].sort((a,b)=>(b[1].cashout-b[1].buyin)-(a[1].cashout-a[1].buyin)).map(([n,r])=>{const p=r.cashout-r.buyin;return`<div class="reportrow"><span><b>${escapeHtml(n)}</b><br><small>${r.games} 場・投入 ${money(r.buyin)}</small></span><b class="${p>=0?"pos":"neg"}">${p>=0?"+":""}${money(p)}</b></div>`}).join("")||"<p class='muted'>尚無資料</p>";
+  $("reportPeriod").textContent=`${rangeLabel(range,now)}｜依總盈虧由高到低排序`;
+  (roomData.games||[]).filter(g=>g.endedAt&&gameMatchesRange(g,range,now)&&!isGameEmpty(g)).forEach(g=>(g.players||[]).forEach(p=>{
+    const r=map.get(p.name)||{games:0,buyin:0,cashout:0};
+    r.games++;r.buyin+=buyinTotal(p);r.cashout+=Number(p.cashout||0);map.set(p.name,r);
+  }));
+  const rows=[...map].sort((a,b)=>{
+    const pa=b[1].cashout-b[1].buyin,pb=a[1].cashout-a[1].buyin;
+    return pa-pb||b[1].cashout-a[1].cashout||a[0].localeCompare(b[0],"zh-Hant");
+  });
+  $("report").innerHTML=rows.map(([n,r],i)=>{
+    const profit=r.cashout-r.buyin,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
+    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+  }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 }
 
 $("googleBtn").onclick=async()=>{const provider=new GoogleAuthProvider();try{const r=await signInWithPopup(auth,provider),c=prompt("請輸入妳要管理的群組代碼");if(c)await enterOwnerRoom(c)}catch(e){if(e.code?.includes("popup"))await signInWithRedirect(auth,provider);else alert(e.message)}};
@@ -163,6 +188,6 @@ $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.re
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=11",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=12",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));
