@@ -59,6 +59,7 @@
             <h2 id="roomTitle"></h2>
             <p id="gameDate" class="muted"></p>
             <p id="gameState" class="game-state active"></p>
+            <p id="liveBuyinNotice" class="live-buyin-notice hidden">🔴 即時買入：房主新增買入後，這裡會自動更新。</p>
             <button id="cancelNewGameBtn" class="danger small cancel-new-game hidden">取消開新局</button>
           </div>
           <button id="switchBtn" class="secondary small">切換群組</button>
@@ -243,8 +244,8 @@
 
       <div class="totals">
         <div><span>投入</span><strong class="pbuy">$0</strong></div>
-        <div><span>拿回</span><strong class="pcash">$0</strong></div>
-        <div><span>盈虧</span><strong class="pprofit">$0</strong></div>
+        <div class="cashout-total"><span>拿回</span><strong class="pcash">$0</strong></div>
+        <div class="profit-total"><span>盈虧</span><strong class="pprofit">$0</strong></div>
       </div>
 
       <div class="owner-control actions">
@@ -265,7 +266,7 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=30"></script>
-  <script type="module" src="poker-judge.js?v=30"></script>
+  <script type="module" src="app.js?v=32"></script>
+  <script type="module" src="poker-judge.js?v=32"></script>
 </body>
 </html>

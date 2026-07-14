@@ -123,6 +123,8 @@ function render(){
   $("auditStatus").textContent=completed?(isEditing()?"正在修改這一局":"本局已完成並保存"):"目前進行中的牌局";
   $("gameState").className=`game-state ${completed&&!isEditing()?"completed":"active"}`;
   $("gameState").textContent=completed?(isEditing()?"正在修改已完成牌局":"本局已完成，操作已鎖定"):("目前牌局進行中");
+  // 觀看者在牌局進行中可即時查看所有玩家的買入金額、次數與明細。
+  $("liveBuyinNotice").classList.toggle("hidden",isOwner||completed);
   $("playerAddArea").classList.toggle("hidden",!editable);
   $("favoriteManager").classList.toggle("hidden",!editable);
   $("favoriteSelect").innerHTML='<option value="">常用玩家</option>'+[...(roomData.favorites||[])].sort().map(n=>`<option>${escapeHtml(n)}</option>`).join("");
@@ -130,8 +132,13 @@ function render(){
   const wrap=$("players");wrap.innerHTML="";
   (g?.players||[]).forEach(p=>{
     const f=$("playerTemplate").content.cloneNode(true),root=f.querySelector(".player"),b=buyinTotal(p),c=Number(p.cashout||0),profit=c-b;
-    root.querySelector(".pname").textContent=p.name;root.querySelector(".pmeta").textContent=`${p.transactions.length} 次買入`;root.querySelector(".pbuy").textContent=money(b);root.querySelector(".pcash").textContent=money(c);
+    root.querySelector(".pname").textContent=p.name;root.querySelector(".pmeta").textContent=`${p.transactions.length} 次買入・目前投入 ${money(b)}`;root.querySelector(".pbuy").textContent=money(b);root.querySelector(".pcash").textContent=money(c);
     const pe=root.querySelector(".pprofit");pe.textContent=`${profit>=0?"+":""}${money(profit)}`;pe.classList.add(profit>=0?"pos":"neg");
+    // 未結算時，觀看者只顯示即時買入資訊；完成本局後才顯示拿回與盈虧。
+    const viewerLive=!isOwner&&!completed;
+    root.querySelector(".cashout-total")?.classList.toggle("hidden",viewerLive);
+    root.querySelector(".profit-total")?.classList.toggle("hidden",viewerLive);
+    root.classList.toggle("viewer-live",viewerLive);
     root.classList.toggle("locked",!editable);
     root.querySelectorAll(".owner-control").forEach(x=>x.classList.toggle("hidden",!editable));
     root.querySelectorAll("button,input,select").forEach(el=>{if(el.closest(".owner-control"))el.disabled=!editable});

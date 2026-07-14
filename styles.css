@@ -113,3 +113,7 @@ body.picker-open{overflow:hidden}
 
 /* v28：空白新局可安全取消 */
 .cancel-new-game{margin-top:10px;width:auto;min-height:42px;padding:8px 16px;font-size:15px}.between .cancel-new-game{align-self:flex-start}@media(max-width:560px){.cancel-new-game{width:100%}}
+
+.live-buyin-notice{margin:.45rem 0 0;padding:.55rem .75rem;border-radius:10px;background:#fff3cd;color:#664d03;font-weight:700;font-size:.92rem}
+.player.viewer-live .totals{grid-template-columns:1fr}
+.player.viewer-live .totals>div{min-height:64px}
