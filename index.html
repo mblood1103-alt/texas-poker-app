@@ -41,6 +41,18 @@
     <section id="appArea" class="hidden">
       <div id="roleBanner" class="role"></div>
 
+
+      <section class="card owner-only new-game-card hidden" id="newGameCard">
+        <div class="new-game-copy">
+          <span class="new-game-icon">＋</span>
+          <div>
+            <h2>開始新的牌局</h2>
+            <p class="hint">目前牌局已保存。按下後會建立新的牌局時間，歷史紀錄不會被刪除。</p>
+          </div>
+        </div>
+        <button id="newGameBtn" class="new-game-main-btn">開新局</button>
+      </section>
+
       <section id="currentGameCard" class="card">
         <div class="between">
           <div>
@@ -85,6 +97,11 @@
           <div><span>差額</span><strong id="difference">$0</strong></div>
         </div>
         <p id="differenceHint" class="hint"></p>
+        <div class="audit-player-section">
+          <h3>本局玩家排名與紀錄</h3>
+          <p class="hint">依本局盈虧由高到低排列，並顯示每位玩家的買入、拿回與買入次數。</p>
+          <div id="auditPlayerRanking" class="audit-player-ranking"></div>
+        </div>
         <div class="owner-only actions audit-actions">
           <button id="finishBtn">完成本局</button>
           <button id="editCurrentBtn" class="secondary hidden">修改本局</button>
@@ -92,22 +109,13 @@
         </div>
       </section>
 
-      <section class="card owner-only new-game-card hidden" id="newGameCard">
-        <div class="new-game-copy">
-          <span class="new-game-icon">＋</span>
-          <div>
-            <h2>開始新的牌局</h2>
-            <p class="hint">目前牌局已保存。按下後會建立新的牌局時間，歷史紀錄不會被刪除。</p>
-          </div>
-        </div>
-        <button id="newGameBtn" class="new-game-main-btn">開新局</button>
-      </section>
 
-
-      <section class="card" id="pokerJudgeCard">
+      <details class="card collapsible-card" id="pokerJudgeCard">
+        <summary class="section-summary">🃏 撲克牌型練習室</summary>
+        <div class="collapsible-body">
         <div class="between">
           <div>
-            <h2>撲克牌型練習室</h2><details style="margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:10px"><summary style="font-weight:bold;cursor:pointer">📖 怎麼判斷輸贏？</summary><div style="margin-top:10px;line-height:1.7">德州撲克會從「2 張手牌＋5 張公牌」中選出最強的 5 張牌。牌型大小：皇家同花順 ＞ 同花順 ＞ 鐵枝 ＞ 葫蘆 ＞ 同花 ＞ 順子 ＞ 三條 ＞ 兩對 ＞ 一對 ＞ 高牌。<br><b>高牌：</b>先比最大張，再依序比 4 張踢腳。<br><b>一對：</b>先比對子，再依序比 3 張踢腳。<br><b>兩對：</b>先比大對、再比小對，最後比踢腳。<br><b>三條：</b>先比三條，再依序比 2 張踢腳。<br><b>順子：</b>比最高張，A2345 為最小順子。<br><b>同花：</b>由最大張開始逐張比較。<br><b>葫蘆：</b>先比三條，再比對子。<br><b>鐵枝：</b>先比 4 張相同點數的牌，再比最後 1 張踢腳。<br><b>同花順：</b>同一花色的 5 張連續牌，比最高張大小。<br><b>皇家同花順：</b>同一花色的 10、J、Q、K、A，是最大的牌型。<br>若雙方最強 5 張牌完全相同，就是平分。</div></details>
+            <details style="margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:10px"><summary style="font-weight:bold;cursor:pointer">📖 怎麼判斷輸贏？</summary><div style="margin-top:10px;line-height:1.7">德州撲克會從「2 張手牌＋5 張公牌」中選出最強的 5 張牌。牌型大小：皇家同花順 ＞ 同花順 ＞ 鐵枝 ＞ 葫蘆 ＞ 同花 ＞ 順子 ＞ 三條 ＞ 兩對 ＞ 一對 ＞ 高牌。<br><b>高牌：</b>先比最大張，再依序比 4 張踢腳。<br><b>一對：</b>先比對子，再依序比 3 張踢腳。<br><b>兩對：</b>先比大對、再比小對，最後比踢腳。<br><b>三條：</b>先比三條，再依序比 2 張踢腳。<br><b>順子：</b>比最高張，A2345 為最小順子。<br><b>同花：</b>由最大張開始逐張比較。<br><b>葫蘆：</b>先比三條，再比對子。<br><b>鐵枝：</b>先比 4 張相同點數的牌，再比最後 1 張踢腳。<br><b>同花順：</b>同一花色的 5 張連續牌，比最高張大小。<br><b>皇家同花順：</b>同一花色的 10、J、Q、K、A，是最大的牌型。<br>若雙方最強 5 張牌完全相同，就是平分。</div></details>
             <p class="hint">這是獨立的牌型解答工具，不會連動本局玩家或記帳資料。選 5 張公牌與每位玩家 2 張手牌，就能練習並判斷勝負、踢腳與平分。</p>
           </div>
           <button id="resetPokerJudgeBtn" class="secondary small" type="button">全部清除</button>
@@ -125,7 +133,8 @@
         <div id="judgeResult" class="judge-result hidden" aria-live="polite"></div>
 
         <p class="hint judge-tap-hint">點任何一個公牌或手牌空格，牌組就會自動跳出供你選擇。</p>
-      </section>
+        </div>
+      </details>
 
       <div id="pokerPickerModal" class="poker-picker-modal hidden" role="dialog" aria-modal="true" aria-labelledby="pokerPickerTitle">
         <button id="pokerPickerBackdrop" class="poker-picker-backdrop" type="button" aria-label="關閉選牌視窗"></button>
@@ -165,8 +174,10 @@
           <div id="attendanceReport" class="ranking-list"></div>
         </div>
 
-        <h2 class="history-title">牌局紀錄</h2>
-        <p class="hint">可選擇指定日期查看當天歷史牌局；排行榜只計算已完成牌局。房主可修改牌局，觀看者只能查看。</p>
+        <details class="history-details collapsible-card">
+          <summary class="section-summary">📅 牌局紀錄</summary>
+          <div class="collapsible-body">
+            <p class="hint">可選擇指定日期查看當天歷史牌局；排行榜只計算已完成牌局。房主可修改牌局，觀看者只能查看。</p>
 
         <div class="history-filter">
           <div class="calendar-toolbar">
@@ -190,6 +201,8 @@
         <p id="historySummary" class="hint history-summary"></p>
         <div id="historyRanking" class="history-ranking"></div>
         <div id="gameHistory"></div>
+          </div>
+        </details>
       </section>
 
       <section class="card owner-only">

@@ -146,6 +146,8 @@ function render(){
     root.querySelectorAll(".delete-tx").forEach(btn=>btn.onclick=()=>deleteBuyin(p.id,btn.dataset.tid));wrap.appendChild(f);
   });
   const {buy,cash}=gameTotals(g),diff=cash-buy;$("totalBuyin").textContent=money(buy);$("totalCashout").textContent=money(cash);$("difference").textContent=`${diff>0?"+":""}${money(diff)}`;$("differenceHint").textContent=diff===0?"帳目相符，可以安心結算。":diff>0?`目前多出 ${money(diff)}。`:`目前少了 ${money(Math.abs(diff))}。`;
+  const auditRows=(g?.players||[]).map(p=>{const pb=buyinTotal(p),pc=Number(p.cashout||0);return {name:p.name,buy:pb,cash:pc,profit:pc-pb,count:(p.transactions||[]).length}}).sort((a,b)=>b.profit-a.profit||b.cash-a.cash||a.name.localeCompare(b.name,"zh-TW"));
+  $("auditPlayerRanking").innerHTML=auditRows.length?auditRows.map((r,i)=>`<div class="audit-player-row"><div class="audit-rank">${i<3?["🥇","🥈","🥉"][i]:`第 ${i+1} 名`}</div><div class="audit-player-main"><b>${escapeHtml(r.name)}</b><small>${r.count} 次買入・投入 ${money(r.buy)}・拿回 ${money(r.cash)}</small></div><strong class="${r.profit>=0?"pos":"neg"}">${r.profit>=0?"+":""}${money(r.profit)}</strong></div>`).join(""):"<p class='muted'>本局尚未加入玩家</p>";
   $("finishBtn").classList.toggle("hidden",!isOwner||completed);$("finishEditBtn").classList.toggle("hidden",!isOwner||!isEditing());$("editCurrentBtn").classList.toggle("hidden",!isOwner||!completed||isEditing());
   // 「開新局」獨立顯示：只有本局完成、且未在修改時才出現。
   $("newGameCard").classList.toggle("hidden",!isOwner||!completed||isEditing());

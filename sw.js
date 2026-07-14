@@ -1,4 +1,4 @@
-const C="dezhou-custom-calendar-v26";
+const C="dezhou-custom-calendar-v27";
 const ASSETS=["./","./index.html","./styles.css?v=21","./app.js?v=21","./poker-judge.js?v=21","./manifest.webmanifest?v=21"];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)))});
 self.addEventListener("activate",e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k))))])));
