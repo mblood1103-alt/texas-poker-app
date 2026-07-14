@@ -127,3 +127,7 @@ body.picker-open{overflow:hidden}
 #initialBuyinHint{display:block;margin-top:8px}
 .buyin-actions{display:grid;grid-template-columns:repeat(4,1fr)}
 @media(max-width:560px){.player-add{grid-template-columns:1fr}.initial-buyin-options{grid-template-columns:repeat(2,1fr)}.buyin-actions{grid-template-columns:repeat(2,1fr)}}
+
+
+/* v36：查看次數改為每日計算，並可單筆刪除 */
+.viewer-log-main{min-width:0;flex:1}.viewer-log-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}.viewer-log-actions small{white-space:nowrap}.delete-viewer-log{flex:0 0 auto}@media(max-width:560px){.viewer-log-actions{flex-direction:column;align-items:flex-end;gap:6px}}

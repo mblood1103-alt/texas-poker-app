@@ -78,22 +78,31 @@ async function addFavorite(){const n=$("favoriteName").value.trim();if(!n)return
 async function removeFavorite(name){if(!confirm(`確定將「${name}」從常用玩家移除嗎？\n\n過去牌局與統計不會被刪除。`))return;await mutate(d=>{d.favorites=(d.favorites||[]).filter(n=>n!==name)})}
 function renderFavorites(){const list=$("favoriteList");if(!list)return;const names=[...(roomData?.favorites||[])].sort((a,b)=>a.localeCompare(b,"zh-Hant"));list.innerHTML=names.map(n=>`<div class="favorite-chip"><span>${escapeHtml(n)}</span><button class="danger tiny remove-favorite" data-name="${escapeHtml(n)}">移除</button></div>`).join("")||"<p class='muted'>尚未設定常用玩家</p>";list.querySelectorAll(".remove-favorite").forEach(btn=>btn.onclick=()=>removeFavorite(btn.dataset.name))}
 
+function todayKey(){
+  const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
 async function recordViewerAccess(){
   const viewerUser=auth.currentUser||user;
   if(!viewerUser?.uid)throw new Error("匿名登入尚未完成");
   if(!roomCode)throw new Error("群組代碼不存在");
   const ref=doc(db,"rooms",roomCode,"viewerLogs",viewerUser.uid);
   await runTransaction(db,async tx=>{
-    const snap=await tx.get(ref),now=new Date().toISOString();
+    const snap=await tx.get(ref),now=new Date().toISOString(),dateKey=todayKey();
     if(snap.exists()){
-      const d=snap.data();
-      tx.update(ref,{displayName:viewerName,lastSeen:now,visitCount:Number(d.visitCount||0)+1,updatedAt:serverTimestamp()});
+      const d=snap.data(),sameDay=d.visitDateKey===dateKey;
+      tx.update(ref,{displayName:viewerName,lastSeen:now,visitDateKey:dateKey,visitCount:sameDay?Number(d.visitCount||0)+1:1,updatedAt:serverTimestamp()});
     }else{
-      tx.set(ref,{uid:viewerUser.uid,displayName:viewerName,firstSeen:now,lastSeen:now,visitCount:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      tx.set(ref,{uid:viewerUser.uid,displayName:viewerName,firstSeen:now,lastSeen:now,visitDateKey:dateKey,visitCount:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
     }
   });
 }
-function subscribeViewerLogs(){if(viewerLogUnsubscribe)viewerLogUnsubscribe();const box=$("viewerLogList");if(!box||!isOwner)return;viewerLogUnsubscribe=onSnapshot(collection(db,"rooms",roomCode,"viewerLogs"),snap=>{const rows=snap.docs.map(d=>d.data()).sort((a,b)=>new Date(b.lastSeen||0)-new Date(a.lastSeen||0));box.innerHTML=rows.map(v=>{const seen=v.lastSeen?new Date(v.lastSeen).toLocaleString("zh-TW",{hour12:false}):"—",short=(v.uid||"").slice(0,8);return `<div class="viewer-log-row"><div><b>${escapeHtml(v.displayName||"未填名稱")}</b><br><small>裝置 ${short}…・查看 ${Number(v.visitCount||1)} 次</small></div><small>${seen}</small></div>`}).join("")||"<p class='muted'>尚無查看紀錄</p>"},e=>{console.error(e);box.innerHTML="<p class='muted'>無法讀取查看紀錄</p>"})}
+async function deleteViewerLog(logId,displayName){
+  if(!isOwner)return alert("只有房主可以刪除查看紀錄");
+  if(!confirm(`確定刪除「${displayName||"未填名稱"}」這筆查看紀錄嗎？\n\n這不會影響牌局資料。`))return;
+  const batch=writeBatch(db);batch.delete(doc(db,"rooms",roomCode,"viewerLogs",logId));await batch.commit();
+}
+function subscribeViewerLogs(){if(viewerLogUnsubscribe)viewerLogUnsubscribe();const box=$("viewerLogList");if(!box||!isOwner)return;viewerLogUnsubscribe=onSnapshot(collection(db,"rooms",roomCode,"viewerLogs"),snap=>{const currentDay=todayKey(),rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>new Date(b.lastSeen||0)-new Date(a.lastSeen||0));box.innerHTML=rows.map(v=>{const seen=v.lastSeen?new Date(v.lastSeen).toLocaleString("zh-TW",{hour12:false}):"—",short=(v.uid||"").slice(0,8),todayCount=v.visitDateKey===currentDay?Number(v.visitCount||0):0;return `<div class="viewer-log-row"><div class="viewer-log-main"><b>${escapeHtml(v.displayName||"未填名稱")}</b><br><small>裝置 ${short}…・今日查看 ${todayCount} 次</small></div><div class="viewer-log-actions"><small>${seen}</small><button class="danger tiny delete-viewer-log" data-id="${escapeHtml(v.id)}" data-name="${escapeHtml(v.displayName||"未填名稱")}" type="button">刪除</button></div></div>`}).join("")||"<p class='muted'>尚無查看紀錄</p>";box.querySelectorAll(".delete-viewer-log").forEach(btn=>btn.onclick=()=>deleteViewerLog(btn.dataset.id,btn.dataset.name).catch(e=>alert(e.message)))},e=>{console.error(e);box.innerHTML="<p class='muted'>無法讀取查看紀錄</p>"})}
 async function clearViewerLogs(){if(!isOwner)return alert("只有房主可以清空查看紀錄");if(!confirm("確定清空全部查看紀錄嗎？\n\n這不會影響牌局資料。"))return;const snap=await getDocs(collection(db,"rooms",roomCode,"viewerLogs")),batch=writeBatch(db);snap.forEach(d=>batch.delete(d.ref));await batch.commit()}
 
 async function renamePlayer(oldName){
