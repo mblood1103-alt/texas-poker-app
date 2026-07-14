@@ -102,8 +102,55 @@ async function renamePlayer(oldName){
   const applyAll=confirm(`要把「${oldName}」在所有過去牌局、統計與常用玩家中都改成「${newName}」嗎？\n\n按「好」＝全部一起改\n按「取消」＝只改目前牌局`);
   await mutate(d=>{assertEditable(d);const targets=applyAll?(d.games||[]):[(d.games||[]).find(g=>g.id===d.currentGameId)].filter(Boolean);for(const g of targets)for(const p of(g.players||[]))if(p.name===oldName)p.name=newName;if(applyAll){d.favorites=(d.favorites||[]).map(n=>n===oldName?newName:n);d.favorites=[...new Set(d.favorites)]}});
 }
-async function addPlayer(){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");const n=$("playerName").value.trim()||$("favoriteSelect").value;if(!n)return;try{await mutate(d=>{const g=assertEditable(d);if(g.players.some(p=>p.name===n))throw new Error("玩家已存在");g.players.push({id:makeId(),name:n,cashout:0,transactions:[]});g.updatedAt=new Date().toISOString();d.favorites=d.favorites||[];if(!d.favorites.includes(n))d.favorites.push(n)});$("playerName").value=""}catch(e){alert(e.message)}}
+async function addPlayer(){
+  if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
+  const n=$("playerName").value.trim()||$("favoriteSelect").value;
+  if(!n)return alert("請先選擇或輸入玩家名稱");
+  const initialAmount=Math.max(0,Number($("initialBuyinAmount").value||0));
+  try{
+    await mutate(d=>{
+      const g=assertEditable(d);
+      if(g.players.some(p=>p.name===n))throw new Error("玩家已存在");
+      const transactions=initialAmount>0?[{
+        id:makeId(),
+        amount:initialAmount,
+        at:new Date().toISOString(),
+        by:user.displayName||user.email
+      }]:[];
+      g.players.push({id:makeId(),name:n,cashout:0,transactions});
+      g.updatedAt=new Date().toISOString();
+      d.favorites=d.favorites||[];
+      if(!d.favorites.includes(n))d.favorites.push(n);
+    });
+    $("playerName").value="";
+    $("favoriteSelect").value="";
+  }catch(e){alert(e.message)}
+}
 const addBuyin=(pid,a)=>{if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");return mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.transactions.push({id:makeId(),amount:Number(a),at:new Date().toISOString(),by:user.displayName||user.email});g.updatedAt=new Date().toISOString()})};
+async function subtractBuyin100(pid){
+  if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
+  const player=currentGame()?.players?.find(x=>x.id===pid);
+  if(!player)return alert("找不到玩家");
+  if(buyinTotal(player)<100)return alert("目前投入不足 $100，不能再扣除。");
+  try{
+    await mutate(d=>{
+      const g=assertEditable(d),p=g.players.find(x=>x.id===pid);
+      if(!p)throw new Error("找不到玩家");
+      let remain=100;
+      const tx=[...(p.transactions||[])];
+      for(let i=tx.length-1;i>=0&&remain>0;i--){
+        const amount=Number(tx[i].amount||0);
+        if(amount<=0)continue;
+        const used=Math.min(amount,remain);
+        tx[i]={...tx[i],amount:amount-used,editedAt:new Date().toISOString()};
+        remain-=used;
+      }
+      p.transactions=tx.filter(t=>Number(t.amount||0)>0);
+      g.updatedAt=new Date().toISOString();
+    });
+  }catch(e){alert(e.message)}
+}
+
 const saveCashout=(pid,a)=>{if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");return mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.cashout=Number(a||0);g.updatedAt=new Date().toISOString()})};
 function deleteBuyin(pid,tid){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");if(!confirm("確定刪除這筆買入紀錄嗎？\n\n刪除後會重新計算該玩家與本局統計。"))return;mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);p.transactions=(p.transactions||[]).filter(t=>t.id!==tid);g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
 function editBuyin(pid,tid,oldAmount){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");const v=prompt("請輸入正確的買入金額",String(oldAmount));if(v===null)return;const amount=Number(v);if(!Number.isFinite(amount)||amount<=0)return alert("請輸入大於 0 的金額");mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid),t=(p.transactions||[]).find(x=>x.id===tid);if(!t)throw new Error("找不到這筆買入紀錄");t.amount=amount;t.editedAt=new Date().toISOString();t.editedBy=user.displayName||user.email;g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
@@ -143,6 +190,7 @@ function render(){
     root.querySelectorAll(".owner-control").forEach(x=>x.classList.toggle("hidden",!editable));
     root.querySelectorAll("button,input,select").forEach(el=>{if(el.closest(".owner-control"))el.disabled=!editable});
     root.querySelectorAll("[data-buy]").forEach(btn=>btn.onclick=()=>addBuyin(p.id,Number(btn.dataset.buy)));
+    root.querySelector(".minus100Btn").onclick=()=>subtractBuyin100(p.id);
     root.querySelector(".customBtn").onclick=()=>{const a=Number(prompt("輸入買入金額"));if(a>0)addBuyin(p.id,a)};
     root.querySelector(".cashInput").value=p.cashout?Number(p.cashout):"";
     root.querySelector(".saveBtn").onclick=()=>saveCashout(p.id,root.querySelector(".cashInput").value);
@@ -325,6 +373,25 @@ $("viewerBtn").onclick=async()=>{try{
   if(!auth.currentUser){const credential=await signInAnonymously(auth);user=credential.user}else user=auth.currentUser;
   await enterViewerRoom($("roomCode").value,$("viewerName").value)
 }catch(e){console.error(e);alert(`無法觀看帳目：${e.message||"請稍後再試"}`)}};
+
+function setInitialBuyin(amount,label){
+  const value=Math.max(0,Number(amount||0));
+  $("initialBuyinAmount").value=String(value);
+  document.querySelectorAll(".initialBuyinBtn").forEach(btn=>{
+    const selected=Number(btn.dataset.amount)===value;
+    btn.classList.toggle("selected",selected);
+    btn.classList.toggle("secondary",!selected);
+  });
+  $("initialBuyinHint").textContent=value>0
+    ?`新增玩家時會直接記錄第 1 次買入 ${money(value)}`
+    :"只新增玩家，暫時不記錄買入";
+  $("addPlayerBtn").textContent=value>0?`新增玩家＋買入 ${money(value)}`:"只新增玩家";
+}
+document.querySelectorAll(".initialBuyinBtn").forEach(btn=>btn.onclick=()=>setInitialBuyin(btn.dataset.amount));
+$("initialBuyinCustomBtn").onclick=()=>{
+  const amount=Number(prompt("輸入初始買入金額"));
+  if(amount>0)setInitialBuyin(amount);
+};
 $("addPlayerBtn").onclick=addPlayer;$("addFavoriteBtn").onclick=addFavorite;$("clearViewerLogsBtn").onclick=()=>clearViewerLogs().catch(e=>alert(e.message));
 $("finishBtn").onclick=async()=>{
   if(!canEditCurrent())return;

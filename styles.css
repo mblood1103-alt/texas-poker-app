@@ -117,3 +117,18 @@ body.picker-open{overflow:hidden}
 .live-buyin-notice{margin:.45rem 0 0;padding:.55rem .75rem;border-radius:10px;background:#fff3cd;color:#664d03;font-weight:700;font-size:.92rem}
 .player.viewer-live .totals{grid-template-columns:1fr}
 .player.viewer-live .totals>div{min-height:64px}
+
+.player-add{grid-template-columns:1fr 1fr}
+.player-add #addPlayerBtn{grid-column:1/-1}
+.initial-buyin-box{grid-column:1/-1;border:1px solid #cbd5e1;border-radius:14px;padding:12px;background:#f8fafc}
+.initial-buyin-label{display:block;font-weight:800;margin-bottom:8px}
+.initial-buyin-options{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.initial-buyin-options button{min-height:44px}
+.initial-buyin-options button.selected{background:#0f172a;color:#fff}
+#initialBuyinHint{display:block;margin-top:8px}
+.buyin-actions{display:grid;grid-template-columns:repeat(4,1fr)}
+@media(max-width:560px){
+  .player-add{grid-template-columns:1fr}
+  .initial-buyin-options{grid-template-columns:repeat(2,1fr)}
+  .buyin-actions{grid-template-columns:repeat(2,1fr)}
+}

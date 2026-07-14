@@ -70,7 +70,20 @@
             <option value="">常用玩家</option>
           </select>
           <input id="playerName" placeholder="請輸入名稱">
-          <button id="addPlayerBtn">新增玩家</button>
+
+          <div class="initial-buyin-box">
+            <span class="initial-buyin-label">初始買入</span>
+            <div class="initial-buyin-options">
+              <button type="button" class="secondary initialBuyinBtn" data-amount="0">只新增</button>
+              <button type="button" class="initialBuyinBtn selected" data-amount="100">$100</button>
+              <button type="button" class="secondary initialBuyinBtn" data-amount="200">$200</button>
+              <button type="button" class="secondary initialBuyinCustomBtn">自訂</button>
+            </div>
+            <input id="initialBuyinAmount" type="hidden" value="100">
+            <small id="initialBuyinHint" class="muted">新增玩家時會直接記錄第 1 次買入 $100</small>
+          </div>
+
+          <button id="addPlayerBtn">新增玩家＋買入 $100</button>
         </div>
 
         <details id="favoriteManager" class="owner-only favorite-manager">
@@ -248,7 +261,8 @@
         <div class="profit-total"><span>盈虧</span><strong class="pprofit">$0</strong></div>
       </div>
 
-      <div class="owner-control actions">
+      <div class="owner-control actions buyin-actions">
+        <button class="danger minus100Btn">−100</button>
         <button data-buy="100">+100</button>
         <button data-buy="200">+200</button>
         <button class="secondary customBtn">自訂</button>
@@ -266,7 +280,7 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=32"></script>
-  <script type="module" src="poker-judge.js?v=32"></script>
+  <script type="module" src="app.js?v=33"></script>
+  <script type="module" src="poker-judge.js?v=33"></script>
 </body>
 </html>
