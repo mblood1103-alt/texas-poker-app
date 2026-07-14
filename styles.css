@@ -131,3 +131,7 @@ body.picker-open{overflow:hidden}
 
 /* v36：查看次數改為每日計算，並可單筆刪除 */
 .viewer-log-main{min-width:0;flex:1}.viewer-log-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}.viewer-log-actions small{white-space:nowrap}.delete-viewer-log{flex:0 0 auto}@media(max-width:560px){.viewer-log-actions{flex-direction:column;align-items:flex-end;gap:6px}}
+
+
+/* v37：今日次數、總累積與可展開查看時間軸 */
+.viewer-log-card{align-items:flex-start}.viewer-time-details{margin-top:10px}.viewer-time-details summary{cursor:pointer;font-weight:700;color:#0f172a}.viewer-time-details ul{margin:8px 0 0 0;padding-left:24px;color:#475569}.viewer-time-details li{padding:3px 0}.viewer-log-actions{padding-top:2px}@media(max-width:560px){.viewer-log-card{gap:8px}.viewer-log-actions{flex-direction:row;align-items:flex-start}}

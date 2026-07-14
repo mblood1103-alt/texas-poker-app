@@ -91,9 +91,17 @@ async function recordViewerAccess(){
     const snap=await tx.get(ref),now=new Date().toISOString(),dateKey=todayKey();
     if(snap.exists()){
       const d=snap.data(),sameDay=d.visitDateKey===dateKey;
-      tx.update(ref,{displayName:viewerName,lastSeen:now,visitDateKey:dateKey,visitCount:sameDay?Number(d.visitCount||0)+1:1,updatedAt:serverTimestamp()});
+      const oldTimes=Array.isArray(d.accessTimes)?d.accessTimes.filter(Boolean):[];
+      const accessTimes=oldTimes.length?oldTimes:[d.lastSeen].filter(Boolean);
+      accessTimes.push(now);
+      tx.update(ref,{
+        displayName:viewerName,lastSeen:now,visitDateKey:dateKey,
+        visitCount:sameDay?Number(d.visitCount||0)+1:1,
+        totalCount:Number(d.totalCount||d.visitCount||accessTimes.length-1)+1,
+        accessTimes,updatedAt:serverTimestamp()
+      });
     }else{
-      tx.set(ref,{uid:viewerUser.uid,displayName:viewerName,firstSeen:now,lastSeen:now,visitDateKey:dateKey,visitCount:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      tx.set(ref,{uid:viewerUser.uid,displayName:viewerName,firstSeen:now,lastSeen:now,visitDateKey:dateKey,visitCount:1,totalCount:1,accessTimes:[now],createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
     }
   });
 }
@@ -102,7 +110,27 @@ async function deleteViewerLog(logId,displayName){
   if(!confirm(`確定刪除「${displayName||"未填名稱"}」這筆查看紀錄嗎？\n\n這不會影響牌局資料。`))return;
   const batch=writeBatch(db);batch.delete(doc(db,"rooms",roomCode,"viewerLogs",logId));await batch.commit();
 }
-function subscribeViewerLogs(){if(viewerLogUnsubscribe)viewerLogUnsubscribe();const box=$("viewerLogList");if(!box||!isOwner)return;viewerLogUnsubscribe=onSnapshot(collection(db,"rooms",roomCode,"viewerLogs"),snap=>{const currentDay=todayKey(),rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>new Date(b.lastSeen||0)-new Date(a.lastSeen||0));box.innerHTML=rows.map(v=>{const seen=v.lastSeen?new Date(v.lastSeen).toLocaleString("zh-TW",{hour12:false}):"—",short=(v.uid||"").slice(0,8),todayCount=v.visitDateKey===currentDay?Number(v.visitCount||0):0;return `<div class="viewer-log-row"><div class="viewer-log-main"><b>${escapeHtml(v.displayName||"未填名稱")}</b><br><small>裝置 ${short}…・今日查看 ${todayCount} 次</small></div><div class="viewer-log-actions"><small>${seen}</small><button class="danger tiny delete-viewer-log" data-id="${escapeHtml(v.id)}" data-name="${escapeHtml(v.displayName||"未填名稱")}" type="button">刪除</button></div></div>`}).join("")||"<p class='muted'>尚無查看紀錄</p>";box.querySelectorAll(".delete-viewer-log").forEach(btn=>btn.onclick=()=>deleteViewerLog(btn.dataset.id,btn.dataset.name).catch(e=>alert(e.message)))},e=>{console.error(e);box.innerHTML="<p class='muted'>無法讀取查看紀錄</p>"})}
+function subscribeViewerLogs(){
+  if(viewerLogUnsubscribe)viewerLogUnsubscribe();
+  const box=$("viewerLogList");if(!box||!isOwner)return;
+  viewerLogUnsubscribe=onSnapshot(collection(db,"rooms",roomCode,"viewerLogs"),snap=>{
+    const currentDay=todayKey();
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>new Date(b.lastSeen||0)-new Date(a.lastSeen||0));
+    box.innerHTML=rows.map(v=>{
+      const short=(v.uid||"").slice(0,8);
+      let times=Array.isArray(v.accessTimes)?v.accessTimes.filter(Boolean):[];
+      if(!times.length&&v.lastSeen)times=[v.lastSeen];
+      times=times.slice().sort((a,b)=>new Date(b)-new Date(a));
+      const todayFromTimes=times.filter(t=>{const d=new Date(t),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return `${y}-${m}-${day}`===currentDay}).length;
+      const todayCount=times.length?todayFromTimes:(v.visitDateKey===currentDay?Number(v.visitCount||0):0);
+      const totalCount=Math.max(Number(v.totalCount||0),times.length,Number(v.visitCount||0));
+      const details=times.map(t=>`<li>${new Date(t).toLocaleString("zh-TW",{hour12:false})}</li>`).join("")||"<li>尚無時間紀錄</li>";
+      return `<div class="viewer-log-row viewer-log-card"><div class="viewer-log-main"><b>${escapeHtml(v.displayName||"未填名稱")}</b><br><small>裝置 ${short}…・今日查看 ${todayCount} 次・總累積 ${totalCount} 次</small><details class="viewer-time-details"><summary>查看明細</summary><ul>${details}</ul></details></div><div class="viewer-log-actions"><button class="danger tiny delete-viewer-log" data-id="${escapeHtml(v.id)}" data-name="${escapeHtml(v.displayName||"未填名稱")}" type="button">刪除</button></div></div>`;
+    }).join("")||"<p class='muted'>尚無查看紀錄</p>";
+    box.querySelectorAll(".delete-viewer-log").forEach(btn=>btn.onclick=()=>deleteViewerLog(btn.dataset.id,btn.dataset.name).catch(e=>alert(e.message)));
+  },e=>{console.error(e);box.innerHTML="<p class='muted'>無法讀取查看紀錄</p>"});
+}
+
 async function clearViewerLogs(){if(!isOwner)return alert("只有房主可以清空查看紀錄");if(!confirm("確定清空全部查看紀錄嗎？\n\n這不會影響牌局資料。"))return;const snap=await getDocs(collection(db,"rooms",roomCode,"viewerLogs")),batch=writeBatch(db);snap.forEach(d=>batch.delete(d.ref));await batch.commit()}
 
 async function renamePlayer(oldName){
