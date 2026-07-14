@@ -7,7 +7,7 @@ const SUITS=[
 const RANKS=["A","K","Q","J","10","9","8","7","6","5","4","3","2"];
 const VALUE={"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"10":10,J:11,Q:12,K:13,A:14};
 const RANK_NAME={14:"A",13:"K",12:"Q",11:"J",10:"10",9:"9",8:"8",7:"7",6:"6",5:"5",4:"4",3:"3",2:"2"};
-const TYPE_NAMES=["高牌","一對","兩對","三條","順子","同花","葫蘆","四條","同花順"];
+const TYPE_NAMES=["高牌","一對","兩對","三條","順子","同花","葫蘆","鐵枝","同花順"];
 let state={board:Array(5).fill(null),players:[],active:{kind:"board",index:0}};
 let nextPlayerId=1;
 const $=id=>document.getElementById(id);
@@ -132,7 +132,7 @@ function sortDisplay(cards,type,straightHigh){
 }
 function detailText(type,s){
   if(type===8)return `${RANK_NAME[s[1]]} 高同花順`;
-  if(type===7)return `${RANK_NAME[s[1]]} 四條，踢腳 ${RANK_NAME[s[2]]}`;
+  if(type===7)return `${RANK_NAME[s[1]]} 鐵枝，踢腳 ${RANK_NAME[s[2]]}`;
   if(type===6)return `${RANK_NAME[s[1]]} 葫蘆 ${RANK_NAME[s[2]]}`;
   if(type===5)return `${s.slice(1).map(v=>RANK_NAME[v]).join("、")} 同花`;
   if(type===4)return `${RANK_NAME[s[1]]} 高順子`;
