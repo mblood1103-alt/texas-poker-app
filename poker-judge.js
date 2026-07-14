@@ -26,7 +26,23 @@ function slotLabel(kind,index,player){
   if(kind==="board")return `公牌第 ${index+1} 張`;
   return `${player?.name||"玩家"}第 ${index+1} 張手牌`;
 }
-function setActive(kind,index,playerId=null){state.active={kind,index,playerId};renderAll();}
+function setActive(kind,index,playerId=null){
+  state.active={kind,index,playerId};
+  renderAll();
+  openPicker();
+}
+function openPicker(){
+  const modal=$("pokerPickerModal");
+  if(!modal)return;
+  modal.classList.remove("hidden");
+  document.body.classList.add("picker-open");
+}
+function closePicker(){
+  const modal=$("pokerPickerModal");
+  if(!modal)return;
+  modal.classList.add("hidden");
+  document.body.classList.remove("picker-open");
+}
 function assignCard(card){
   const a=state.active;if(!a)return;
   const used=selectedKeys();
@@ -34,6 +50,7 @@ function assignCard(card){
   if(a.kind==="board")state.board[a.index]=card;
   else{const p=state.players.find(x=>x.id===a.playerId);if(p)p.cards[a.index]=card;}
   advanceActive();renderAll();
+  closePicker();
 }
 function advanceActive(){
   const emptyBoard=state.board.findIndex(c=>!c);if(emptyBoard>=0){state.active={kind:"board",index:emptyBoard};return;}
@@ -147,6 +164,9 @@ function init(){
   $("addJudgePlayerBtn").onclick=()=>{state.players.push(newPlayer(`玩家 ${state.players.length+1}`));advanceActive();renderAll();};
   $("resetPokerJudgeBtn").onclick=()=>{if(confirm("確定清除所有公牌與玩家手牌？"))resetAll();};
   $("judgeWinnerBtn").onclick=judge;
+  $("closePokerPickerBtn").onclick=closePicker;
+  $("pokerPickerBackdrop").onclick=closePicker;
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")closePicker();});
   renderAll();
 }
 init();
