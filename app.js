@@ -151,6 +151,14 @@ function render(){
   $("finishBtn").classList.toggle("hidden",!isOwner||completed);$("finishEditBtn").classList.toggle("hidden",!isOwner||!isEditing());$("editCurrentBtn").classList.toggle("hidden",!isOwner||!completed||isEditing());
   // 「開新局」獨立顯示：只有本局完成、且未在修改時才出現。
   $("newGameCard").classList.toggle("hidden",!isOwner||!completed||isEditing());
+  // 只要目前是空白未完成的新局，而且還有上一局，就允許取消。
+  // 同時相容舊版已建立、沒有 openedFromGameId 標記的空白新局。
+  const allGames=roomData.games||[];
+  const currentIndex=g?allGames.findIndex(x=>x.id===g.id):-1;
+  const fallbackPrevious=currentIndex>0?allGames[currentIndex-1]:null;
+  const previousGame=g?(allGames.find(x=>x.id===g.openedFromGameId)||fallbackPrevious):null;
+  const canCancelNewGame=!!(isOwner&&g&&!g.endedAt&&isGameEmpty(g)&&previousGame);
+  $("cancelNewGameBtn").classList.toggle("hidden",!canCancelNewGame);
   renderReport();renderGameHistory();
 }
 
@@ -326,7 +334,27 @@ $("finishBtn").onclick=async()=>{
   }catch(e){alert(`完成本局失敗：${e.message}`)}
 };
 $("editCurrentBtn").onclick=()=>currentGame()&&editGame(currentGame().id);$("finishEditBtn").onclick=finishEditing;
-$("newGameBtn").onclick=()=>{if(!isOwner)return;const g=currentGame();if(g&&!g.endedAt&&!isGameEmpty(g)&&!confirm("目前這局尚未完成，仍要直接開新局嗎？舊資料會保留。"))return;if(g&&!g.endedAt&&isGameEmpty(g))return alert("目前已經是空白新局，不需要再開一局。");if(!confirm("確定開新局？只有按下這個按鈕才會建立新的牌局時間。"))return;clearEditingMode();mutate(d=>{const ng={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};d.games=d.games||[];d.games.push(ng);d.currentGameId=ng.id})};
+$("newGameBtn").onclick=()=>{if(!isOwner)return;const g=currentGame();if(g&&!g.endedAt&&!isGameEmpty(g)&&!confirm("目前這局尚未完成，仍要直接開新局嗎？舊資料會保留。"))return;if(g&&!g.endedAt&&isGameEmpty(g))return alert("目前已經是空白新局，不需要再開一局。");if(!confirm("確定開新局？只有按下這個按鈕才會建立新的牌局時間。"))return;clearEditingMode();mutate(d=>{const previousId=d.currentGameId||null;const ng={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[],openedFromGameId:previousId};d.games=d.games||[];d.games.push(ng);d.currentGameId=ng.id})};
+$("cancelNewGameBtn").onclick=async()=>{
+  if(!isOwner)return;
+  const g=currentGame();
+  if(!g||g.endedAt||!isGameEmpty(g)||!g.openedFromGameId)return alert("這局已經加入玩家或記帳，不能取消開新局。");
+  if(!confirm("確定取消這個空白新局，回到上一局嗎？"))return;
+  try{
+    clearEditingMode();
+    await mutate(d=>{
+      const games=d.games||[];
+      const currentIndex=games.findIndex(x=>x.id===d.currentGameId);
+      const current=currentIndex>=0?games[currentIndex]:null;
+      if(!current||current.endedAt||!isGameEmpty(current))throw new Error("這局已經有資料，不能取消");
+      const previous=games.find(x=>x.id===current.openedFromGameId)||(currentIndex>0?games[currentIndex-1]:null);
+      if(!previous)throw new Error("找不到上一局");
+      d.games=games.filter(x=>x.id!==current.id);
+      d.currentGameId=previous.id;
+    });
+    window.scrollTo({top:0,behavior:"smooth"});
+  }catch(e){alert(`取消開新局失敗：${e.message}`)}
+};
 $("range").onchange=()=>{renderReport();renderGameHistory()};
 $("historyPrevBtn").onclick=()=>shiftHistoryDate(-1);
 $("historyTodayBtn").onclick=()=>{const now=new Date();historyDateFilter=localDateKey(now);calendarMonth=new Date(now.getFullYear(),now.getMonth(),1);$("historyDate").value=historyDateFilter;renderGameHistory()};
@@ -339,6 +367,6 @@ $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.re
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=26",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=28",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));
