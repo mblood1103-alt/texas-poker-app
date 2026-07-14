@@ -102,3 +102,6 @@
 .poker-picker-head h3{margin:0 0 3px}.poker-picker-head p{margin:0}
 body.picker-open{overflow:hidden}
 @media(min-width:700px){.poker-picker-modal{align-items:center}.poker-picker-sheet{border-radius:22px}}
+
+/* v26：驗帳與開新局分開，避免操作層級混在一起 */
+.audit-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.audit-heading h2{margin-bottom:4px}.audit-status{margin:0}.audit-actions{margin-top:12px}.new-game-card{border:2px solid #0f172a;background:linear-gradient(180deg,#fff,#f8fafc)}.new-game-copy{display:flex;align-items:flex-start;gap:12px}.new-game-copy h2{margin:2px 0 4px}.new-game-copy .hint{margin:0}.new-game-icon{display:flex;align-items:center;justify-content:center;flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:#0f172a;color:#fff;font-size:28px;line-height:1}.new-game-main-btn{width:100%;margin-top:14px;min-height:52px;font-size:18px}

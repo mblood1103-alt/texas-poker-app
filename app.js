@@ -118,6 +118,9 @@ function render(){
   // 已完成且未進入修改模式時，整個玩家操作版面收起，避免誤觸。
   $("currentGameCard").classList.toggle("hidden",completed&&!isEditing());
   $("gameDate").textContent=g?new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false}):"";
+  const auditDate=g?new Date(g.startedAt).toLocaleDateString("zh-TW",{year:"numeric",month:"numeric",day:"numeric"}):"未建立牌局";
+  $("auditTitle").textContent=`本局驗帳｜${auditDate}`;
+  $("auditStatus").textContent=completed?(isEditing()?"正在修改這一局":"本局已完成並保存"):"目前進行中的牌局";
   $("gameState").className=`game-state ${completed&&!isEditing()?"completed":"active"}`;
   $("gameState").textContent=completed?(isEditing()?"正在修改已完成牌局":"本局已完成，操作已鎖定"):("目前牌局進行中");
   $("playerAddArea").classList.toggle("hidden",!editable);
@@ -144,6 +147,8 @@ function render(){
   });
   const {buy,cash}=gameTotals(g),diff=cash-buy;$("totalBuyin").textContent=money(buy);$("totalCashout").textContent=money(cash);$("difference").textContent=`${diff>0?"+":""}${money(diff)}`;$("differenceHint").textContent=diff===0?"帳目相符，可以安心結算。":diff>0?`目前多出 ${money(diff)}。`:`目前少了 ${money(Math.abs(diff))}。`;
   $("finishBtn").classList.toggle("hidden",!isOwner||completed);$("finishEditBtn").classList.toggle("hidden",!isOwner||!isEditing());$("editCurrentBtn").classList.toggle("hidden",!isOwner||!completed||isEditing());
+  // 「開新局」獨立顯示：只有本局完成、且未在修改時才出現。
+  $("newGameCard").classList.toggle("hidden",!isOwner||!completed||isEditing());
   renderReport();renderGameHistory();
 }
 
@@ -332,6 +337,6 @@ $("switchBtn").onclick=()=>{localStorage.removeItem("ownerRoom");localStorage.re
 
 onAuthStateChanged(auth,u=>{user=u;if(!u){setStatus("請登入");return}setStatus("已登入");const ownerRoom=localStorage.getItem("ownerRoom"),viewRoom=localStorage.getItem("viewerRoom"),vname=localStorage.getItem("viewerName")||"";if(u.email&&ownerRoom)enterOwnerRoom(ownerRoom).catch(e=>alert(e.message));else if(!u.email&&viewRoom)enterViewerRoom(viewRoom,vname)});
 getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸入妳要管理的群組代碼");if(c)enterOwnerRoom(c)}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=18",{updateViaCache:"none"});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=26",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));

@@ -72,20 +72,35 @@
         <div id="players"></div>
       </section>
 
-      <section class="card">
-        <h2>本局驗帳</h2>
+      <section class="card" id="auditCard">
+        <div class="audit-heading">
+          <div>
+            <h2 id="auditTitle">本局驗帳</h2>
+            <p id="auditStatus" class="muted audit-status"></p>
+          </div>
+        </div>
         <div class="totals">
           <div><span>總買入</span><strong id="totalBuyin">$0</strong></div>
           <div><span>總拿回</span><strong id="totalCashout">$0</strong></div>
           <div><span>差額</span><strong id="difference">$0</strong></div>
         </div>
         <p id="differenceHint" class="hint"></p>
-        <div class="owner-only actions">
+        <div class="owner-only actions audit-actions">
           <button id="finishBtn">完成本局</button>
           <button id="editCurrentBtn" class="secondary hidden">修改本局</button>
           <button id="finishEditBtn" class="secondary hidden">完成修改</button>
-          <button id="newGameBtn" class="secondary">開新局</button>
         </div>
+      </section>
+
+      <section class="card owner-only new-game-card hidden" id="newGameCard">
+        <div class="new-game-copy">
+          <span class="new-game-icon">＋</span>
+          <div>
+            <h2>開始新的牌局</h2>
+            <p class="hint">目前牌局已保存。按下後會建立新的牌局時間，歷史紀錄不會被刪除。</p>
+          </div>
+        </div>
+        <button id="newGameBtn" class="new-game-main-btn">開新局</button>
       </section>
 
 
