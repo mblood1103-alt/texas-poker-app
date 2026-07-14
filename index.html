@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=29">
+  <link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body>
   <header class="top">
@@ -151,30 +151,35 @@
         </section>
       </div>
 
+      <details class="stats-details collapsible-card">
+        <summary class="section-summary">📊 累積統計</summary>
+        <div class="collapsible-body">
+          <div class="between">
+            <h2>累積統計</h2>
+            <select id="range" aria-label="排行榜期間">
+              <option value="day">日排行榜</option>
+              <option value="week">週排行榜</option>
+              <option value="month" selected>月排行榜</option>
+              <option value="year">年排行榜</option>
+            </select>
+          </div>
+          <p id="reportPeriod" class="hint ranking-period"></p>
+
+          <div class="ranking-block">
+            <h3 class="ranking-heading">盈虧排行榜</h3>
+            <p class="hint ranking-note">依總盈虧由高到低排序，並同步顯示出勤率。</p>
+            <div id="report" class="ranking-list"></div>
+          </div>
+
+          <div class="ranking-block attendance-block">
+            <h3 class="ranking-heading">出勤排行榜</h3>
+            <p class="hint ranking-note">出勤率＝玩家參加的已完成牌局數 ÷ 該期間全部已完成牌局數。</p>
+            <div id="attendanceReport" class="ranking-list"></div>
+          </div>
+        </div>
+      </details>
+
       <section class="card">
-        <div class="between">
-          <h2>累積統計</h2>
-          <select id="range" aria-label="排行榜期間">
-            <option value="day">日排行榜</option>
-            <option value="week">週排行榜</option>
-            <option value="month" selected>月排行榜</option>
-            <option value="year">年排行榜</option>
-          </select>
-        </div>
-        <p id="reportPeriod" class="hint ranking-period"></p>
-
-        <div class="ranking-block">
-          <h3 class="ranking-heading">盈虧排行榜</h3>
-          <p class="hint ranking-note">依總盈虧由高到低排序，並同步顯示出勤率。</p>
-          <div id="report" class="ranking-list"></div>
-        </div>
-
-        <div class="ranking-block attendance-block">
-          <h3 class="ranking-heading">出勤排行榜</h3>
-          <p class="hint ranking-note">出勤率＝玩家參加的已完成牌局數 ÷ 該期間全部已完成牌局數。</p>
-          <div id="attendanceReport" class="ranking-list"></div>
-        </div>
-
         <details class="history-details collapsible-card">
           <summary class="section-summary">📅 牌局紀錄</summary>
           <div class="collapsible-body">
@@ -256,7 +261,7 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=29"></script>
-  <script type="module" src="poker-judge.js?v=29"></script>
+  <script type="module" src="app.js?v=30"></script>
+  <script type="module" src="poker-judge.js?v=30"></script>
 </body>
 </html>

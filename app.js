@@ -334,7 +334,7 @@ $("finishBtn").onclick=async()=>{
   }catch(e){alert(`完成本局失敗：${e.message}`)}
 };
 $("editCurrentBtn").onclick=()=>currentGame()&&editGame(currentGame().id);$("finishEditBtn").onclick=finishEditing;
-$("newGameBtn").onclick=()=>{if(!isOwner)return;const g=currentGame();if(g&&!g.endedAt&&!isGameEmpty(g)&&!confirm("目前這局尚未完成，仍要直接開新局嗎？舊資料會保留。"))return;if(g&&!g.endedAt&&isGameEmpty(g))return alert("目前已經是空白新局，不需要再開一局。");if(!confirm("確定開新局？只有按下這個按鈕才會建立新的牌局時間。"))return;clearEditingMode();mutate(d=>{const previousId=d.currentGameId||null;const ng={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[],openedFromGameId:previousId};d.games=d.games||[];d.games.push(ng);d.currentGameId=ng.id})};
+$("newGameBtn").onclick=()=>{if(!isOwner)return;const g=currentGame();if(g&&!g.endedAt&&isGameEmpty(g))return alert("目前已經是空白新局，不需要再開一局。");clearEditingMode();mutate(d=>{const previousId=d.currentGameId||null;const ng={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[],openedFromGameId:previousId};d.games=d.games||[];d.games.push(ng);d.currentGameId=ng.id})};
 $("cancelNewGameBtn").onclick=async()=>{
   if(!isOwner)return;
   const g=currentGame();
