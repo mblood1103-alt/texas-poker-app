@@ -8,6 +8,7 @@ const $=id=>document.getElementById(id);
 const money=n=>`$${Number(n||0).toLocaleString("zh-TW")}`;
 const makeId=()=>crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`;
 const clean=s=>s.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,"").slice(0,24);
+const actorName=()=>user?.displayName||user?.email||"房主";
 let user=null,roomData=null,roomCode="",isOwner=false,unsubscribe=null,viewerLogUnsubscribe=null,viewerName="";
 let editingGameId=sessionStorage.getItem("editingGameId")||"";
 let historyDateFilter="";
@@ -38,12 +39,12 @@ async function createOrOpenOwnerRoom(code){
     const snap=await tx.get(ref);
     if(!snap.exists()){
       const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};
-      tx.set(ref,{code,ownerEmail:user.email,ownerUid:user.uid,currentGameId:g.id,games:[g],favorites:[],createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      tx.set(ref,{code,ownerEmail:user?.email||"",ownerUid:user?.uid||"",currentGameId:g.id,games:[g],favorites:[],createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
       return;
     }
     const d=snap.data();
-    if(d.ownerEmail&&d.ownerEmail!==user.email)throw new Error("這個群組已有其他房主");
-    tx.update(ref,{ownerEmail:user.email,ownerUid:user.uid,updatedAt:serverTimestamp()});
+    if(d.ownerEmail&&d.ownerEmail!==user?.email)throw new Error("這個群組已有其他房主");
+    tx.update(ref,{ownerEmail:user?.email||"",ownerUid:user?.uid||"",updatedAt:serverTimestamp()});
   });
 }
 async function enterOwnerRoom(code){roomCode=clean(code);if(!roomCode)return alert("請輸入群組代碼");await createOrOpenOwnerRoom(roomCode);localStorage.setItem("ownerRoom",roomCode);subscribe()}
@@ -58,7 +59,7 @@ function subscribe(){
   if(unsubscribe)unsubscribe();setStatus("正在同步…");
   unsubscribe=onSnapshot(doc(db,"rooms",roomCode),snap=>{
     if(!snap.exists()){alert("找不到這個群組");return}
-    roomData=snap.data();isOwner=!!user?.email&&roomData.ownerEmail===user.email;
+    roomData=snap.data();isOwner=!!user?.email&&roomData.ownerEmail===user?.email;
     if(editingGameId&&!roomData.games?.some(g=>g.id===editingGameId)){editingGameId="";sessionStorage.removeItem("editingGameId")}
     render();setStatus("已即時同步");
   },e=>{console.error(e);setStatus("同步失敗")});
@@ -68,7 +69,7 @@ async function mutate(fn){
   const ref=doc(db,"rooms",roomCode);
   await runTransaction(db,async tx=>{
     const snap=await tx.get(ref);if(!snap.exists())throw new Error("群組不存在");
-    const data=structuredClone(snap.data());if(data.ownerEmail!==user.email)throw new Error("不是房主");
+    const data=structuredClone(snap.data());if(data.ownerEmail!==user?.email)throw new Error("不是房主");
     fn(data);data.updatedAt=serverTimestamp();tx.set(ref,data);
   });
 }
@@ -111,12 +112,7 @@ async function addPlayer(){
     await mutate(d=>{
       const g=assertEditable(d);
       if(g.players.some(p=>p.name===n))throw new Error("玩家已存在");
-      const transactions=initialAmount>0?[{
-        id:makeId(),
-        amount:initialAmount,
-        at:new Date().toISOString(),
-        by:user.displayName||user.email
-      }]:[];
+      const transactions=initialAmount>0?[{id:makeId(),amount:initialAmount,at:new Date().toISOString(),by:actorName()}]:[];
       g.players.push({id:makeId(),name:n,cashout:0,transactions});
       g.updatedAt=new Date().toISOString();
       d.favorites=d.favorites||[];
@@ -126,7 +122,7 @@ async function addPlayer(){
     $("favoriteSelect").value="";
   }catch(e){alert(e.message)}
 }
-const addBuyin=(pid,a)=>{if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");return mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.transactions.push({id:makeId(),amount:Number(a),at:new Date().toISOString(),by:user.displayName||user.email});g.updatedAt=new Date().toISOString()})};
+const addBuyin=(pid,a)=>{if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");return mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.transactions.push({id:makeId(),amount:Number(a),at:new Date().toISOString(),by:actorName()});g.updatedAt=new Date().toISOString()})};
 async function subtractBuyin100(pid){
   if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
   const player=currentGame()?.players?.find(x=>x.id===pid);
@@ -142,7 +138,7 @@ async function subtractBuyin100(pid){
         const amount=Number(tx[i].amount||0);
         if(amount<=0)continue;
         const used=Math.min(amount,remain);
-        tx[i]={...tx[i],amount:amount-used,editedAt:new Date().toISOString()};
+        tx[i]={...tx[i],amount:amount-used,editedAt:new Date().toISOString(),editedBy:actorName()};
         remain-=used;
       }
       p.transactions=tx.filter(t=>Number(t.amount||0)>0);
@@ -153,7 +149,7 @@ async function subtractBuyin100(pid){
 
 const saveCashout=(pid,a)=>{if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");return mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.cashout=Number(a||0);g.updatedAt=new Date().toISOString()})};
 function deleteBuyin(pid,tid){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");if(!confirm("確定刪除這筆買入紀錄嗎？\n\n刪除後會重新計算該玩家與本局統計。"))return;mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);p.transactions=(p.transactions||[]).filter(t=>t.id!==tid);g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
-function editBuyin(pid,tid,oldAmount){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");const v=prompt("請輸入正確的買入金額",String(oldAmount));if(v===null)return;const amount=Number(v);if(!Number.isFinite(amount)||amount<=0)return alert("請輸入大於 0 的金額");mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid),t=(p.transactions||[]).find(x=>x.id===tid);if(!t)throw new Error("找不到這筆買入紀錄");t.amount=amount;t.editedAt=new Date().toISOString();t.editedBy=user.displayName||user.email;g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
+function editBuyin(pid,tid,oldAmount){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");const v=prompt("請輸入正確的買入金額",String(oldAmount));if(v===null)return;const amount=Number(v);if(!Number.isFinite(amount)||amount<=0)return alert("請輸入大於 0 的金額");mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid),t=(p.transactions||[]).find(x=>x.id===tid);if(!t)throw new Error("找不到這筆買入紀錄");t.amount=amount;t.editedAt=new Date().toISOString();t.editedBy=actorName();g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
 
 function render(){
   if(!roomData)return;
@@ -373,26 +369,20 @@ $("viewerBtn").onclick=async()=>{try{
   if(!auth.currentUser){const credential=await signInAnonymously(auth);user=credential.user}else user=auth.currentUser;
   await enterViewerRoom($("roomCode").value,$("viewerName").value)
 }catch(e){console.error(e);alert(`無法觀看帳目：${e.message||"請稍後再試"}`)}};
-
-function setInitialBuyin(amount,label){
+function setInitialBuyin(amount){
   const value=Math.max(0,Number(amount||0));
   $("initialBuyinAmount").value=String(value);
-  document.querySelectorAll(".initialBuyinBtn").forEach(btn=>{
+  document.querySelectorAll(".initial-buyin-btn").forEach(btn=>{
     const selected=Number(btn.dataset.amount)===value;
     btn.classList.toggle("selected",selected);
     btn.classList.toggle("secondary",!selected);
   });
-  $("initialBuyinHint").textContent=value>0
-    ?`新增玩家時會直接記錄第 1 次買入 ${money(value)}`
-    :"只新增玩家，暫時不記錄買入";
+  $("initialBuyinHint").textContent=value>0?`新增玩家時會直接記錄第 1 次買入 ${money(value)}`:"只新增玩家，暫時不記錄買入";
   $("addPlayerBtn").textContent=value>0?`新增玩家＋買入 ${money(value)}`:"只新增玩家";
 }
-document.querySelectorAll(".initialBuyinBtn").forEach(btn=>btn.onclick=()=>setInitialBuyin(btn.dataset.amount));
-const initialCustomBtn=$("initialBuyinCustomBtn");
-if(initialCustomBtn)initialCustomBtn.onclick=()=>{
-  const amount=Number(prompt("輸入初始買入金額"));
-  if(amount>0)setInitialBuyin(amount);
-};
+document.querySelectorAll(".initial-buyin-btn").forEach(btn=>btn.onclick=()=>setInitialBuyin(btn.dataset.amount));
+const initialBuyinCustomBtn=$("initialBuyinCustomBtn");
+if(initialBuyinCustomBtn)initialBuyinCustomBtn.onclick=()=>{const amount=Number(prompt("輸入初始買入金額"));if(amount>0)setInitialBuyin(amount)};
 $("addPlayerBtn").onclick=addPlayer;$("addFavoriteBtn").onclick=addFavorite;$("clearViewerLogsBtn").onclick=()=>clearViewerLogs().catch(e=>alert(e.message));
 $("finishBtn").onclick=async()=>{
   if(!canEditCurrent())return;

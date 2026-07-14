@@ -123,12 +123,7 @@ body.picker-open{overflow:hidden}
 .initial-buyin-box{grid-column:1/-1;border:1px solid #cbd5e1;border-radius:14px;padding:12px;background:#f8fafc}
 .initial-buyin-label{display:block;font-weight:800;margin-bottom:8px}
 .initial-buyin-options{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.initial-buyin-options button{min-height:44px}
 .initial-buyin-options button.selected{background:#0f172a;color:#fff}
 #initialBuyinHint{display:block;margin-top:8px}
 .buyin-actions{display:grid;grid-template-columns:repeat(4,1fr)}
-@media(max-width:560px){
-  .player-add{grid-template-columns:1fr}
-  .initial-buyin-options{grid-template-columns:repeat(2,1fr)}
-  .buyin-actions{grid-template-columns:repeat(2,1fr)}
-}
+@media(max-width:560px){.player-add{grid-template-columns:1fr}.initial-buyin-options{grid-template-columns:repeat(2,1fr)}.buyin-actions{grid-template-columns:repeat(2,1fr)}}
