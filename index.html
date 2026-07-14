@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
-  <link rel="manifest" href="manifest.webmanifest?v=17">
-  <link rel="stylesheet" href="styles.css?v=17">
+  <link rel="manifest" href="manifest.webmanifest?v=20">
+  <link rel="stylesheet" href="styles.css?v=20">
 </head>
 <body>
   <header class="top">
@@ -86,6 +86,34 @@
           <button id="finishEditBtn" class="secondary hidden">完成修改</button>
           <button id="newGameBtn" class="secondary">開新局</button>
         </div>
+      </section>
+
+
+      <section class="card" id="pokerJudgeCard">
+        <div class="between">
+          <div>
+            <h2>撲克牌型練習室</h2>
+            <p class="hint">這是獨立的牌型解答工具，不會連動本局玩家或記帳資料。選 5 張公牌與每位玩家 2 張手牌，就能練習並判斷勝負、踢腳與平分。</p>
+          </div>
+          <button id="resetPokerJudgeBtn" class="secondary small" type="button">全部清除</button>
+        </div>
+
+        <h3 class="judge-subtitle">公牌</h3>
+        <div id="boardSlots" class="card-slots board-slots"></div>
+
+        <div class="judge-toolbar single">
+          <button id="addJudgePlayerBtn" class="secondary" type="button">新增練習玩家</button>
+        </div>
+        <div id="judgePlayers" class="judge-players"></div>
+
+        <button id="judgeWinnerBtn" class="judge-main-btn" type="button">判定誰贏</button>
+        <div id="judgeResult" class="judge-result hidden" aria-live="polite"></div>
+
+        <details class="deck-panel" open>
+          <summary>點選撲克牌</summary>
+          <p id="activeSlotHint" class="hint">請先點上方一個空白牌位，再從下面選牌。</p>
+          <div id="pokerDeck" class="poker-deck"></div>
+        </details>
       </section>
 
       <section class="card">
@@ -189,6 +217,7 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=18"></script>
+  <script type="module" src="app.js?v=20"></script>
+  <script type="module" src="poker-judge.js?v=20"></script>
 </body>
 </html>
