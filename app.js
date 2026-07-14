@@ -388,7 +388,8 @@ function setInitialBuyin(amount,label){
   $("addPlayerBtn").textContent=value>0?`新增玩家＋買入 ${money(value)}`:"只新增玩家";
 }
 document.querySelectorAll(".initialBuyinBtn").forEach(btn=>btn.onclick=()=>setInitialBuyin(btn.dataset.amount));
-$("initialBuyinCustomBtn").onclick=()=>{
+const initialCustomBtn=$("initialBuyinCustomBtn");
+if(initialCustomBtn)initialCustomBtn.onclick=()=>{
   const amount=Number(prompt("輸入初始買入金額"));
   if(amount>0)setInitialBuyin(amount);
 };
