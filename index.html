@@ -212,14 +212,18 @@
       </section>
 
       <section class="card owner-only">
-        <div class="between">
-          <div>
-            <h2>查看紀錄</h2>
-            <p class="hint">只顯示對方輸入的名稱、匿名裝置代碼與查看時間；不代表真實身分。</p>
+        <details>
+          <summary><strong>👀 查看紀錄</strong></summary>
+          <div class="collapsible-content">
+            <div class="between">
+              <div>
+                <p class="hint">只顯示對方輸入的名稱、匿名裝置代碼與查看時間；不代表真實身分。</p>
+              </div>
+              <button id="clearViewerLogsBtn" class="danger small">清空紀錄</button>
+            </div>
+            <div id="viewerLogList"></div>
           </div>
-          <button id="clearViewerLogsBtn" class="danger small">清空紀錄</button>
-        </div>
-        <div id="viewerLogList"></div>
+        </details>
       </section>
     </section>
   </main>
