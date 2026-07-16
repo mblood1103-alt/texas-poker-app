@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=37">
+  <link rel="stylesheet" href="styles.css?v=39">
 </head>
 <body>
   <header class="top">
@@ -255,32 +255,44 @@
         </div>
       </div>
 
-      <div class="totals">
-        <div><span>投入</span><strong class="pbuy">$0</strong></div>
-        <div class="cashout-total"><span>拿回</span><strong class="pcash">$0</strong></div>
-        <div class="profit-total"><span>盈虧</span><strong class="pprofit">$0</strong></div>
+      <div class="settled-summary hidden">
+        <div class="settled-badge">✓ 已結算</div>
+        <div class="settled-numbers">
+          <span>投入 <b class="pbuy settled-buy">$0</b></span>
+          <span>拿回 <b class="pcash settled-cash">$0</b></span>
+          <span>盈虧 <b class="pprofit settled-profit">$0</b></span>
+        </div>
+        <button class="secondary small editSettlementBtn" type="button">修改結算</button>
       </div>
 
-      <div class="owner-control actions buyin-actions">
-        <button class="danger minus100Btn">−100</button>
-        <button data-buy="100">+100</button>
-        <button data-buy="200">+200</button>
-        <button class="secondary customBtn">自訂</button>
-      </div>
+      <div class="player-full-content">
+        <div class="totals">
+          <div><span>投入</span><strong class="pbuy">$0</strong></div>
+          <div class="cashout-total"><span>拿回</span><strong class="pcash">$0</strong></div>
+          <div class="profit-total"><span>盈虧</span><strong class="pprofit">$0</strong></div>
+        </div>
 
-      <div class="owner-control cashrow">
-        <input class="cashInput" type="number" min="0" inputmode="numeric" placeholder="最後拿回金額">
-        <button class="secondary saveBtn">儲存</button>
-      </div>
+        <div class="owner-control actions buyin-actions">
+          <button class="danger minus100Btn">−100</button>
+          <button data-buy="100">+100</button>
+          <button data-buy="200">+200</button>
+          <button class="secondary customBtn">自訂</button>
+        </div>
 
-      <details>
-        <summary>查看買入紀錄</summary>
-        <ul class="txlist"></ul>
-      </details>
+        <div class="owner-control cashrow">
+          <input class="cashInput" type="number" min="0" inputmode="numeric" placeholder="最後拿回金額">
+          <button class="secondary saveBtn">儲存並完成</button>
+        </div>
+
+        <details>
+          <summary>查看買入紀錄</summary>
+          <ul class="txlist"></ul>
+        </details>
+      </div>
     </article>
   </template>
 
-  <script type="module" src="app.js?v=37"></script>
+  <script type="module" src="app.js?v=39"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 </body>
 </html>

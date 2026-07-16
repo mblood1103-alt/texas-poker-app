@@ -13,6 +13,8 @@ let user=null,roomData=null,roomCode="",isOwner=false,unsubscribe=null,viewerLog
 let editingGameId=sessionStorage.getItem("editingGameId")||"";
 let historyDateFilter="";
 let calendarMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+let pendingCashoutScrollFrom="";
+const expandedSettledPlayers=new Set();
 
 const buyinTotal=p=>(p.transactions||[]).reduce((s,t)=>s+Number(t.amount||0),0);
 const gameTotals=g=>({
@@ -159,7 +161,7 @@ async function addPlayer(){
     $("favoriteSelect").value="";
   }catch(e){alert(e.message)}
 }
-const addBuyin=(pid,a)=>{if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");return mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.transactions.push({id:makeId(),amount:Number(a),at:new Date().toISOString(),by:actorName()});g.updatedAt=new Date().toISOString()})};
+const addBuyin=(pid,a)=>{if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");return mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.transactions.push({id:makeId(),amount:Number(a),at:new Date().toISOString(),by:actorName()});p.cashoutCompleted=false;g.updatedAt=new Date().toISOString()})};
 async function subtractBuyin100(pid){
   if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
   const player=currentGame()?.players?.find(x=>x.id===pid);
@@ -179,14 +181,26 @@ async function subtractBuyin100(pid){
         remain-=used;
       }
       p.transactions=tx.filter(t=>Number(t.amount||0)>0);
+      p.cashoutCompleted=false;
       g.updatedAt=new Date().toISOString();
     });
   }catch(e){alert(e.message)}
 }
 
-const saveCashout=(pid,a)=>{if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");return mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.cashout=Number(a||0);g.updatedAt=new Date().toISOString()})};
-function deleteBuyin(pid,tid){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");if(!confirm("確定刪除這筆買入紀錄嗎？\n\n刪除後會重新計算該玩家與本局統計。"))return;mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);p.transactions=(p.transactions||[]).filter(t=>t.id!==tid);g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
-function editBuyin(pid,tid,oldAmount){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");const v=prompt("請輸入正確的買入金額",String(oldAmount));if(v===null)return;const amount=Number(v);if(!Number.isFinite(amount)||amount<=0)return alert("請輸入大於 0 的金額");mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid),t=(p.transactions||[]).find(x=>x.id===tid);if(!t)throw new Error("找不到這筆買入紀錄");t.amount=amount;t.editedAt=new Date().toISOString();t.editedBy=actorName();g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
+async function saveCashout(pid,a){
+  if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
+  if(a===""||a===null||a===undefined)return alert("請先輸入最後拿回金額，沒拿回請輸入 0");
+  const amount=Number(a);
+  if(!Number.isFinite(amount)||amount<0)return alert("請輸入 0 以上的拿回金額");
+  pendingCashoutScrollFrom=pid;
+  expandedSettledPlayers.delete(pid);
+  try{
+    await mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.cashout=amount;p.cashoutCompleted=true;p.cashoutCompletedAt=new Date().toISOString();g.updatedAt=new Date().toISOString()});
+  }catch(e){pendingCashoutScrollFrom="";throw e}
+}
+function expandSettledPlayer(pid){expandedSettledPlayers.add(pid);render();requestAnimationFrame(()=>document.querySelector(`.player[data-player-id="${CSS.escape(pid)}"] .cashInput`)?.focus())}
+function deleteBuyin(pid,tid){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");if(!confirm("確定刪除這筆買入紀錄嗎？\n\n刪除後會重新計算該玩家與本局統計。"))return;mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);p.transactions=(p.transactions||[]).filter(t=>t.id!==tid);p.cashoutCompleted=false;g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
+function editBuyin(pid,tid,oldAmount){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");const v=prompt("請輸入正確的買入金額",String(oldAmount));if(v===null)return;const amount=Number(v);if(!Number.isFinite(amount)||amount<=0)return alert("請輸入大於 0 的金額");mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid),t=(p.transactions||[]).find(x=>x.id===tid);if(!t)throw new Error("找不到這筆買入紀錄");t.amount=amount;t.editedAt=new Date().toISOString();t.editedBy=actorName();p.cashoutCompleted=false;g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
 
 function render(){
   if(!roomData)return;
@@ -212,27 +226,47 @@ function render(){
   const wrap=$("players");wrap.innerHTML="";
   (g?.players||[]).forEach(p=>{
     const f=$("playerTemplate").content.cloneNode(true),root=f.querySelector(".player"),b=buyinTotal(p),c=Number(p.cashout||0),profit=c-b;
-    root.querySelector(".pname").textContent=p.name;root.querySelector(".pmeta").textContent=`${p.transactions.length} 次買入・目前投入 ${money(b)}`;root.querySelector(".pbuy").textContent=money(b);root.querySelector(".pcash").textContent=money(c);
-    const pe=root.querySelector(".pprofit");pe.textContent=`${profit>=0?"+":""}${money(profit)}`;pe.classList.add(profit>=0?"pos":"neg");
+    const isSettled=!!p.cashoutCompleted,collapsedSettled=isSettled&&!expandedSettledPlayers.has(p.id)&&editable;
+    root.dataset.playerId=p.id;
+    root.querySelector(".pname").textContent=p.name;root.querySelector(".pmeta").textContent=isSettled?`✅ 已結算・${p.transactions.length} 次買入・投入 ${money(b)}`:`${p.transactions.length} 次買入・目前投入 ${money(b)}`;
+    root.querySelectorAll(".pbuy").forEach(el=>el.textContent=money(b));root.querySelectorAll(".pcash").forEach(el=>el.textContent=money(c));
+    root.querySelectorAll(".pprofit").forEach(pe=>{pe.textContent=`${profit>=0?"+":""}${money(profit)}`;pe.classList.add(profit>=0?"pos":"neg")});
     // 未結算時，觀看者只顯示即時買入資訊；完成本局後才顯示拿回與盈虧。
     const viewerLive=!isOwner&&!completed;
     root.querySelector(".cashout-total")?.classList.toggle("hidden",viewerLive);
     root.querySelector(".profit-total")?.classList.toggle("hidden",viewerLive);
     root.classList.toggle("viewer-live",viewerLive);
     root.classList.toggle("locked",!editable);
+    root.classList.toggle("settled-collapsed",collapsedSettled);
+    root.querySelector(".settled-summary")?.classList.toggle("hidden",!collapsedSettled);
+    root.querySelector(".player-full-content")?.classList.toggle("hidden",collapsedSettled);
     root.querySelectorAll(".owner-control").forEach(x=>x.classList.toggle("hidden",!editable));
     root.querySelectorAll("button,input,select").forEach(el=>{if(el.closest(".owner-control"))el.disabled=!editable});
     root.querySelectorAll("[data-buy]").forEach(btn=>btn.onclick=()=>addBuyin(p.id,Number(btn.dataset.buy)));
     root.querySelector(".minus100Btn").onclick=()=>subtractBuyin100(p.id);
     root.querySelector(".customBtn").onclick=()=>{const a=Number(prompt("輸入買入金額"));if(a>0)addBuyin(p.id,a)};
     root.querySelector(".cashInput").value=p.cashout?Number(p.cashout):"";
-    root.querySelector(".saveBtn").onclick=()=>saveCashout(p.id,root.querySelector(".cashInput").value);
+    root.querySelector(".saveBtn").onclick=()=>saveCashout(p.id,root.querySelector(".cashInput").value).catch(e=>alert(e.message));
+    root.querySelector(".editSettlementBtn")?.addEventListener("click",()=>expandSettledPlayer(p.id));
     root.querySelector(".renameBtn").onclick=()=>renamePlayer(p.name);
     root.querySelector(".deleteBtn").onclick=()=>confirm("確定刪除？")&&mutate(d=>{const gg=assertEditable(d);gg.players=gg.players.filter(x=>x.id!==p.id);gg.updatedAt=new Date().toISOString()});
     root.querySelector(".txlist").innerHTML=(p.transactions||[]).slice().reverse().map(t=>`<li class="tx-row"><span>${new Date(t.at).toLocaleString("zh-TW",{hour12:false})}　<b>${money(t.amount)}</b>${t.editedAt?"（已修改）":""}</span>${editable?`<span class="tx-actions"><button class="secondary tiny edit-tx" data-tid="${t.id}" data-amount="${Number(t.amount||0)}">修改</button><button class="danger tiny delete-tx" data-tid="${t.id}">刪除</button></span>`:""}</li>`).join("")||"<li>尚無紀錄</li>";
     root.querySelectorAll(".edit-tx").forEach(btn=>btn.onclick=()=>editBuyin(p.id,btn.dataset.tid,btn.dataset.amount));
     root.querySelectorAll(".delete-tx").forEach(btn=>btn.onclick=()=>deleteBuyin(p.id,btn.dataset.tid));wrap.appendChild(f);
   });
+  if(pendingCashoutScrollFrom&&editable){
+    const players=g?.players||[],fromIndex=players.findIndex(p=>p.id===pendingCashoutScrollFrom);
+    const ordered=[...players.slice(fromIndex+1),...players.slice(0,Math.max(0,fromIndex))];
+    const next=ordered.find(p=>!p.cashoutCompleted);
+    pendingCashoutScrollFrom="";
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(next){
+        const el=wrap.querySelector(`.player[data-player-id="${CSS.escape(next.id)}"]`);
+        el?.scrollIntoView({behavior:"smooth",block:"center"});
+        setTimeout(()=>el?.querySelector(".cashInput")?.focus({preventScroll:true}),450);
+      }
+    }));
+  }
   const {buy,cash}=gameTotals(g),diff=cash-buy;$("totalBuyin").textContent=money(buy);$("totalCashout").textContent=money(cash);$("difference").textContent=`${diff>0?"+":""}${money(diff)}`;$("differenceHint").textContent=diff===0?"帳目相符，可以安心結算。":diff>0?`目前多出 ${money(diff)}。`:`目前少了 ${money(Math.abs(diff))}。`;
   const auditEntries=(g?.players||[]).map(p=>{const pb=buyinTotal(p),pc=Number(p.cashout||0);return [p.name,{buyin:pb,cashout:pc,count:(p.transactions||[]).length}]});
   const auditRows=buildCompositeRanking(auditEntries);
