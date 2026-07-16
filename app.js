@@ -234,8 +234,9 @@ function render(){
     root.querySelectorAll(".delete-tx").forEach(btn=>btn.onclick=()=>deleteBuyin(p.id,btn.dataset.tid));wrap.appendChild(f);
   });
   const {buy,cash}=gameTotals(g),diff=cash-buy;$("totalBuyin").textContent=money(buy);$("totalCashout").textContent=money(cash);$("difference").textContent=`${diff>0?"+":""}${money(diff)}`;$("differenceHint").textContent=diff===0?"帳目相符，可以安心結算。":diff>0?`目前多出 ${money(diff)}。`:`目前少了 ${money(Math.abs(diff))}。`;
-  const auditRows=(g?.players||[]).map(p=>{const pb=buyinTotal(p),pc=Number(p.cashout||0);return {name:p.name,buy:pb,cash:pc,profit:pc-pb,count:(p.transactions||[]).length}}).sort((a,b)=>b.profit-a.profit||b.cash-a.cash||a.name.localeCompare(b.name,"zh-TW"));
-  $("auditPlayerRanking").innerHTML=auditRows.length?auditRows.map((r,i)=>`<div class="audit-player-row"><div class="audit-rank">${i<3?["🥇","🥈","🥉"][i]:`第 ${i+1} 名`}</div><div class="audit-player-main"><b>${escapeHtml(r.name)}</b><small>${r.count} 次買入・投入 ${money(r.buy)}・拿回 ${money(r.cash)}</small></div><strong class="${r.profit>=0?"pos":"neg"}">${r.profit>=0?"+":""}${money(r.profit)}</strong></div>`).join(""):"<p class='muted'>本局尚未加入玩家</p>";
+  const auditEntries=(g?.players||[]).map(p=>{const pb=buyinTotal(p),pc=Number(p.cashout||0);return [p.name,{buyin:pb,cashout:pc,count:(p.transactions||[]).length}]});
+  const auditRows=buildCompositeRanking(auditEntries);
+  $("auditPlayerRanking").innerHTML=auditRows.length?auditRows.map((x,i)=>`<div class="audit-player-row"><div class="audit-rank">${i<3?["🥇","🥈","🥉"][i]:`第 ${i+1} 名`}</div><div class="audit-player-main"><b>${escapeHtml(x.name)}</b><small>${x.r.count} 次買入・投入 ${money(x.buyin)}・拿回 ${money(x.cashout)}・報酬率 ${formatRate(x.roi)}</small><small>綜合分數 ${x.score.toFixed(1)}</small></div><strong class="${x.profit>=0?"pos":"neg"}">${x.profit>=0?"+":""}${money(x.profit)}</strong></div>`).join(""):"<p class='muted'>本局尚未加入玩家</p>";
   $("finishBtn").classList.toggle("hidden",!isOwner||completed);$("finishEditBtn").classList.toggle("hidden",!isOwner||!isEditing());$("editCurrentBtn").classList.toggle("hidden",!isOwner||!completed||isEditing());
   // 「開新局」獨立顯示：只有本局完成、且未在修改時才出現。
   $("newGameCard").classList.toggle("hidden",!isOwner||!completed||isEditing());
@@ -248,6 +249,32 @@ function render(){
   const canCancelNewGame=!!(isOwner&&g&&!g.endedAt&&isGameEmpty(g)&&previousGame);
   $("cancelNewGameBtn").classList.toggle("hidden",!canCancelNewGame);
   renderReport();renderGameHistory();
+}
+
+
+function buildCompositeRanking(entries){
+  const rows=entries.map(([name,r])=>{
+    const buyin=Number(r.buyin??r.buy??0);
+    const cashout=Number(r.cashout??r.cash??0);
+    const profit=cashout-buyin;
+    const roi=buyin>0?(profit/buyin)*100:0;
+    return {name,r,buyin,cashout,profit,roi,score:0};
+  });
+  if(!rows.length)return rows;
+  const profits=rows.map(x=>x.profit),rois=rows.map(x=>x.roi);
+  const minProfit=Math.min(...profits),maxProfit=Math.max(...profits);
+  const minRoi=Math.min(...rois),maxRoi=Math.max(...rois);
+  const normalize=(value,min,max)=>max===min?50:((value-min)/(max-min))*100;
+  rows.forEach(x=>{
+    const profitScore=normalize(x.profit,minProfit,maxProfit);
+    const roiScore=normalize(x.roi,minRoi,maxRoi);
+    x.score=(profitScore*0.5)+(roiScore*0.5);
+  });
+  return rows.sort((a,b)=>b.score-a.score||b.profit-a.profit||b.roi-a.roi||b.cashout-a.cashout||a.name.localeCompare(b.name,"zh-Hant"));
+}
+function formatRate(value){
+  const rounded=Math.round(value*10)/10;
+  return `${rounded>=0?"+":""}${rounded}%`;
 }
 
 function startOfWeek(date){
@@ -351,14 +378,11 @@ function renderGameHistory(){
     const r=rankingMap.get(p.name)||{games:0,buyin:0,cashout:0};
     r.games++;r.buyin+=buyinTotal(p);r.cashout+=Number(p.cashout||0);rankingMap.set(p.name,r);
   }));
-  const rankingRows=[...rankingMap].sort((a,b)=>{
-    const profitB=b[1].cashout-b[1].buyin,profitA=a[1].cashout-a[1].buyin;
-    return profitB-profitA||b[1].cashout-a[1].cashout||a[0].localeCompare(b[0],"zh-Hant");
-  });
+  const rankingRows=buildCompositeRanking([...rankingMap]);
   const rankingTitle=historyDateFilter?`${historyDateFilter.replaceAll("-","/")} 當日排名`:`全部歷史排名`;
-  $("historyRanking").innerHTML=`<h3>${rankingTitle}</h3><p class="hint">依已完成牌局的總盈虧由高到低排序</p><div class="ranking-list">${rankingRows.map(([n,r],i)=>{
-    const profit=r.cashout-r.buyin,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
-    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+  $("historyRanking").innerHTML=`<h3>${rankingTitle}</h3><p class="hint">綜合排名＝總盈虧 50%＋報酬率 50%（同期間玩家標準化後計算）</p><div class="ranking-list">${rankingRows.map((x,i)=>{
+    const {name:n,r,profit,roi,score}=x,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
+    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
   }).join("")||"<p class='muted'>這個日期尚無已完成牌局可排名</p>"}</div>`;
 
   box.innerHTML=games.map(g=>{const {buy,cash}=gameTotals(g),diff=cash-buy,isCurrent=g.id===roomData.currentGameId,state=g.endedAt?"已完成":"進行中";return `<article class="game-history-item"><div class="game-row"><div><b>${new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false})}</b><br><small>${g.players?.length||0} 位玩家・投入 ${money(buy)}・拿回 ${money(cash)}・差額 ${diff>=0?"+":""}${money(diff)}・${state}${isCurrent?"・目前顯示":""}</small></div><div class="game-actions"><button class="secondary small view-game" data-game-id="${g.id}" type="button">查看明細</button>${isOwner&&g.endedAt?`<button class="secondary small edit-game" data-game-id="${g.id}">修改此局</button>`:""}${isOwner?`<button class="danger small delete-game" data-game-id="${g.id}">刪除此局</button>`:""}</div></div><div id="detail-${g.id}" class="hidden">${gameDetailHtml(g)}</div></article>`}).join("")||`<p class='muted'>${historyDateFilter?"這一天沒有牌局紀錄":"尚無牌局紀錄"}</p>`;
@@ -381,13 +405,10 @@ function renderReport(){
     });
   });
 
-  const profitRows=[...map].sort((a,b)=>{
-    const profitB=b[1].cashout-b[1].buyin,profitA=a[1].cashout-a[1].buyin;
-    return profitB-profitA||b[1].cashout-a[1].cashout||b[1].games-a[1].games||a[0].localeCompare(b[0],"zh-Hant");
-  });
-  $("report").innerHTML=profitRows.map(([n,r],i)=>{
-    const profit=r.cashout-r.buyin,attendance=totalGames?Math.round(r.games/totalGames*100):0,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
-    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small class="attendance-meta">出勤 ${r.games}/${totalGames} 局・${attendance}%</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+  const profitRows=buildCompositeRanking([...map]);
+  $("report").innerHTML=profitRows.map((x,i)=>{
+    const {name:n,r,profit,roi,score}=x,attendance=totalGames?Math.round(r.games/totalGames*100):0,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
+    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small><small class="attendance-meta">出勤 ${r.games}/${totalGames} 局・${attendance}%</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 
   const attendanceRows=[...map].sort((a,b)=>{

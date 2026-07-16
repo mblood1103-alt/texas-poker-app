@@ -1,4 +1,4 @@
-const C="dezhou-viewer-timeline-v37";
+const C="dezhou-viewer-timeline-v38";
 const ASSETS=["./","./index.html","./styles.css?v=37","./app.js?v=37","./poker-judge.js?v=v35","./manifest.webmanifest?v=30"];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)))});
 self.addEventListener("activate",e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k))))])));
