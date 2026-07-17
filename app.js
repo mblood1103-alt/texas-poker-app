@@ -453,7 +453,9 @@ function renderReport(){
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 
   const buyinRows=[...map].sort((a,b)=>{
-    return b[1].buyin-a[1].buyin||b[1].games-a[1].games||a[0].localeCompare(b[0],"zh-Hant");
+    const avgB=b[1].games?b[1].buyin/b[1].games:0;
+    const avgA=a[1].games?a[1].buyin/a[1].games:0;
+    return b[1].buyin-a[1].buyin||avgB-avgA||b[1].games-a[1].games||a[0].localeCompare(b[0],"zh-Hant");
   });
   $("buyinReport").innerHTML=buyinRows.map(([n,r],i)=>{
     const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
