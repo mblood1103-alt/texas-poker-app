@@ -452,15 +452,21 @@ function renderReport(){
     return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small><small class="attendance-meta">出勤 ${r.games}/${totalGames} 局・${attendance}%</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 
-  const buyinRows=[...map].sort((a,b)=>{
-    const avgB=b[1].games?b[1].buyin/b[1].games:0;
-    const avgA=a[1].games?a[1].buyin/a[1].games:0;
-    return b[1].buyin-a[1].buyin||avgB-avgA||b[1].games-a[1].games||a[0].localeCompare(b[0],"zh-Hant");
-  });
-  $("buyinReport").innerHTML=buyinRows.map(([n,r],i)=>{
+  const buyinBase=[...map].map(([n,r])=>({
+    name:n,r,
+    avg:r.games?r.buyin/r.games:0
+  }));
+  const maxBuyin=Math.max(0,...buyinBase.map(x=>x.r.buyin));
+  const maxAvg=Math.max(0,...buyinBase.map(x=>x.avg));
+  const maxGames=Math.max(0,...buyinBase.map(x=>x.r.games));
+  const buyinRows=buyinBase.map(x=>({
+    ...x,
+    score:(maxBuyin?x.r.buyin/maxBuyin*50:0)+(maxAvg?x.avg/maxAvg*30:0)+(maxGames?x.r.games/maxGames*20:0)
+  })).sort((a,b)=>b.score-a.score||b.r.buyin-a.r.buyin||b.avg-a.avg||b.r.games-a.r.games||a.name.localeCompare(b.name,"zh-Hant"));
+  $("buyinReport").innerHTML=buyinRows.map((x,i)=>{
+    const {name:n,r,avg,score}=x;
     const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
-    const avg=r.games?r.buyin/r.games:0;
-    return `<div class="ranking-row buyin-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・平均每局買入 ${money(Math.round(avg))}</small></div><b class="buyin-total">${money(r.buyin)}</b></div>`;
+    return `<div class="ranking-row buyin-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・平均每局買入 ${money(Math.round(avg))}</small><small>買入綜合分數 ${score.toFixed(1)}</small></div><b class="buyin-total">${money(r.buyin)}</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 
   const attendanceRows=[...map].sort((a,b)=>{
