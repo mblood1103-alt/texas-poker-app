@@ -224,7 +224,14 @@ function render(){
   $("favoriteSelect").innerHTML='<option value="">常用玩家</option>'+[...(roomData.favorites||[])].sort().map(n=>`<option>${escapeHtml(n)}</option>`).join("");
   renderFavorites();
   const wrap=$("players");wrap.innerHTML="";
-  (g?.players||[]).forEach(p=>{
+  // 已結算玩家移到最上方，最近完成結算的排最前；未結算玩家維持原本順序。
+  const displayPlayers=[...(g?.players||[])].sort((a,b)=>{
+    const as=!!a.cashoutCompleted,bs=!!b.cashoutCompleted;
+    if(as!==bs)return as?-1:1;
+    if(as&&bs)return String(b.cashoutCompletedAt||"").localeCompare(String(a.cashoutCompletedAt||""));
+    return 0;
+  });
+  displayPlayers.forEach(p=>{
     const f=$("playerTemplate").content.cloneNode(true),root=f.querySelector(".player"),b=buyinTotal(p),c=Number(p.cashout||0),profit=c-b;
     const isSettled=!!p.cashoutCompleted,collapsedSettled=isSettled&&!expandedSettledPlayers.has(p.id)&&editable;
     root.dataset.playerId=p.id;
