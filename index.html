@@ -127,7 +127,73 @@
       </section>
 
 
-      <details class="card collapsible-card" id="pokerJudgeCard">
+      <details class="card stats-details collapsible-card">
+        <summary class="section-summary">📊 累積統計</summary>
+        <div class="collapsible-body">
+          <div class="between">
+            <h2>累積統計</h2>
+            <select id="range" aria-label="排行榜期間">
+              <option value="day">日排行榜</option>
+              <option value="week">週排行榜</option>
+              <option value="month" selected>月排行榜</option>
+              <option value="year">年排行榜</option>
+            </select>
+          </div>
+          <p id="reportPeriod" class="hint ranking-period"></p>
+
+          <div class="ranking-block">
+            <h3 class="ranking-heading">盈虧排行榜</h3>
+            <p class="hint ranking-note">依綜合分數排序：總盈虧 50%＋報酬率 50%，並同步顯示出勤率。</p>
+            <div id="report" class="ranking-list"></div>
+          </div>
+
+          <div class="ranking-block buyin-block">
+            <h3 class="ranking-heading">買入金額排行榜</h3>
+            <p class="hint ranking-note">依平均每局買入金額由高到低排序；總買入金額與參加場數僅作為資訊顯示。</p>
+            <div id="buyinReport" class="ranking-list"></div>
+          </div>
+
+          <div class="ranking-block attendance-block">
+            <h3 class="ranking-heading">出勤排行榜</h3>
+            <p class="hint ranking-note">出勤率＝玩家參加的已完成牌局數 ÷ 該期間全部已完成牌局數。</p>
+            <div id="attendanceReport" class="ranking-list"></div>
+          </div>
+        </div>
+      </details>
+
+<section class="card">
+        <details class="history-details collapsible-card">
+          <summary class="section-summary">📅 牌局紀錄</summary>
+          <div class="collapsible-body">
+            <p class="hint">可選擇指定日期查看當天歷史牌局；排行榜只計算已完成牌局。房主可修改牌局，觀看者只能查看。</p>
+
+        <div class="history-filter">
+          <div class="calendar-toolbar">
+            <button id="calendarPrevMonthBtn" class="secondary small" type="button" aria-label="上一個月">‹</button>
+            <strong id="calendarMonthTitle">月份</strong>
+            <button id="calendarNextMonthBtn" class="secondary small" type="button" aria-label="下一個月">›</button>
+          </div>
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div id="historyCalendar" class="history-calendar" aria-label="牌局日期月曆"></div>
+          <p class="calendar-legend"><span class="calendar-dot"></span> 有牌局紀錄</p>
+          <input id="historyDate" type="hidden">
+          <div class="history-nav">
+            <button id="historyPrevBtn" class="secondary small" type="button">前一天</button>
+            <button id="historyTodayBtn" class="secondary small" type="button">今天</button>
+            <button id="historyNextBtn" class="secondary small" type="button">後一天</button>
+            <button id="historyAllBtn" class="secondary small" type="button">全部紀錄</button>
+          </div>
+        </div>
+        <p id="historySummary" class="hint history-summary"></p>
+        <div id="historyRanking" class="history-ranking"></div>
+        <div id="gameHistory"></div>
+          </div>
+        </details>
+      </section>
+
+<details class="card collapsible-card" id="pokerJudgeCard">
         <summary class="section-summary">🃏 撲克牌型練習室</summary>
         <div class="collapsible-body">
         <div class="between">
@@ -167,71 +233,9 @@
         </section>
       </div>
 
-      <details class="stats-details collapsible-card">
-        <summary class="section-summary">📊 累積統計</summary>
-        <div class="collapsible-body">
-          <div class="between">
-            <h2>累積統計</h2>
-            <select id="range" aria-label="排行榜期間">
-              <option value="day">日排行榜</option>
-              <option value="week">週排行榜</option>
-              <option value="month" selected>月排行榜</option>
-              <option value="year">年排行榜</option>
-            </select>
-          </div>
-          <p id="reportPeriod" class="hint ranking-period"></p>
+      
 
-          <div class="ranking-block">
-            <h3 class="ranking-heading">盈虧排行榜</h3>
-            <p class="hint ranking-note">依綜合分數排序：總盈虧 50%＋報酬率 50%，並同步顯示出勤率。</p>
-            <div id="report" class="ranking-list"></div>
-          </div>
-
-          <div class="ranking-block buyin-block">
-            <h3 class="ranking-heading">買入金額排行榜</h3>
-            <p class="hint ranking-note">依平均每局買入金額由高到低排序；總買入金額與參加場數僅作為資訊顯示。</p>
-            <div id="buyinReport" class="ranking-list"></div>
-          </div>
-
-          <div class="ranking-block attendance-block">
-            <h3 class="ranking-heading">出勤排行榜</h3>
-            <p class="hint ranking-note">出勤率＝玩家參加的已完成牌局數 ÷ 該期間全部已完成牌局數。</p>
-            <div id="attendanceReport" class="ranking-list"></div>
-          </div>
-        </div>
-      </details>
-
-      <section class="card">
-        <details class="history-details collapsible-card">
-          <summary class="section-summary">📅 牌局紀錄</summary>
-          <div class="collapsible-body">
-            <p class="hint">可選擇指定日期查看當天歷史牌局；排行榜只計算已完成牌局。房主可修改牌局，觀看者只能查看。</p>
-
-        <div class="history-filter">
-          <div class="calendar-toolbar">
-            <button id="calendarPrevMonthBtn" class="secondary small" type="button" aria-label="上一個月">‹</button>
-            <strong id="calendarMonthTitle">月份</strong>
-            <button id="calendarNextMonthBtn" class="secondary small" type="button" aria-label="下一個月">›</button>
-          </div>
-          <div class="calendar-weekdays" aria-hidden="true">
-            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-          </div>
-          <div id="historyCalendar" class="history-calendar" aria-label="牌局日期月曆"></div>
-          <p class="calendar-legend"><span class="calendar-dot"></span> 有牌局紀錄</p>
-          <input id="historyDate" type="hidden">
-          <div class="history-nav">
-            <button id="historyPrevBtn" class="secondary small" type="button">前一天</button>
-            <button id="historyTodayBtn" class="secondary small" type="button">今天</button>
-            <button id="historyNextBtn" class="secondary small" type="button">後一天</button>
-            <button id="historyAllBtn" class="secondary small" type="button">全部紀錄</button>
-          </div>
-        </div>
-        <p id="historySummary" class="hint history-summary"></p>
-        <div id="historyRanking" class="history-ranking"></div>
-        <div id="gameHistory"></div>
-          </div>
-        </details>
-      </section>
+      
 
       <section class="card owner-only">
         <details>
