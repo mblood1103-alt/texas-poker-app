@@ -97,6 +97,11 @@
         </details>
 
         <div id="players"></div>
+        <div class="owner-only actions audit-actions player-finish-actions">
+          <button id="finishBtn">完成本局</button>
+          <button id="editCurrentBtn" class="secondary hidden">修改本局</button>
+          <button id="finishEditBtn" class="secondary hidden">完成修改</button>
+        </div>
       </section>
 
       <section class="card" id="auditCard">
@@ -116,11 +121,6 @@
           <h3>本局玩家排名與紀錄</h3>
           <p class="hint">依綜合分數排列：總盈虧 50%＋報酬率 50%，並顯示買入、拿回與買入次數。</p>
           <div id="auditPlayerRanking" class="audit-player-ranking"></div>
-        </div>
-        <div class="owner-only actions audit-actions">
-          <button id="finishBtn">完成本局</button>
-          <button id="editCurrentBtn" class="secondary hidden">修改本局</button>
-          <button id="finishEditBtn" class="secondary hidden">完成修改</button>
         </div>
       </section>
 
