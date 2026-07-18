@@ -142,6 +142,25 @@ async function renamePlayer(oldName){
   const applyAll=confirm(`要把「${oldName}」在所有過去牌局、統計與常用玩家中都改成「${newName}」嗎？\n\n按「好」＝全部一起改\n按「取消」＝只改目前牌局`);
   await mutate(d=>{assertEditable(d);const targets=applyAll?(d.games||[]):[(d.games||[]).find(g=>g.id===d.currentGameId)].filter(Boolean);for(const g of targets)for(const p of(g.players||[]))if(p.name===oldName)p.name=newName;if(applyAll){d.favorites=(d.favorites||[]).map(n=>n===oldName?newName:n);d.favorites=[...new Set(d.favorites)]}});
 }
+async function setPlayerTableNo(pid){
+  if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
+  const player=currentGame()?.players?.find(x=>x.id===pid);
+  if(!player)return alert("找不到玩家");
+  const current=player.tableNo==null||player.tableNo===""?"":String(player.tableNo);
+  const proposed=prompt("請輸入桌號（可先留空，之後再補）",current);
+  if(proposed===null)return;
+  const value=proposed.trim();
+  if(value!==""&&!/^\d+$/.test(value))return alert("桌號請輸入數字");
+  const tableNo=value===""?null:Number(value);
+  if(tableNo!==null&&tableNo<1)return alert("桌號請輸入 1 以上的數字");
+  await mutate(d=>{
+    const g=assertEditable(d),p=g.players.find(x=>x.id===pid);
+    if(!p)throw new Error("找不到玩家");
+    p.tableNo=tableNo;
+    g.updatedAt=new Date().toISOString();
+  });
+}
+
 async function addPlayer(){
   if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
   const n=$("playerName").value.trim()||$("favoriteSelect").value;
@@ -224,8 +243,13 @@ function render(){
   $("favoriteSelect").innerHTML='<option value="">常用玩家</option>'+[...(roomData.favorites||[])].sort().map(n=>`<option>${escapeHtml(n)}</option>`).join("");
   renderFavorites();
   const wrap=$("players");wrap.innerHTML="";
-  // 已結算玩家移到最上方，最近完成結算的排最前；未結算玩家維持原本順序。
+  // 有桌號的玩家依桌號由小到大排列；尚未填桌號的玩家排在最後。
+  // 同樣都未填桌號時，維持既有的結算優先邏輯。
   const displayPlayers=[...(g?.players||[])].sort((a,b)=>{
+    const an=Number(a.tableNo),bn=Number(b.tableNo);
+    const ah=Number.isFinite(an)&&an>0,bh=Number.isFinite(bn)&&bn>0;
+    if(ah!==bh)return ah?-1:1;
+    if(ah&&bh&&an!==bn)return an-bn;
     const as=!!a.cashoutCompleted,bs=!!b.cashoutCompleted;
     if(as!==bs)return as?-1:1;
     if(as&&bs)return String(b.cashoutCompletedAt||"").localeCompare(String(a.cashoutCompletedAt||""));
@@ -235,7 +259,7 @@ function render(){
     const f=$("playerTemplate").content.cloneNode(true),root=f.querySelector(".player"),b=buyinTotal(p),c=Number(p.cashout||0),profit=c-b;
     const isSettled=!!p.cashoutCompleted,collapsedSettled=isSettled&&!expandedSettledPlayers.has(p.id)&&editable;
     root.dataset.playerId=p.id;
-    root.querySelector(".pname").textContent=p.name;root.querySelector(".pmeta").textContent=isSettled?`✅ 已結算・${p.transactions.length} 次買入・投入 ${money(b)}`:`${p.transactions.length} 次買入・目前投入 ${money(b)}`;
+    root.querySelector(".pname").textContent=p.tableNo?`${p.tableNo} 號｜${p.name}`:p.name;root.querySelector(".pmeta").textContent=isSettled?`✅ 已結算・${p.transactions.length} 次買入・投入 ${money(b)}`:`${p.transactions.length} 次買入・目前投入 ${money(b)}`;
     root.querySelectorAll(".pbuy").forEach(el=>el.textContent=money(b));root.querySelectorAll(".pcash").forEach(el=>el.textContent=money(c));
     root.querySelectorAll(".pprofit").forEach(pe=>{pe.textContent=`${profit>=0?"+":""}${money(profit)}`;pe.classList.add(profit>=0?"pos":"neg")});
     // 未結算時，觀看者只顯示即時買入資訊；完成本局後才顯示拿回與盈虧。
@@ -255,6 +279,7 @@ function render(){
     root.querySelector(".cashInput").value=p.cashout?Number(p.cashout):"";
     root.querySelector(".saveBtn").onclick=()=>saveCashout(p.id,root.querySelector(".cashInput").value).catch(e=>alert(e.message));
     root.querySelector(".editSettlementBtn")?.addEventListener("click",()=>expandSettledPlayer(p.id));
+    root.querySelector(".tableNoBtn").onclick=()=>setPlayerTableNo(p.id).catch(e=>alert(e.message));
     root.querySelector(".renameBtn").onclick=()=>renamePlayer(p.name);
     root.querySelector(".deleteBtn").onclick=()=>confirm("確定刪除？")&&mutate(d=>{const gg=assertEditable(d);gg.players=gg.players.filter(x=>x.id!==p.id);gg.updatedAt=new Date().toISOString()});
     root.querySelector(".txlist").innerHTML=(p.transactions||[]).slice().reverse().map(t=>`<li class="tx-row"><span>${new Date(t.at).toLocaleString("zh-TW",{hour12:false})}　<b>${money(t.amount)}</b>${t.editedAt?"（已修改）":""}</span>${editable?`<span class="tx-actions"><button class="secondary tiny edit-tx" data-tid="${t.id}" data-amount="${Number(t.amount||0)}">修改</button><button class="danger tiny delete-tx" data-tid="${t.id}">刪除</button></span>`:""}</li>`).join("")||"<li>尚無紀錄</li>";
