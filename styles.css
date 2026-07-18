@@ -605,3 +605,28 @@ body.picker-open{overflow:hidden}
   .rank-chip::before{inset:5px}
   .rank-chip>span{font-size:12px}
 }
+
+/* v81：籌碼內圈加入經典皇冠＋黑桃細節，保留中央排名數字 */
+.rank-chip>span::before,
+.rank-chip>span::after{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:6px;
+  line-height:1;
+  font-weight:700;
+  opacity:.9;
+  pointer-events:none;
+  text-shadow:none;
+}
+.rank-chip>span::before{content:"♛";top:-8px;}
+.rank-chip>span::after{content:"♠";bottom:-8px;}
+.rank-chip-gold>span::before,.rank-chip-gold>span::after{color:#5f4300}
+.rank-chip-silver>span::before,.rank-chip-silver>span::after{color:#3f454b}
+.rank-chip-bronze>span::before,.rank-chip-bronze>span::after{color:#5c2e17}
+.rank-chip-black>span::before,.rank-chip-black>span::after{color:#d9dde2}
+@media(max-width:560px){
+  .rank-chip>span::before,.rank-chip>span::after{font-size:5.5px}
+  .rank-chip>span::before{top:-7px}
+  .rank-chip>span::after{bottom:-7px}
+}
