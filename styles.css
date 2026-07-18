@@ -698,3 +698,67 @@ body.picker-open{overflow:hidden}
   .ranking-list .rank-badge,.audit-player-row .audit-rank{width:72px !important;min-width:72px !important}
   .poker-chip-medal,.audit-rank .poker-chip-medal{width:60px !important;height:60px !important;flex-basis:60px !important}
 }
+
+/* v83 修正：排行榜籌碼不再蓋住玩家文字 */
+.ranking-row{
+  display:grid !important;
+  grid-template-columns:84px minmax(0,1fr) auto !important;
+  column-gap:14px !important;
+  align-items:center !important;
+  position:relative !important;
+}
+.ranking-row .rank-badge{
+  grid-column:1 !important;
+  width:84px !important;
+  min-width:84px !important;
+  margin:0 !important;
+  padding:0 !important;
+  position:static !important;
+  transform:none !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+.ranking-row .rank-main{
+  grid-column:2 !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+.ranking-row .rank-profit,
+.ranking-row .buyin-total,
+.ranking-row .attendance-rate{
+  grid-column:3 !important;
+  white-space:nowrap !important;
+  align-self:center !important;
+}
+.ranking-row .poker-chip-medal{
+  width:62px !important;
+  height:62px !important;
+  flex:0 0 62px !important;
+}
+@media(max-width:520px){
+  .ranking-row{
+    grid-template-columns:78px minmax(0,1fr) !important;
+    column-gap:12px !important;
+  }
+  .ranking-row .rank-badge{
+    width:78px !important;
+    min-width:78px !important;
+  }
+  .ranking-row .rank-main{
+    grid-column:2 !important;
+  }
+  .ranking-row .rank-profit,
+  .ranking-row .buyin-total,
+  .ranking-row .attendance-rate{
+    grid-column:2 !important;
+    justify-self:start !important;
+    margin-top:8px !important;
+  }
+  .ranking-row .poker-chip-medal{
+    width:60px !important;
+    height:60px !important;
+    flex-basis:60px !important;
+  }
+}
