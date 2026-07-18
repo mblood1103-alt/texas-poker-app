@@ -113,14 +113,34 @@
             <p id="auditStatus" class="muted audit-status"></p>
           </div>
         </div>
-        <div class="totals audit-totals">
-          <div class="audit-stat audit-buyin"><span class="audit-icon"><svg class="verify-icon" viewBox="0 0 48 48" aria-hidden="true"><ellipse cx="24" cy="14" rx="13" ry="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 14v6c0 2.5 6 4.5 13 4.5s13-2 13-4.5v-6
-M11 20v6c0 2.5 6 4.5 13 4.5s13-2 13-4.5v-6
-M11 26v6c0 2.5 6 4.5 13 4.5s13-2 13-4.5v-6
-M15 36v3c0 2 5 4 11 4 6 0 11-2 11-4v-7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span>總買入</span><strong id="totalBuyin">$0</strong></div>
-          <div class="audit-stat audit-cashout"><span class="audit-icon"><svg class="verify-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="11" width="36" height="26" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="24" cy="24" r="7" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 17c3 0 5-2 5-4M36 17c-3 0-5-2-5-4M12 31c3 0 5 2 5 4M36 31c-3 0-5 2-5 4" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></span><span>總拿回</span><strong id="totalCashout">$0</strong></div>
-          <div class="audit-stat audit-difference"><span class="audit-icon"><svg class="verify-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 8v30M14 40h20M10 13h28M24 8l-5 5h10zM12 13 6 27h12L12 13zm24 0-6 14h12L36 13z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 27c1 5 11 5 12 0M30 27c1 5 11 5 12 0" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></span><span>差額</span><strong id="difference">$0</strong></div>
-          <div class="audit-stat audit-players"><span class="audit-icon"><svg class="verify-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="15" r="7" fill="currentColor"/><circle cx="10" cy="20" r="5" fill="currentColor" opacity=".75"/><circle cx="38" cy="20" r="5" fill="currentColor" opacity=".75"/><path d="M11 39c0-9 5-14 13-14s13 5 13 14H11zM1 39c0-7 3-11 9-12 3 2 5 5 5 12H1zm32 0c0-7 2-10 5-12 6 1 9 5 9 12H33z" fill="currentColor"/></svg></span><span>總人數</span><strong id="totalPlayers">0 人</strong></div>
+        <div class="audit-summary-grid">
+          <div class="audit-summary-card audit-buyin-card">
+            <div class="audit-summary-icon" aria-hidden="true">
+              <svg viewBox="0 0 64 48"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="23" cy="15" rx="13" ry="4.5"/><path d="M10 15v7c0 2.7 6 4.7 13 4.7s13-2 13-4.7v-7M10 20c0 2.7 6 4.7 13 4.7s13-2 13-4.7"/><ellipse cx="38" cy="28" rx="14" ry="4.8"/><path d="M24 28v7c0 2.7 6.5 4.8 14 4.8S52 37.7 52 35v-7M24 33c0 2.7 6.5 4.8 14 4.8S52 35.7 52 33"/></g></svg>
+            </div>
+            <div class="audit-summary-copy"><span>總買入</span><strong id="totalBuyin">$0</strong></div>
+          </div>
+
+          <div class="audit-summary-card audit-cashout-card">
+            <div class="audit-summary-icon" aria-hidden="true">
+              <svg viewBox="0 0 64 48"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="11" width="48" height="26" rx="2"/><rect x="12" y="15" width="40" height="18" rx="1"/><circle cx="32" cy="24" r="6"/><path d="M16 19c3 0 5-2 5-4M48 19c-3 0-5-2-5-4M16 29c3 0 5 2 5 4M48 29c-3 0-5 2-5 4"/></g></svg>
+            </div>
+            <div class="audit-summary-copy"><span>總拿回</span><strong id="totalCashout">$0</strong></div>
+          </div>
+
+          <div class="audit-summary-card audit-difference-card is-balanced">
+            <div class="audit-summary-icon" aria-hidden="true">
+              <svg viewBox="0 0 64 48"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M32 7v33M20 41h24M13 14h38M32 7l-5 5h10z"/><path d="M15 14 8 29h14L15 14zm34 0-7 15h14L49 14z"/><path d="M8 29c1 5 13 5 14 0M42 29c1 5 13 5 14 0"/></g></svg>
+            </div>
+            <div class="audit-summary-copy"><span>差額</span><strong id="difference">$0</strong><em id="differenceState"></em></div>
+          </div>
+
+          <div class="audit-summary-card audit-players-card">
+            <div class="audit-summary-icon" aria-hidden="true">
+              <svg viewBox="0 0 64 48"><g fill="currentColor"><circle cx="32" cy="14" r="6.2"/><circle cx="17" cy="19" r="4.8"/><circle cx="47" cy="19" r="4.8"/><path d="M20 42c0-10 4.8-16 12-16s12 6 12 16H20z"/><path d="M4 42c0-8 3.5-13 11-14 3.5 2.7 5.5 7 5.5 14H4z"/><path d="M43.5 42c0-7 2-11.3 5.5-14 7.5 1 11 6 11 14H43.5z"/></g></svg>
+            </div>
+            <div class="audit-summary-copy"><span>總人數</span><strong id="totalPlayers">0 人</strong></div>
+          </div>
         </div>
         <p id="differenceHint" class="hint"></p>
         <details class="audit-player-section ranking-collapse">
