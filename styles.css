@@ -536,3 +536,13 @@ body.picker-open{overflow:hidden}
   color:#d93a3a;
   font-weight:600;
 }
+
+/* v74: 帳目相符時警語顯示綠色 */
+#auditCard #differenceHint{
+  color:#169447;
+  font-weight:600;
+}
+#auditCard #differenceHint.is-mismatch{
+  color:#d93a3a;
+  font-weight:600;
+}
