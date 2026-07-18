@@ -277,7 +277,7 @@ function render(){
   const {buy,cash}=gameTotals(g),diff=cash-buy;$("totalBuyin").textContent=money(buy);$("totalCashout").textContent=money(cash);$("difference").textContent=`${diff>0?"+":""}${money(diff)}`;$("differenceHint").textContent=diff===0?"帳目相符，可以安心結算。":diff>0?`目前多出 ${money(diff)}。`:`目前少了 ${money(Math.abs(diff))}。`;
   const auditEntries=(g?.players||[]).map(p=>{const pb=buyinTotal(p),pc=Number(p.cashout||0);return [p.name,{buyin:pb,cashout:pc,count:(p.transactions||[]).length}]});
   const auditRows=buildCompositeRanking(auditEntries);
-  $("auditPlayerRanking").innerHTML=auditRows.length?auditRows.map((x,i)=>`<div class="audit-player-row"><div class="audit-rank">${i<3?["🥇","🥈","🥉"][i]:`第 ${i+1} 名`}</div><div class="audit-player-main"><b>${escapeHtml(x.name)}</b><small>${x.r.count} 次買入・投入 ${money(x.buyin)}・拿回 ${money(x.cashout)}・報酬率 ${formatRate(x.roi)}</small><small>綜合分數 ${x.score.toFixed(1)}</small></div><strong class="${x.profit>=0?"pos":"neg"}">${x.profit>=0?"+":""}${money(x.profit)}</strong></div>`).join(""):"<p class='muted'>本局尚未加入玩家</p>";
+  $("auditPlayerRanking").innerHTML=auditRows.length?auditRows.map((x,i)=>`<div class="audit-player-row ${x.profit<0?"profit-loss":"profit-win"}"><div class="audit-rank">${i<3?["🥇","🥈","🥉"][i]:`第 ${i+1} 名`}</div><div class="audit-player-main"><b>${escapeHtml(x.name)}</b><small>${x.r.count} 次買入・投入 ${money(x.buyin)}・拿回 ${money(x.cashout)}・報酬率 ${formatRate(x.roi)}</small><small>綜合分數 ${x.score.toFixed(1)}</small></div><strong class="${x.profit>=0?"pos":"neg"}">${x.profit>=0?"+":""}${money(x.profit)}</strong></div>`).join(""):"<p class='muted'>本局尚未加入玩家</p>";
   $("finishBtn").classList.toggle("hidden",!isOwner||completed);$("finishEditBtn").classList.toggle("hidden",!isOwner||!isEditing());$("editCurrentBtn").classList.toggle("hidden",!isOwner||!completed||isEditing());
   // 「開新局」獨立顯示：只有本局完成、且未在修改時才出現。
   $("newGameCard").classList.toggle("hidden",!isOwner||!completed||isEditing());
@@ -449,7 +449,7 @@ function renderReport(){
   const profitRows=buildCompositeRanking([...map]);
   $("report").innerHTML=profitRows.map((x,i)=>{
     const {name:n,r,profit,roi,score}=x,attendance=totalGames?Math.round(r.games/totalGames*100):0,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
-    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small><small class="attendance-meta">出勤 ${r.games}/${totalGames} 局・${attendance}%</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+    return `<div class="ranking-row ${profit<0?"profit-loss":"profit-win"}"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small><small class="attendance-meta">出勤 ${r.games}/${totalGames} 局・${attendance}%</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 
   const buyinRows=[...map].map(([n,r])=>({
@@ -468,7 +468,7 @@ function renderReport(){
   });
   $("attendanceReport").innerHTML=attendanceRows.map(([n,r],i)=>{
     const attendance=totalGames?Math.round(r.games/totalGames*100):0,profit=r.cashout-r.buyin,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
-    return `<div class="ranking-row attendance-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>出勤 ${r.games}/${totalGames} 局・該期間盈虧 ${profit>=0?"+":""}${money(profit)}</small></div><b class="attendance-rate">${attendance}%</b></div>`;
+    return `<div class="ranking-row attendance-row attendance-highlight"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>出勤 ${r.games}/${totalGames} 局・該期間盈虧 ${profit>=0?"+":""}${money(profit)}</small></div><b class="attendance-rate">${attendance}%</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 }
 

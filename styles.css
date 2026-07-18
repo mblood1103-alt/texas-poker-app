@@ -214,3 +214,36 @@ body.picker-open{overflow:hidden}
 .audit-player-ranking .audit-ranking-row:has(.negative){
   background:linear-gradient(90deg,rgba(255,226,226,.72) 0%,rgba(255,243,243,.38) 52%,rgba(255,255,255,0) 100%)!important;
 }
+
+/* v52 exact soft-gradient ranking colors */
+.ranking-list .ranking-row.attendance-highlight{
+  background:linear-gradient(90deg,
+    rgba(224,248,239,.72) 0%,
+    rgba(241,252,247,.38) 52%,
+    rgba(255,255,255,0) 100%) !important;
+}
+.ranking-list .ranking-row.buyin-highlight{
+  background:linear-gradient(90deg,
+    rgba(255,248,219,.56) 0%,
+    rgba(255,252,237,.30) 52%,
+    rgba(255,255,255,0) 100%) !important;
+}
+.ranking-list .ranking-row.profit-win,
+.audit-player-ranking .audit-player-row.profit-win{
+  background:linear-gradient(90deg,
+    rgba(224,248,239,.72) 0%,
+    rgba(241,252,247,.38) 52%,
+    rgba(255,255,255,0) 100%) !important;
+}
+.ranking-list .ranking-row.profit-loss,
+.audit-player-ranking .audit-player-row.profit-loss{
+  background:linear-gradient(90deg,
+    rgba(255,229,229,.72) 0%,
+    rgba(255,245,245,.38) 52%,
+    rgba(255,255,255,0) 100%) !important;
+}
+.audit-player-ranking .audit-player-row{
+  border-radius:18px;
+  padding:16px 12px;
+  margin:8px 0;
+}
