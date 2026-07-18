@@ -281,7 +281,7 @@ if(diffCard){
   const state=diff===0?"is-balanced":diff>0?"is-extra":"is-short";
   diffCard.classList.add(state);
   $("differenceState").textContent=diff===0?"":diff>0?"多出":"短少";
-}$("differenceHint").textContent=diff===0?"帳目相符，可以安心結算。":"⚠️ 帳目不符，請檢查後再結算。";$("differenceHint").classList.toggle("is-mismatch",diff!==0);
+}$("differenceHint").textContent=diff===0?"<span style="color:#16834A;font-weight:600;">帳目相符，可以安心結算。</span>":"⚠️ 帳目不符，請檢查後再結算。";$("differenceHint").classList.toggle("is-mismatch",diff!==0);
   const auditEntries=(g?.players||[]).map(p=>{const pb=buyinTotal(p),pc=Number(p.cashout||0);return [p.name,{buyin:pb,cashout:pc,count:(p.transactions||[]).length}]});
   const auditRows=buildCompositeRanking(auditEntries);
   $("auditPlayerRanking").innerHTML=auditRows.length?auditRows.map((x,i)=>`<div class="audit-player-row ${x.profit<0?"profit-loss":"profit-win"}"><div class="audit-rank">${i<3?["🥇","🥈","🥉"][i]:`第 ${i+1} 名`}</div><div class="audit-player-main"><b>${escapeHtml(x.name)}</b><small>${x.r.count} 次買入・投入 ${money(x.buyin)}・拿回 ${money(x.cashout)}・報酬率 ${formatRate(x.roi)}</small><small>綜合分數 ${x.score.toFixed(1)}</small></div><strong class="${x.profit>=0?"pos":"neg"}">${x.profit>=0?"+":""}${money(x.profit)}</strong></div>`).join(""):"<p class='muted'>本局尚未加入玩家</p>";
