@@ -248,15 +248,14 @@ function render(){
   $("favoriteSelect").innerHTML='<option value="">常用玩家</option>'+[...(roomData.favorites||[])].sort().map(n=>`<option>${escapeHtml(n)}</option>`).join("");
   renderFavorites();
   const wrap=$("players");wrap.innerHTML="";
-  // 有桌號的玩家依桌號由小到大排列；尚未填桌號的玩家排在最後。
-  // 同樣都未填桌號時，維持既有的結算優先邏輯。
+  // 已結算玩家優先排在最上方；同一狀態內再依桌號由小到大排列，未填桌號者排最後。
   const displayPlayers=[...(g?.players||[])].sort((a,b)=>{
+    const as=!!a.cashoutCompleted,bs=!!b.cashoutCompleted;
+    if(as!==bs)return as?-1:1;
     const an=Number(a.tableNo),bn=Number(b.tableNo);
     const ah=Number.isFinite(an)&&an>0,bh=Number.isFinite(bn)&&bn>0;
     if(ah!==bh)return ah?-1:1;
     if(ah&&bh&&an!==bn)return an-bn;
-    const as=!!a.cashoutCompleted,bs=!!b.cashoutCompleted;
-    if(as!==bs)return as?-1:1;
     if(as&&bs)return String(b.cashoutCompletedAt||"").localeCompare(String(a.cashoutCompletedAt||""));
     return 0;
   });
