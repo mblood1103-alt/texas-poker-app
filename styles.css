@@ -192,3 +192,25 @@ body.picker-open{overflow:hidden}
 .audit-player-ranking .audit-ranking-row.profit-loss{
  background:linear-gradient(90deg,rgba(255,226,226,.72),rgba(255,243,243,.40) 48%,rgba(255,255,255,0))!important;
 }
+
+/* v51 safe gradients: no JS template modification required */
+.audit-player-ranking .ranking-row,
+.audit-player-ranking .audit-player-row,
+.audit-player-ranking .audit-ranking-row{
+  border-radius:18px;
+}
+/* Modern iOS Safari supports :has(); infer win/loss from existing colored amount elements */
+.audit-player-ranking .ranking-row:has(.positive),
+.audit-player-ranking .ranking-row:has(.profit-positive),
+.audit-player-ranking .ranking-row:has(.green),
+.audit-player-ranking .audit-player-row:has(.positive),
+.audit-player-ranking .audit-ranking-row:has(.positive){
+  background:linear-gradient(90deg,rgba(222,248,236,.72) 0%,rgba(239,252,246,.38) 52%,rgba(255,255,255,0) 100%)!important;
+}
+.audit-player-ranking .ranking-row:has(.negative),
+.audit-player-ranking .ranking-row:has(.profit-negative),
+.audit-player-ranking .ranking-row:has(.red),
+.audit-player-ranking .audit-player-row:has(.negative),
+.audit-player-ranking .audit-ranking-row:has(.negative){
+  background:linear-gradient(90deg,rgba(255,226,226,.72) 0%,rgba(255,243,243,.38) 52%,rgba(255,255,255,0) 100%)!important;
+}
