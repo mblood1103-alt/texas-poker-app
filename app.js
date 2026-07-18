@@ -450,7 +450,7 @@ function denseRankLabels(rows){
 }
 function rankBadge(rank){
   const cls=rank===1?"rank-1":rank===2?"rank-2":rank===3?"rank-3":"rank-other";
-  return `<span class="poker-chip-medal ${cls}" aria-label="第 ${rank} 名"><span class="chip-crown">${rank<=3?"♛":"♠"}</span><span class="chip-number">${rank}</span><span class="chip-suit">♠</span></span>`;
+  return `<span class="poker-chip-medal ${cls}" aria-label="第 ${rank} 名"><span class="chip-number">${rank}</span></span>`;
 }
 function renderGameHistory(){
   const box=$("gameHistory");if(!box)return;
