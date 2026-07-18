@@ -530,3 +530,9 @@ body.picker-open{overflow:hidden}
   #auditCard .audit-summary-copy span{font-size:13px;margin-bottom:4px}
   #auditCard .audit-summary-copy strong{font-size:23px}
 }
+
+/* v72: 帳目不符警語改為紅色，帳目相符維持原色 */
+#auditCard #differenceHint.is-mismatch{
+  color:#d93a3a;
+  font-weight:600;
+}
