@@ -376,3 +376,6 @@ body.picker-open{overflow:hidden}
 #auditCard .audit-totals .audit-players{background:linear-gradient(135deg,#e8f3ff 0%,#f7fbff 100%)!important}
 #auditCard .audit-totals .audit-players span,#auditCard .audit-totals .audit-players strong{color:#1976c9!important}
 @media(max-width:430px){#auditCard .audit-totals .audit-stat{padding-left:68px!important;min-height:104px!important}#auditCard .audit-totals .audit-stat .audit-icon{left:18px!important;font-size:29px!important}}
+
+/* v59 professional verification icons */
+.verify-icon{width:44px;height:44px;display:block;flex:0 0 44px}
