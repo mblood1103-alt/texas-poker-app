@@ -423,7 +423,7 @@ function renderGameHistory(){
   const rankingTitle=historyDateFilter?`${historyDateFilter.replaceAll("-","/")} 當日排名`:`全部歷史排名`;
   $("historyRanking").innerHTML=`<h3>${rankingTitle}</h3><p class="hint">綜合排名＝總盈虧 50%＋報酬率 50%（同期間玩家標準化後計算）</p><div class="ranking-list">${rankingRows.map((x,i)=>{
     const {name:n,r,profit,roi,score}=x,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
-    return `<div class="ranking-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+    return `<div class="ranking-row ${profit>0?"profit-win":profit<0?"profit-loss":"profit-even"}"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
   }).join("")||"<p class='muted'>這個日期尚無已完成牌局可排名</p>"}</div>`;
 
   box.innerHTML=games.map(g=>{const {buy,cash}=gameTotals(g),diff=cash-buy,isCurrent=g.id===roomData.currentGameId,state=g.endedAt?"已完成":"進行中";return `<article class="game-history-item"><div class="game-row"><div><b>${new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false})}</b><br><small>${g.players?.length||0} 位玩家・投入 ${money(buy)}・拿回 ${money(cash)}・差額 ${diff>=0?"+":""}${money(diff)}・${state}${isCurrent?"・目前顯示":""}</small></div><div class="game-actions"><button class="secondary small view-game" data-game-id="${g.id}" type="button">查看明細</button>${isOwner&&g.endedAt?`<button class="secondary small edit-game" data-game-id="${g.id}">修改此局</button>`:""}${isOwner?`<button class="danger small delete-game" data-game-id="${g.id}">刪除此局</button>`:""}</div></div><div id="detail-${g.id}" class="hidden">${gameDetailHtml(g)}</div></article>`}).join("")||`<p class='muted'>${historyDateFilter?"這一天沒有牌局紀錄":"尚無牌局紀錄"}</p>`;
@@ -458,7 +458,7 @@ function renderReport(){
   $("buyinReport").innerHTML=buyinRows.map((x,i)=>{
     const {name:n,r,avg}=x;
     const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
-    return `<div class="ranking-row buyin-row"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總買入 ${money(r.buyin)}</small></div><b class="buyin-total">平均 ${money(Math.round(avg))}</b></div>`;
+    return `<div class="ranking-row buyin-row buyin-highlight"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總買入 ${money(r.buyin)}</small></div><b class="buyin-total">平均 ${money(Math.round(avg))}</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 
   const attendanceRows=[...map].sort((a,b)=>{

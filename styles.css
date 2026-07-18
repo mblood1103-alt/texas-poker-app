@@ -139,3 +139,15 @@ body.picker-open{overflow:hidden}
 
 /* v39：結算後玩家自動收合，並自動前往下一位未結算玩家 */
 .player.settled-collapsed{background:#f8fafc;border-color:#bbf7d0;padding-bottom:12px}.player.settled-collapsed>.between .player-tools{display:none!important}.settled-summary{margin-top:12px;padding:12px;border-radius:14px;background:#f0fdf4;border:1px solid #bbf7d0}.settled-badge{font-weight:900;color:#047857;margin-bottom:8px}.settled-numbers{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}.settled-numbers span{background:#fff;border-radius:10px;padding:8px;text-align:center;color:#64748b;font-size:12px}.settled-numbers b{display:block;margin-top:3px;color:#0f172a;font-size:15px}.settled-numbers .pos{color:#047857}.settled-numbers .neg{color:#b91c1c}.editSettlementBtn{width:100%}.player.settled-collapsed .pmeta{color:#047857;font-weight:700}@media(max-width:560px){.settled-numbers{grid-template-columns:repeat(3,1fr);gap:5px}.settled-numbers span{padding:7px 4px}.settled-numbers b{font-size:14px}}
+
+/* v49 collapsible rankings and ranking card colors */
+.ranking-collapse{margin-top:14px}
+.ranking-collapse>summary{cursor:pointer;list-style:none;padding:12px 0;font-weight:800}
+.ranking-collapse>summary::-webkit-details-marker{display:none}
+.ranking-collapse>summary::before{content:"▶";display:inline-block;margin-right:10px;font-size:.75em;transition:transform .15s ease}
+.ranking-collapse[open]>summary::before{transform:rotate(90deg)}
+.ranking-list .ranking-row,.audit-player-ranking .ranking-row{border-radius:18px;padding:16px 12px;margin:8px 0}
+.ranking-row.profit-win{background:#effcf5}
+.ranking-row.profit-loss{background:#fff1f1}
+.ranking-row.profit-even{background:#f7f9fc}
+.ranking-row.buyin-highlight{background:#fff9e8}

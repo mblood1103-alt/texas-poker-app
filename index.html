@@ -115,11 +115,11 @@
           <div><span>差額</span><strong id="difference">$0</strong></div>
         </div>
         <p id="differenceHint" class="hint"></p>
-        <div class="audit-player-section">
-          <h3>本局玩家排名與紀錄</h3>
+        <details class="audit-player-section ranking-collapse">
+          <summary class="ranking-heading">本局玩家排名與紀錄</summary>
           <p class="hint">依綜合分數排列：總盈虧 50%＋報酬率 50%，並顯示買入、拿回與買入次數。</p>
           <div id="auditPlayerRanking" class="audit-player-ranking"></div>
-        </div>
+        </details>
         <div class="owner-only actions audit-actions">
           <button id="editCurrentBtn" class="secondary hidden">修改本局</button>
           <button id="finishEditBtn" class="secondary hidden">完成修改</button>
@@ -141,23 +141,23 @@
           </div>
           <p id="reportPeriod" class="hint ranking-period"></p>
 
-          <div class="ranking-block">
-            <h3 class="ranking-heading">盈虧排行榜</h3>
+          <details class="ranking-block ranking-collapse">
+            <summary class="ranking-heading">盈虧排行榜</summary>
             <p class="hint ranking-note">依綜合分數排序：總盈虧 50%＋報酬率 50%，並同步顯示出勤率。</p>
             <div id="report" class="ranking-list"></div>
-          </div>
+          </details>
 
-          <div class="ranking-block buyin-block">
-            <h3 class="ranking-heading">買入金額排行榜</h3>
+          <details class="ranking-block buyin-block ranking-collapse">
+            <summary class="ranking-heading">買入金額排行榜</summary>
             <p class="hint ranking-note">依平均每局買入金額由高到低排序；總買入金額與參加場數僅作為資訊顯示。</p>
             <div id="buyinReport" class="ranking-list"></div>
-          </div>
+          </details>
 
-          <div class="ranking-block attendance-block">
-            <h3 class="ranking-heading">出勤排行榜</h3>
+          <details class="ranking-block attendance-block ranking-collapse">
+            <summary class="ranking-heading">出勤排行榜</summary>
             <p class="hint ranking-note">出勤率＝玩家參加的已完成牌局數 ÷ 該期間全部已完成牌局數。</p>
             <div id="attendanceReport" class="ranking-list"></div>
-          </div>
+          </details>
         </div>
       </details>
 
