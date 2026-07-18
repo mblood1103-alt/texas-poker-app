@@ -296,3 +296,11 @@ body.picker-open{overflow:hidden}
 .audit-diff-negative strong{color:#c62828!important}
 .audit-diff-zero{background:rgba(224,242,255,.78)!important}
 .audit-diff-zero strong{color:#1769aa!important}
+
+/* v55 exact 本局驗帳 cards */
+.audit-card .totals > div:nth-child(1){background:#fff8db!important}
+.audit-card .totals > div:nth-child(1) span,.audit-card .totals > div:nth-child(1) strong{color:#9a6700!important}
+.audit-card .totals > div:nth-child(2){background:#e8f8f1!important}
+.audit-card .totals > div:nth-child(2) span,.audit-card .totals > div:nth-child(2) strong{color:#087f5b!important}
+.audit-card .totals > div:nth-child(3){background:#e8f3ff!important}
+.audit-card .totals > div:nth-child(3) span,.audit-card .totals > div:nth-child(3) strong{color:#1769aa!important}
