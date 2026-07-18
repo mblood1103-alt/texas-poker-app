@@ -758,3 +758,40 @@ body.picker-open{overflow:hidden}
   .rank-chip>span::before{top:4px;font-size:7px}
   .rank-chip>span::after{bottom:4px;font-size:6px}
 }
+
+/* v83：籌碼改為較真實的硬質 Casino Chip，減少圓潤塑膠感 */
+.rank-chip{
+  border-radius:50%;
+  background:
+    repeating-conic-gradient(from -11.25deg,
+      var(--chip-rim) 0deg 8deg,
+      var(--chip) 8deg 37deg,
+      var(--chip-rim) 37deg 45deg),
+    var(--chip);
+  border:2px solid var(--chip-dark);
+  box-shadow:
+    0 2px 0 var(--chip-dark),
+    0 4px 5px rgba(15,23,42,.24),
+    inset 0 0 0 1px rgba(255,255,255,.18),
+    inset 0 0 0 5px rgba(0,0,0,.10);
+}
+.rank-chip::before{
+  inset:8px;
+  background:var(--chip);
+  border:2px solid color-mix(in srgb,var(--chip-dark) 58%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb,var(--chip-rim) 45%, transparent),
+    inset 0 0 0 1px rgba(255,255,255,.12);
+}
+.rank-chip::after{
+  inset:4px;
+  border:1px dashed color-mix(in srgb,var(--chip-dark) 55%, transparent);
+  box-shadow:none;
+}
+.rank-chip>span{
+  font-family:Arial,"Helvetica Neue",sans-serif;
+  font-weight:900;
+  text-shadow:none;
+}
+.rank-chip>span::before,.rank-chip>span::after{font-weight:900}
+@media(max-width:560px){.rank-chip::before{inset:7px}.rank-chip::after{inset:3px}}
