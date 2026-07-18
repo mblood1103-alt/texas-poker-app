@@ -367,3 +367,12 @@ body.picker-open{overflow:hidden}
 #auditCard .audit-totals .audit-difference.is-short strong{
   color:#c92a2a !important;
 }
+
+/* v58 驗帳卡片依確認示意圖 */
+#auditCard .audit-totals .audit-stat{position:relative!important;min-height:112px!important;padding:20px 12px 16px 86px!important;text-align:left!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:flex-start!important;border-radius:20px!important}
+#auditCard .audit-totals .audit-stat .audit-icon{position:absolute!important;left:24px!important;top:50%!important;transform:translateY(-50%)!important;font-size:34px!important;line-height:1!important}
+#auditCard .audit-totals .audit-stat>span:not(.audit-icon){font-size:15px!important;font-weight:700!important}
+#auditCard .audit-totals .audit-stat strong{font-size:24px!important;margin-top:7px!important}
+#auditCard .audit-totals .audit-players{background:linear-gradient(135deg,#e8f3ff 0%,#f7fbff 100%)!important}
+#auditCard .audit-totals .audit-players span,#auditCard .audit-totals .audit-players strong{color:#1976c9!important}
+@media(max-width:430px){#auditCard .audit-totals .audit-stat{padding-left:68px!important;min-height:104px!important}#auditCard .audit-totals .audit-stat .audit-icon{left:18px!important;font-size:29px!important}}
