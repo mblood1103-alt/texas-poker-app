@@ -448,10 +448,7 @@ function denseRankLabels(rows){
     return rank;
   });
 }
-function rankBadge(rank){
-  const cls=rank===1?"rank-1":rank===2?"rank-2":rank===3?"rank-3":"rank-other";
-  return `<span class="poker-chip-medal ${cls}" aria-label="第 ${rank} 名"><span class="chip-crown">♛</span><span class="chip-number">${rank}</span><span class="chip-suit">♠</span></span>`;
-}
+function rankBadge(rank){return rank===1?"🥇":rank===2?"🥈":rank===3?"🥉":`第 ${rank} 名`;}
 function renderGameHistory(){
   const box=$("gameHistory");if(!box)return;
   const allGames=(roomData.games||[]).filter(g=>!isGameEmpty(g)).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt));
