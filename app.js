@@ -180,6 +180,7 @@ async function addPlayer(){
     });
     $("playerName").value="";
     $("favoriteSelect").value="";
+    setInitialBuyin(100);
     if($("newPlayerTableNo"))$("newPlayerTableNo").value="";
     const tableBtn=$("newPlayerTableNoBtn");if(tableBtn)tableBtn.textContent="桌號";
   }catch(e){alert(e.message)}
