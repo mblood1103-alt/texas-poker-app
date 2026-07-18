@@ -166,18 +166,22 @@ async function addPlayer(){
   const n=$("playerName").value.trim()||$("favoriteSelect").value;
   if(!n)return alert("請先選擇或輸入玩家名稱");
   const initialAmount=Math.max(0,Number($("initialBuyinAmount").value||0));
+  const tableNoRaw=$("newPlayerTableNo")?.value||"";
+  const tableNo=tableNoRaw===""?null:Number(tableNoRaw);
   try{
     await mutate(d=>{
       const g=assertEditable(d);
       if(g.players.some(p=>p.name===n))throw new Error("玩家已存在");
       const transactions=initialAmount>0?[{id:makeId(),amount:initialAmount,at:new Date().toISOString(),by:actorName()}]:[];
-      g.players.push({id:makeId(),name:n,cashout:0,transactions});
+      g.players.push({id:makeId(),name:n,cashout:0,tableNo,transactions});
       g.updatedAt=new Date().toISOString();
       d.favorites=d.favorites||[];
       if(!d.favorites.includes(n))d.favorites.push(n);
     });
     $("playerName").value="";
     $("favoriteSelect").value="";
+    if($("newPlayerTableNo"))$("newPlayerTableNo").value="";
+    const tableBtn=$("newPlayerTableNoBtn");if(tableBtn)tableBtn.textContent="桌號";
   }catch(e){alert(e.message)}
 }
 const addBuyin=(pid,a)=>{if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");return mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);if(!p)throw new Error("找不到玩家");p.transactions.push({id:makeId(),amount:Number(a),at:new Date().toISOString(),by:actorName()});p.cashoutCompleted=false;g.updatedAt=new Date().toISOString()})};
@@ -523,6 +527,22 @@ function setInitialBuyin(amount){
 document.querySelectorAll(".initial-buyin-btn").forEach(btn=>btn.onclick=()=>setInitialBuyin(btn.dataset.amount));
 const initialBuyinCustomBtn=$("initialBuyinCustomBtn");
 if(initialBuyinCustomBtn)initialBuyinCustomBtn.onclick=()=>{const amount=Number(prompt("輸入初始買入金額"));if(amount>0)setInitialBuyin(amount)};
+const newPlayerTableNoBtn=$("newPlayerTableNoBtn");
+if(newPlayerTableNoBtn)newPlayerTableNoBtn.onclick=()=>{
+  const current=$("newPlayerTableNo")?.value||"";
+  const value=prompt("輸入桌號（可以先不填，之後再補）",current);
+  if(value===null)return;
+  const trimmed=value.trim();
+  if(trimmed===""){
+    $("newPlayerTableNo").value="";
+    newPlayerTableNoBtn.textContent="桌號";
+    return;
+  }
+  const num=Number(trimmed);
+  if(!Number.isInteger(num)||num<1)return alert("桌號請輸入 1 以上的整數");
+  $("newPlayerTableNo").value=String(num);
+  newPlayerTableNoBtn.textContent=`桌號 ${num}`;
+};
 $("addPlayerBtn").onclick=addPlayer;$("addFavoriteBtn").onclick=addFavorite;$("clearViewerLogsBtn").onclick=()=>clearViewerLogs().catch(e=>alert(e.message));
 $("finishBtn").onclick=async()=>{
   if(!canEditCurrent())return;
