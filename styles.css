@@ -546,21 +546,3 @@ body.picker-open{overflow:hidden}
   color:#d93a3a;
   font-weight:600;
 }
-
-/* v80：排行榜名次全面改成德州籌碼圖示，尺寸精簡避免遮住文字 */
-.rank-badge,.audit-rank{display:flex;align-items:center;justify-content:center;min-width:46px}
-.rank-chip{width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 42px;vertical-align:middle}
-.rank-chip-top img{display:block;width:42px;height:42px;object-fit:contain}
-.rank-chip-black{position:relative;border-radius:50%;box-sizing:border-box;background:
-  radial-gradient(circle at center,#242424 0 47%,transparent 48%),
-  repeating-conic-gradient(from -8deg,#d7d7d7 0 10deg,#343434 10deg 42deg);
-  border:2px solid #181818;box-shadow:inset 0 0 0 3px #4a4a4a,0 1px 3px rgba(15,23,42,.22)}
-.rank-chip-black::before{content:"";position:absolute;inset:8px;border-radius:50%;background:linear-gradient(145deg,#3a3a3a,#151515);box-shadow:inset 0 0 0 1px #5f5f5f}
-.rank-chip-black span{position:relative;z-index:1;color:#fff;font-size:20px;font-weight:950;line-height:1;text-shadow:0 1px 2px #000}
-@media(max-width:560px){
-  .rank-badge,.audit-rank{min-width:40px}
-  .rank-chip,.rank-chip-top img{width:36px;height:36px}
-  .rank-chip{flex-basis:36px}
-  .rank-chip-black::before{inset:7px}
-  .rank-chip-black span{font-size:17px}
-}
