@@ -16,7 +16,54 @@
 
 <style id="v61-reference-match">
 .verify-icon{width:30px!important;height:30px!important;flex:0 0 30px!important;display:block;stroke-linecap:round;stroke-linejoin:round}
-</style></head>
+</style>
+<style id="audit-reference-v63">
+/* v63: 本局驗帳四格依示意圖重新定稿 */
+.audit-grid,.settlement-grid,.summary-grid,.verify-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+}
+.audit-card,.settlement-card,.summary-box,.verify-box{
+  min-height:118px!important;
+  padding:16px 18px!important;
+  border-radius:16px!important;
+  box-shadow:none!important;
+  border:1px solid rgba(15,23,42,.05)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:18px!important;
+}
+.audit-card .icon,.settlement-card .icon,.summary-box .icon,.verify-box .icon,
+.audit-card svg,.settlement-card svg,.summary-box svg,.verify-box svg{
+  width:52px!important;height:52px!important;min-width:52px!important;
+  stroke-width:2.4!important;
+}
+.audit-card .label,.settlement-card .label,.summary-box .label,.verify-box .label{
+  font-size:18px!important;font-weight:700!important;line-height:1.15!important;
+  margin:0 0 6px!important;
+}
+.audit-card .value,.settlement-card .value,.summary-box .value,.verify-box .value{
+  font-size:31px!important;font-weight:800!important;line-height:1.05!important;
+  letter-spacing:-.5px!important;
+}
+.audit-card .sub,.settlement-card .sub,.summary-box .sub,.verify-box .sub{
+  font-size:16px!important;font-weight:700!important;margin-top:6px!important;
+}
+</style>
+
+<style id="audit-reference-v63-extra">
+/* 兼容目前版本實際四格 class */
+#settlementSummary,#auditSummary,[data-audit-grid]{
+ display:grid!important;grid-template-columns:1fr 1fr!important;gap:12px!important;
+}
+#settlementSummary>div,#auditSummary>div,[data-audit-grid]>div{
+ min-height:118px!important;padding:16px 18px!important;border-radius:16px!important;
+ display:flex!important;align-items:center!important;gap:18px!important;
+}
+</style>
+</head>
 <body>
   <header class="top">
     <div>
