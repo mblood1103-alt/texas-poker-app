@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
-  <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=75">
+  <link rel="manifest" href="manifest.webmanifest?v=76">
+  <link rel="stylesheet" href="styles.css?v=76">
 
 
 <style id="v61-reference-match">
@@ -496,7 +496,29 @@
     </article>
   </template>
 
-  <script type="module" src="app.js?v=75"></script>
-  <script type="module" src="poker-judge.js?v=35"></script>
+  <script>
+  (async()=>{
+    try{
+      const key="dezhou-v76-cleaned";
+      if(!sessionStorage.getItem(key)){
+        sessionStorage.setItem(key,"1");
+        if("serviceWorker" in navigator){
+          const regs=await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r=>r.unregister()));
+        }
+        if("caches" in window){
+          const keys=await caches.keys();
+          await Promise.all(keys.map(k=>caches.delete(k)));
+        }
+        const u=new URL(location.href);
+        u.searchParams.set("v","76");
+        location.replace(u.toString());
+        return;
+      }
+    }catch(e){console.warn("cache reset skipped",e)}
+  })();
+  </script>
+  <script type="module" src="app.js?v=76"></script>
+  <script type="module" src="poker-judge.js?v=76"></script>
 </body>
 </html>
