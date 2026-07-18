@@ -448,7 +448,10 @@ function denseRankLabels(rows){
     return rank;
   });
 }
-function rankBadge(rank){return rank===1?"🥇":rank===2?"🥈":rank===3?"🥉":`第 ${rank} 名`;}
+function rankBadge(rank){
+  const tone=rank===1?"gold":rank===2?"silver":rank===3?"bronze":"black";
+  return `<span class="rank-chip rank-chip-${tone}" aria-label="第 ${rank} 名"><span>${rank}</span></span>`;
+}
 function renderGameHistory(){
   const box=$("gameHistory");if(!box)return;
   const allGames=(roomData.games||[]).filter(g=>!isGameEmpty(g)).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt));
@@ -505,7 +508,7 @@ function renderReport(){
   })).sort((a,b)=>b.avg-a.avg||b.r.buyin-a.r.buyin||b.r.games-a.r.games||a.name.localeCompare(b.name,"zh-Hant"));
   $("buyinReport").innerHTML=buyinRows.map((x,i)=>{
     const {name:n,r,avg}=x;
-    const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
+    const medal=rankBadge(i+1);
     return `<div class="ranking-row buyin-row buyin-highlight"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總買入 ${money(r.buyin)}</small></div><b class="buyin-total">平均 ${money(Math.round(avg))}</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 
@@ -515,7 +518,7 @@ function renderReport(){
     return rateB-rateA||b[1].games-a[1].games||profitB-profitA||a[0].localeCompare(b[0],"zh-Hant");
   });
   $("attendanceReport").innerHTML=attendanceRows.map(([n,r],i)=>{
-    const attendance=totalGames?Math.round(r.games/totalGames*100):0,profit=r.cashout-r.buyin,medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`第 ${i+1} 名`;
+    const attendance=totalGames?Math.round(r.games/totalGames*100):0,profit=r.cashout-r.buyin,medal=rankBadge(i+1);
     return `<div class="ranking-row attendance-row attendance-highlight"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>出勤 ${r.games}/${totalGames} 局・該期間盈虧 ${profit>=0?"+":""}${money(profit)}</small></div><b class="attendance-rate">${attendance}%</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 }

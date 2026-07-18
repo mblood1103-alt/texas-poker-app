@@ -546,3 +546,62 @@ body.picker-open{overflow:hidden}
   color:#d93a3a;
   font-weight:600;
 }
+
+/* v80：所有排行榜使用小型德州籌碼排名圖示（1金、2銀、3銅、4+黑） */
+.rank-badge,.audit-rank{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:36px;
+}
+.rank-chip{
+  --chip:#16181c;
+  --chip-edge:#050607;
+  --chip-text:#fff;
+  width:30px;
+  height:30px;
+  flex:0 0 30px;
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  position:relative;
+  color:var(--chip-text);
+  background:
+    repeating-conic-gradient(from -7deg,
+      rgba(255,255,255,.96) 0deg 9deg,
+      transparent 9deg 39deg),
+    var(--chip);
+  border:2px solid var(--chip-edge);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.18),0 1px 2px rgba(15,23,42,.18);
+  vertical-align:middle;
+}
+.rank-chip::before{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border-radius:50%;
+  background:var(--chip);
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);
+}
+.rank-chip>span{
+  position:relative;
+  z-index:1;
+  font-size:13px;
+  line-height:1;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 1px rgba(0,0,0,.5);
+}
+.rank-chip-gold{--chip:#d8a900;--chip-edge:#9a7000;--chip-text:#fff8d2}
+.rank-chip-silver{--chip:#9aa1a8;--chip-edge:#646b72;--chip-text:#fff}
+.rank-chip-bronze{--chip:#b66a32;--chip-edge:#7a3f1e;--chip-text:#fff4e8}
+.rank-chip-black{--chip:#1b1d21;--chip-edge:#050607;--chip-text:#fff}
+@media(max-width:560px){
+  .rank-badge,.audit-rank{min-width:32px;justify-content:flex-start}
+  .rank-chip{width:28px;height:28px;flex-basis:28px}
+  .rank-chip::before{inset:5px}
+  .rank-chip>span{font-size:12px}
+}
