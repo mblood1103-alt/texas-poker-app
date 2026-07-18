@@ -247,3 +247,11 @@ body.picker-open{overflow:hidden}
   padding:16px 12px;
   margin:8px 0;
 }
+
+/* v53 attendance ranking: soft blue left-to-right gradient */
+.ranking-list .ranking-row.attendance-row.attendance-highlight{
+  background:linear-gradient(90deg,
+    rgba(224,242,255,.78) 0%,
+    rgba(241,248,255,.42) 52%,
+    rgba(255,255,255,0) 100%) !important;
+}
