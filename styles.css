@@ -762,3 +762,62 @@ body.picker-open{overflow:hidden}
     flex-basis:60px !important;
   }
 }
+
+/* v84：籌碼縮小、排行榜卡片改為較扁的長方形 */
+.ranking-row,
+.ranking-list .ranking-item,
+.audit-player-row{
+  min-height:118px !important;
+  padding-top:16px !important;
+  padding-bottom:16px !important;
+  border-radius:22px !important;
+}
+.ranking-row{
+  grid-template-columns:68px minmax(0,1fr) auto !important;
+  column-gap:12px !important;
+}
+.ranking-row .rank-badge,
+.ranking-list .rank-badge,
+.audit-player-row .audit-rank{
+  width:68px !important;
+  min-width:68px !important;
+}
+.poker-chip-medal,
+.ranking-row .poker-chip-medal,
+.audit-rank .poker-chip-medal{
+  width:52px !important;
+  height:52px !important;
+  flex:0 0 52px !important;
+}
+.poker-chip-medal::after{inset:10px !important}
+.poker-chip-medal .chip-crown{font-size:8px !important}
+.poker-chip-medal .chip-number{font-size:23px !important}
+.poker-chip-medal .chip-suit{font-size:7px !important}
+
+@media(max-width:520px){
+  .ranking-row,
+  .ranking-list .ranking-item,
+  .audit-player-row{
+    min-height:108px !important;
+    padding-top:14px !important;
+    padding-bottom:14px !important;
+    border-radius:20px !important;
+  }
+  .ranking-row{
+    grid-template-columns:64px minmax(0,1fr) !important;
+    column-gap:10px !important;
+  }
+  .ranking-row .rank-badge,
+  .ranking-list .rank-badge,
+  .audit-player-row .audit-rank{
+    width:64px !important;
+    min-width:64px !important;
+  }
+  .poker-chip-medal,
+  .ranking-row .poker-chip-medal,
+  .audit-rank .poker-chip-medal{
+    width:48px !important;
+    height:48px !important;
+    flex-basis:48px !important;
+  }
+}
