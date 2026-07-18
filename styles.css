@@ -634,3 +634,67 @@ body.picker-open{overflow:hidden}
   .poker-chip-medal{width:60px !important;height:60px !important;min-width:60px !important;flex-basis:60px !important}
   .poker-chip-medal .chip-number{font-size:26px !important}
 }
+
+/* v82 排行榜：籌碼固定在左側獨立欄，不遮擋玩家文字 */
+.ranking-list .ranking-item,
+.audit-player-row{
+  display:grid !important;
+  grid-template-columns:78px minmax(0,1fr) !important;
+  column-gap:18px !important;
+  align-items:center !important;
+  position:relative;
+}
+.ranking-list .rank-badge,
+.audit-player-row .audit-rank{
+  grid-column:1 !important;
+  grid-row:1 / span 10 !important;
+  width:78px !important;
+  min-width:78px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  position:static !important;
+  transform:none !important;
+  margin:0 !important;
+}
+.ranking-list .ranking-content,
+.ranking-list .rank-info,
+.ranking-list .ranking-main,
+.audit-player-row .audit-player-info{
+  grid-column:2 !important;
+  min-width:0 !important;
+  margin-left:0 !important;
+  padding-left:0 !important;
+}
+.poker-chip-medal,
+.audit-rank .poker-chip-medal{
+  width:64px !important;height:64px !important;flex:0 0 64px !important;
+  --chip-main:#d5a514;--chip-dark:#8b5b00;--chip-light:#ffe07a;
+  position:relative;box-sizing:border-box;border-radius:50%;
+  display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#111;font-weight:900;line-height:1;
+  background:repeating-conic-gradient(from 0deg,#fff 0deg 12deg,var(--chip-main) 12deg 45deg);
+  border:2px solid var(--chip-light);
+  box-shadow:0 4px 8px rgba(0,0,0,.25),inset 0 0 0 5px var(--chip-main),inset 0 0 0 7px var(--chip-dark),inset 0 0 0 10px var(--chip-light);
+}
+.poker-chip-medal::after{
+  content:"";position:absolute;inset:12px;border-radius:50%;z-index:0;
+  background:radial-gradient(circle at 35% 25%,var(--chip-light),var(--chip-main) 58%,var(--chip-dark));
+  border:1px solid rgba(0,0,0,.45);
+}
+.poker-chip-medal>*{position:relative;z-index:1}
+.poker-chip-medal .chip-crown{font-size:9px;margin-bottom:1px}
+.poker-chip-medal .chip-number{font-size:27px;letter-spacing:-1px}
+.poker-chip-medal .chip-suit{font-size:8px;margin-top:1px}
+.poker-chip-medal.rank-1{--chip-main:#e1ad16;--chip-dark:#8d5b00;--chip-light:#ffe990}
+.poker-chip-medal.rank-2{--chip-main:#b9bec3;--chip-dark:#62686e;--chip-light:#fafafa}
+.poker-chip-medal.rank-3{--chip-main:#bf702c;--chip-dark:#71370f;--chip-light:#f3bb79}
+.poker-chip-medal.rank-other{--chip-main:#242424;--chip-dark:#050505;--chip-light:#f3f3f3;color:#fff}
+@media(max-width:520px){
+  .ranking-list .ranking-item,.audit-player-row{
+    grid-template-columns:72px minmax(0,1fr) !important;
+    column-gap:14px !important;
+  }
+  .ranking-list .rank-badge,.audit-player-row .audit-rank{width:72px !important;min-width:72px !important}
+  .poker-chip-medal,.audit-rank .poker-chip-medal{width:60px !important;height:60px !important;flex-basis:60px !important}
+}
