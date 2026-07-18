@@ -176,6 +176,12 @@
  #settlementSummary>div .value,#auditSummary>div .value,[data-audit-grid]>div .value{font-size:24px!important}
 }
 </style>
+
+<style id="audit-v69-detailed-coin">
+#settlementSummary>div:nth-child(1)::before,#auditSummary>div:nth-child(1)::before,[data-audit-grid]>div:nth-child(1)::before{display:none!important}
+#settlementSummary>div:nth-child(1) svg,#auditSummary>div:nth-child(1) svg,[data-audit-grid]>div:nth-child(1) svg{visibility:visible!important;display:block!important;width:43px!important;height:43px!important;min-width:43px!important;color:#c98a00!important;stroke-width:2.6!important}
+@media(max-width:430px){#settlementSummary>div:nth-child(1) svg,#auditSummary>div:nth-child(1) svg,[data-audit-grid]>div:nth-child(1) svg{width:39px!important;height:39px!important;min-width:39px!important}}
+</style>
 </head>
 <body>
   <header class="top">
@@ -276,7 +282,7 @@
         <div class="audit-summary-grid">
           <div class="audit-summary-card audit-buyin-card">
             <div class="audit-summary-icon" aria-hidden="true">
-              <svg viewBox="0 0 64 48"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="25" cy="13" rx="14" ry="5"/><path d="M11 13v6c0 2.8 6.3 5 14 5s14-2.2 14-5v-6M11 18c0 2.8 6.3 5 14 5s14-2.2 14-5"/><ellipse cx="39" cy="25" rx="14" ry="5"/><path d="M25 25v10c0 2.8 6.3 5 14 5s14-2.2 14-5V25M25 30c0 2.8 6.3 5 14 5s14-2.2 14-5M25 35c0 2.8 6.3 5 14 5s14-2.2 14-5"/><path d="M15 20v8c0 2.4 4.7 4.3 11 4.8"/></g></svg>
+              <svg viewBox="0 0 64 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="12" rx="14" ry="5"/><path d="M10 12v13c0 2.8 6.3 5 14 5 2.3 0 4.5-.2 6.4-.6M10 17c0 2.8 6.3 5 14 5s14-2.2 14-5v-5M10 22c0 2.8 6.3 5 14 5"/><ellipse cx="40" cy="25" rx="14" ry="5"/><path d="M26 25v10c0 2.8 6.3 5 14 5s14-2.2 14-5V25M26 30c0 2.8 6.3 5 14 5s14-2.2 14-5M26 35c0 2.8 6.3 5 14 5s14-2.2 14-5"/><g fill="currentColor" stroke="none"><circle cx="14" cy="17" r="1.1"/><circle cx="20" cy="19" r="1.1"/><circle cx="27" cy="19" r="1.1"/><circle cx="34" cy="17" r="1.1"/><circle cx="14" cy="23" r="1.1"/><circle cx="20" cy="25" r="1.1"/><circle cx="30" cy="30" r="1.1"/><circle cx="36" cy="32" r="1.1"/><circle cx="43" cy="32" r="1.1"/><circle cx="50" cy="30" r="1.1"/><circle cx="30" cy="35" r="1.1"/><circle cx="36" cy="37" r="1.1"/><circle cx="43" cy="37" r="1.1"/><circle cx="50" cy="35" r="1.1"/></g></g></svg>
             </div>
             <div class="audit-summary-copy"><span>總買入</span><strong id="totalBuyin">$0</strong></div>
           </div>
