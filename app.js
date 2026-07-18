@@ -274,7 +274,12 @@ function render(){
       }
     }));
   }
-  const {buy,cash}=gameTotals(g),diff=cash-buy;$("totalBuyin").textContent=money(buy);$("totalCashout").textContent=money(cash);$("difference").textContent=`${diff>0?"+":""}${money(diff)}`;$("differenceHint").textContent=diff===0?"帳目相符，可以安心結算。":diff>0?`目前多出 ${money(diff)}。`:`目前少了 ${money(Math.abs(diff))}。`;
+  const {buy,cash}=gameTotals(g),diff=cash-buy;$("totalBuyin").textContent=money(buy);$("totalCashout").textContent=money(cash);$("difference").textContent=`${diff>0?"+":""}${money(diff)}`;$("totalPlayers").textContent=`${(g?.players||[]).length} 人`;
+const diffCard=$("difference")?.closest(".audit-difference");
+if(diffCard){
+  diffCard.classList.remove("is-balanced","is-extra","is-short");
+  diffCard.classList.add(diff===0?"is-balanced":diff>0?"is-extra":"is-short");
+}$("differenceHint").textContent=diff===0?"帳目相符，可以安心結算。":diff>0?`目前多出 ${money(diff)}。`:`目前少了 ${money(Math.abs(diff))}。`;
   const auditEntries=(g?.players||[]).map(p=>{const pb=buyinTotal(p),pc=Number(p.cashout||0);return [p.name,{buyin:pb,cashout:pc,count:(p.transactions||[]).length}]});
   const auditRows=buildCompositeRanking(auditEntries);
   $("auditPlayerRanking").innerHTML=auditRows.length?auditRows.map((x,i)=>`<div class="audit-player-row ${x.profit<0?"profit-loss":"profit-win"}"><div class="audit-rank">${i<3?["🥇","🥈","🥉"][i]:`第 ${i+1} 名`}</div><div class="audit-player-main"><b>${escapeHtml(x.name)}</b><small>${x.r.count} 次買入・投入 ${money(x.buyin)}・拿回 ${money(x.cashout)}・報酬率 ${formatRate(x.roi)}</small><small>綜合分數 ${x.score.toFixed(1)}</small></div><strong class="${x.profit>=0?"pos":"neg"}">${x.profit>=0?"+":""}${money(x.profit)}</strong></div>`).join(""):"<p class='muted'>本局尚未加入玩家</p>";

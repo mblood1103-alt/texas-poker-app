@@ -304,3 +304,66 @@ body.picker-open{overflow:hidden}
 .audit-card .totals > div:nth-child(2) span,.audit-card .totals > div:nth-child(2) strong{color:#087f5b!important}
 .audit-card .totals > div:nth-child(3){background:#e8f3ff!important}
 .audit-card .totals > div:nth-child(3) span,.audit-card .totals > div:nth-child(3) strong{color:#1769aa!important}
+
+/* v56 本局驗帳四色卡片：使用精確 class，避免被舊樣式覆蓋 */
+#auditCard .audit-totals{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:12px !important;
+}
+#auditCard .audit-totals .audit-stat{
+  border-radius:18px !important;
+  padding:16px 10px !important;
+  min-width:0 !important;
+}
+#auditCard .audit-totals .audit-buyin{
+  background:linear-gradient(135deg,#fff8db 0%,#fffdf3 100%) !important;
+}
+#auditCard .audit-totals .audit-buyin span,
+#auditCard .audit-totals .audit-buyin strong{
+  color:#9a6700 !important;
+}
+#auditCard .audit-totals .audit-cashout{
+  background:linear-gradient(135deg,#e8f8f1 0%,#f7fdf9 100%) !important;
+}
+#auditCard .audit-totals .audit-cashout span,
+#auditCard .audit-totals .audit-cashout strong{
+  color:#087f5b !important;
+}
+#auditCard .audit-totals .audit-difference{
+  background:linear-gradient(135deg,#e8f3ff 0%,#f7fbff 100%) !important;
+}
+#auditCard .audit-totals .audit-difference span,
+#auditCard .audit-totals .audit-difference strong{
+  color:#1769aa !important;
+}
+#auditCard .audit-totals .audit-players{
+  background:linear-gradient(135deg,#f1edff 0%,#faf8ff 100%) !important;
+}
+#auditCard .audit-totals .audit-players span,
+#auditCard .audit-totals .audit-players strong{
+  color:#6f42c1 !important;
+}
+
+/* v57 差額動態配色：平衡灰、多出綠、短少紅 */
+#auditCard .audit-totals .audit-difference.is-balanced{
+  background:linear-gradient(135deg,#f1f3f5 0%,#fafbfc 100%) !important;
+}
+#auditCard .audit-totals .audit-difference.is-balanced span,
+#auditCard .audit-totals .audit-difference.is-balanced strong{
+  color:#5f6670 !important;
+}
+#auditCard .audit-totals .audit-difference.is-extra{
+  background:linear-gradient(135deg,#e8f8f1 0%,#f7fdf9 100%) !important;
+}
+#auditCard .audit-totals .audit-difference.is-extra span,
+#auditCard .audit-totals .audit-difference.is-extra strong{
+  color:#087f5b !important;
+}
+#auditCard .audit-totals .audit-difference.is-short{
+  background:linear-gradient(135deg,#fdecec 0%,#fff8f8 100%) !important;
+}
+#auditCard .audit-totals .audit-difference.is-short span,
+#auditCard .audit-totals .audit-difference.is-short strong{
+  color:#c92a2a !important;
+}
