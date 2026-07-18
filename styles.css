@@ -151,3 +151,44 @@ body.picker-open{overflow:hidden}
 .ranking-row.profit-loss{background:#fff1f1}
 .ranking-row.profit-even{background:#f7f9fc}
 .ranking-row.buyin-highlight{background:#fff9e8}
+
+/* v50：排行榜改成與出勤榜一致的左側淡色漸層 */
+.ranking-list .ranking-row,
+.audit-player-ranking .ranking-row{
+  border-radius:18px;
+  padding:16px 12px;
+  margin:8px 0;
+  background:#fff;
+}
+
+/* 盈虧榜＋本局玩家榜：贏錢、打平＝淡綠；輸錢＝淡紅 */
+.ranking-list .ranking-row.profit-win,
+.ranking-list .ranking-row.profit-even,
+.audit-player-ranking .ranking-row.profit-win,
+.audit-player-ranking .ranking-row.profit-even{
+  background:linear-gradient(90deg, rgba(222,248,236,.72) 0%, rgba(239,252,246,.40) 48%, rgba(255,255,255,0) 100%) !important;
+}
+.ranking-list .ranking-row.profit-loss,
+.audit-player-ranking .ranking-row.profit-loss{
+  background:linear-gradient(90deg, rgba(255,226,226,.72) 0%, rgba(255,243,243,.40) 48%, rgba(255,255,255,0) 100%) !important;
+}
+
+/* 買入榜：更淡的黃色，由左向右漸淡 */
+.ranking-list .ranking-row.buyin-highlight{
+  background:linear-gradient(90deg, rgba(255,246,207,.62) 0%, rgba(255,251,232,.34) 48%, rgba(255,255,255,0) 100%) !important;
+}
+
+.audit-player-ranking .audit-player-row,
+.audit-player-ranking .audit-ranking-row{
+  border-radius:18px;padding:16px 12px;margin:8px 0;
+}
+.audit-player-ranking .audit-player-row.profit-win,
+.audit-player-ranking .audit-player-row.profit-even,
+.audit-player-ranking .audit-ranking-row.profit-win,
+.audit-player-ranking .audit-ranking-row.profit-even{
+ background:linear-gradient(90deg,rgba(222,248,236,.72),rgba(239,252,246,.40) 48%,rgba(255,255,255,0))!important;
+}
+.audit-player-ranking .audit-player-row.profit-loss,
+.audit-player-ranking .audit-ranking-row.profit-loss{
+ background:linear-gradient(90deg,rgba(255,226,226,.72),rgba(255,243,243,.40) 48%,rgba(255,255,255,0))!important;
+}
