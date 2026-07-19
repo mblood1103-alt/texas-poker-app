@@ -32,6 +32,17 @@ service cloud.firestore {
         allow read, delete: if request.auth != null
                             && get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerUid == request.auth.uid;
       }
+
+      match /analysisLogs/{logId} {
+        allow create: if request.auth != null
+                      && request.resource.data.uid == request.auth.uid;
+
+        allow read, delete: if request.auth != null
+                            && get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerUid == request.auth.uid;
+
+        allow update: if false;
+      }
+
     }
   }
 }

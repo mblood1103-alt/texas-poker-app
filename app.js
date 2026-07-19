@@ -57,13 +57,51 @@ async function enterViewerRoom(code,name){
   subscribe();
   try{await recordViewerAccess()}catch(e){console.warn("查看紀錄寫入失敗，但不影響觀看帳目：",e)}
 }
+
+window.getPokerAppContext=()=>({
+  roomCode,
+  isOwner,
+  viewerName,
+  displayName:isOwner?(user?.displayName||user?.email||"房主"):(viewerName||"觀看者"),
+  uid:(auth.currentUser||user)?.uid||"",
+  signedIn:!!(auth.currentUser||user)
+});
+
+window.recordPokerAnalysisUse=async detail=>{
+  const u=auth.currentUser||user;
+  if(!u?.uid||!roomCode)return;
+  const ref=doc(collection(db,"rooms",roomCode,"analysisLogs"));
+  const payload={
+    uid:u.uid,
+    displayName:isOwner?(user?.displayName||user?.email||"房主"):(viewerName||"觀看者"),
+    mode:isOwner?"房主":"觀看者",
+    hand:detail?.hand||"",
+    heroNames:detail?.heroNames||"",
+    position:detail?.position||"",
+    street:detail?.street||"翻牌前",
+    usedAt:new Date().toISOString()
+  };
+  await runTransaction(db,async tx=>{tx.set(ref,payload)});
+};
+
+let analysisLogUnsubscribe=null;
+window.subscribePokerAnalysisLogs=callback=>{
+  if(analysisLogUnsubscribe){analysisLogUnsubscribe();analysisLogUnsubscribe=null}
+  if(!isOwner||!roomCode){callback([]);return ()=>{}}
+  analysisLogUnsubscribe=onSnapshot(collection(db,"rooms",roomCode,"analysisLogs"),snap=>{
+    const rows=snap.docs.map(d=>d.data()).sort((a,b)=>String(b.usedAt||"").localeCompare(String(a.usedAt||"")));
+    callback(rows);
+  },e=>{console.warn("分析使用紀錄讀取失敗",e);callback([])});
+  return ()=>{if(analysisLogUnsubscribe){analysisLogUnsubscribe();analysisLogUnsubscribe=null}};
+};
+
 function subscribe(){
   if(unsubscribe)unsubscribe();setStatus("正在同步…");
   unsubscribe=onSnapshot(doc(db,"rooms",roomCode),snap=>{
     if(!snap.exists()){alert("找不到這個群組");return}
     roomData=snap.data();isOwner=!!user?.email&&roomData.ownerEmail===user?.email;
     if(editingGameId&&!roomData.games?.some(g=>g.id===editingGameId)){editingGameId="";sessionStorage.removeItem("editingGameId")}
-    render();setStatus("已即時同步");
+    render();setStatus("已即時同步");window.dispatchEvent(new CustomEvent("pokerappcontextchange"));
   },e=>{console.error(e);setStatus("同步失敗")});
 }
 async function mutate(fn){

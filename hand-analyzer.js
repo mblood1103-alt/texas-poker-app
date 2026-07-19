@@ -217,7 +217,7 @@ function analyze(){
   const pos=$("saHeroPos").value;
   if(!pos){alert("請先直接點牌桌上的座位，選擇你的位置。");return;}
 
-  const bb=Number($("saBB").value)||2,stack=Number($("saStack").value)||100,tableSize=Number($("saTableSize").value)||6;
+  const bb=Number($("saBB").value)||2,remainingChips=Number($("saStack").value)||0,stack=bb>0?remainingChips/bb:0,tableSize=Number($("saTableSize").value)||6;
   const preflop=$("saAction").value,flopCards=$("saFlopCards").value,flopAction=$("saFlopAction").value;
   const turnCard=$("saTurnCard").value,turnAction=$("saTurnAction").value,riverCard=$("saRiverCard").value,riverAction=$("saRiverAction").value;
   const street=activeStreet(),p=parsePressure(preflop,bb);
@@ -248,15 +248,18 @@ function analyze(){
   else if(p.level>=3)reason+="目前是高壓力再加注局面，範圍要非常緊。";
   else reason+="目前沒有偵測到明確的翻牌前加注壓力。";
 
-  lastAnalysis={at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,blinds:`${$("saSB").value}/${$("saBB").value}`,
+  lastAnalysis={at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,blinds:`${$("saSB").value}/${$("saBB").value}`,
     preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,street,raise,call,fold,best:best[0],reason};
   renderResult(lastAnalysis);
+  if(window.recordPokerAnalysisUse){
+    window.recordPokerAnalysisUse({hand,heroNames,position:pos,street}).catch(e=>console.warn("分析使用紀錄寫入失敗",e));
+  }
 }
 
 function bar(cls,label,val){return `<div class="strategy-row ${cls}"><b>${label}</b><div class="strategy-track"><div class="strategy-fill" style="width:${val}%"></div></div><strong>${val}%</strong></div>`;}
 function renderResult(r){
   const box=$("saResult");
-  box.innerHTML=`<h3>${escapeHtml(r.heroNames||r.hand)}｜${r.pos}｜目前到 ${r.street}</h3>
+  box.innerHTML=`<h3>${escapeHtml(r.heroNames||r.hand)}｜${r.pos}｜剩餘 ${Number(r.remainingChips||0).toLocaleString("zh-TW")}｜目前到 ${r.street}</h3>
     <div class="strategy-bars">${bar("raise","加注",r.raise)}${bar("call","跟注",r.call)}${bar("fold","棄牌",r.fold)}</div>
     <div class="strategy-main"><b>主要建議：${r.best}</b><p>${escapeHtml(r.reason)}</p>
       <div class="street-summary">
@@ -278,6 +281,41 @@ function renderHistory(){
     <div>加注 ${r.raise}%・跟注 ${r.call}%・棄牌 ${r.fold}%</div><small>${escapeHtml(r.preflop||"尚無翻牌前行動")}<br>${new Date(r.at).toLocaleString("zh-TW",{hour12:false})}</small></div>`).join(""):`<p class="strategy-history-empty">尚無分析紀錄。</p>`;
 }
 
+
+function clearCurrentHand(){
+  Object.keys(selectedCards).forEach(k=>selectedCards[k]="");
+  Object.keys(actionState).forEach(k=>actionState[k]=[]);
+  renderSelectedCards();
+  Object.keys(actionState).forEach(renderActionSequence);
+  $("saResult").classList.add("hidden");
+  $("saResult").innerHTML="";
+  lastAnalysis=null;
+  document.querySelectorAll(".street-tab").forEach((b,i)=>b.classList.toggle("active",i===0));
+  document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel==="preflop"));
+}
+
+let stopUsageLog=null;
+function refreshUsageLogVisibility(){
+  const section=$("saUsageLogSection");
+  if(!section)return;
+  const ctx=window.getPokerAppContext?window.getPokerAppContext():null;
+  const owner=!!ctx?.isOwner;
+  section.classList.toggle("hidden",!owner);
+  if(stopUsageLog){stopUsageLog();stopUsageLog=null}
+  if(owner&&window.subscribePokerAnalysisLogs){
+    stopUsageLog=window.subscribePokerAnalysisLogs(rows=>{
+      const box=$("saUsageLog");
+      if(!box)return;
+      box.innerHTML=rows.length?rows.slice(0,100).map(r=>`
+        <div class="usage-log-item">
+          <b>${escapeHtml(r.displayName||"未命名")}｜${escapeHtml(r.mode||"")}</b>
+          <div>${escapeHtml(r.heroNames||r.hand||"未選牌")}・${escapeHtml(r.position||"")}・${escapeHtml(r.street||"翻牌前")}</div>
+          <small>${r.usedAt?new Date(r.usedAt).toLocaleString("zh-TW",{hour12:false}):""}</small>
+        </div>`).join(""):`<p class="strategy-history-empty">還沒有人使用過牌局分析。</p>`;
+    });
+  }
+}
+
 function initStreetTabs(){
   document.querySelectorAll(".street-tab").forEach(btn=>btn.addEventListener("click",()=>{
     const street=btn.dataset.street;
@@ -290,10 +328,13 @@ function init(){
   $("saTableSize").addEventListener("change",renderSeats);
   $("saAnalyzeBtn").addEventListener("click",analyze);
   $("saSaveBtn").addEventListener("click",saveCurrent);
+  $("saClearHandBtn").addEventListener("click",clearCurrentHand);
   $("saClearHistory").addEventListener("click",()=>{if(confirm("確定清空這台裝置上的牌局分析紀錄嗎？")){localStorage.removeItem(HISTORY_KEY);renderHistory();}});
   initStreetTabs();initCardSlots();initActionBuilders();
   renderSeats();renderSelectedCards();
   Object.keys(actionState).forEach(renderActionSequence);
   renderHistory();
+  refreshUsageLogVisibility();
+  window.addEventListener("pokerappcontextchange",refreshUsageLogVisibility);
 }
 init();

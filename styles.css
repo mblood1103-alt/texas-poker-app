@@ -888,3 +888,24 @@ body.picker-open{overflow:hidden}
   .card-slot{width:72px;height:98px}
   .card-deck-grid{grid-template-columns:repeat(4,1fr)}
 }
+
+
+/* v88：較小撲克牌、剩餘籌碼、一鍵清除、房主分析使用紀錄 */
+.card-slot{width:62px;height:84px;border-radius:10px;font-size:22px}
+.card-slot .rank{font-size:23px}
+.card-slot .suit{font-size:25px}
+.card-slot small{font-size:10px}
+.hero-cards,.board-cards{gap:7px}
+.strategy-actions-v88{grid-template-columns:1fr 1fr}
+.strategy-actions-v88 #saClearHandBtn{grid-column:1/-1}
+.owner-only-analysis-log{border-top:1px solid #e2e8f0;padding-top:8px}
+.usage-log-item{padding:10px 0;border-bottom:1px solid #e2e8f0}
+.usage-log-item:last-child{border-bottom:0}
+.usage-log-item small{display:block;color:#64748b;margin-top:3px}
+@media(max-width:560px){
+  .card-slot{width:56px;height:76px}
+  .card-slot .rank{font-size:21px}
+  .card-slot .suit{font-size:23px}
+  .strategy-actions-v88{grid-template-columns:1fr}
+  .strategy-actions-v88 #saClearHandBtn{grid-column:auto}
+}
