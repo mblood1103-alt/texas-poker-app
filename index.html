@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=82">
+  <link rel="stylesheet" href="styles.css?v=85">
 
 
 <style id="v61-reference-match">
@@ -384,6 +384,58 @@
           </div>
         </details>
 
+
+      <details class="card collapsible-card" id="handAnalyzerCard">
+        <summary class="section-summary">🧠 牌局策略分析</summary>
+        <div class="collapsible-body hand-analyzer">
+          <p class="hint">輸入翻牌前局面後，系統會給「加注／跟注／棄牌」混合頻率參考。此版本為離線規則模型，不是即時 GTO Solver 或真實大數據資料庫，因此百分比是策略參考，不應冒充精準 solver 解。</p>
+
+          <div class="strategy-grid">
+            <label>桌型
+              <select id="saTableSize">
+                <option value="6">6 人桌</option>
+                <option value="9" selected>9 人桌</option>
+              </select>
+            </label>
+            <label>小盲
+              <input id="saSB" type="number" min="0.01" step="0.5" value="1">
+            </label>
+            <label>大盲
+              <input id="saBB" type="number" min="0.01" step="0.5" value="2">
+            </label>
+            <label>有效籌碼（BB）
+              <input id="saStack" type="number" min="10" step="5" value="100">
+            </label>
+            <label>你的位置
+              <select id="saHeroPos">
+                <option>UTG</option><option>UTG+1</option><option>MP</option><option>HJ</option>
+                <option>CO</option><option>BTN</option><option>SB</option><option selected>BB</option>
+              </select>
+            </label>
+            <label>手牌
+              <input id="saHand" maxlength="3" value="AJo" placeholder="例如 AJo、AKs、77">
+            </label>
+          </div>
+
+          <label>翻牌前行動
+            <textarea id="saAction" rows="3" placeholder="例如：UTG 開到 4，SB 加注到 10">UTG 開到 4，SB 加注到 10</textarea>
+          </label>
+
+          <div class="strategy-actions">
+            <button id="saAnalyzeBtn" type="button">分析這一手</button>
+            <button id="saSaveBtn" class="secondary" type="button">儲存分析紀錄</button>
+          </div>
+
+          <div id="saResult" class="strategy-result hidden" aria-live="polite"></div>
+
+          <details class="strategy-history">
+            <summary class="ranking-heading">我的分析紀錄</summary>
+            <div id="saHistory"></div>
+            <button id="saClearHistory" class="danger small" type="button">清空分析紀錄</button>
+          </details>
+        </div>
+      </details>
+
 <details class="card collapsible-card" id="pokerJudgeCard">
         <summary class="section-summary">🃏 撲克牌型練習室</summary>
         <div class="collapsible-body">
@@ -497,6 +549,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
+  <script type="module" src="hand-analyzer.js?v=1"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 </body>
 </html>
