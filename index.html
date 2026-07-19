@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=88">
+  <link rel="stylesheet" href="styles.css?v=90">
 
 
 <style id="v61-reference-match">
@@ -400,6 +400,8 @@
                 <option value="6" selected>6 人桌</option>
                 <option value="7">7 人桌</option>
                 <option value="8">8 人桌</option>
+                <option value="9">9 人桌</option>
+                <option value="10">10 人桌</option>
               </select>
             </label>
             <label>小盲
@@ -550,7 +552,20 @@
           </section>
 
           <div class="strategy-actions strategy-actions-v88">
-            <button id="saAnalyzeBtn" type="button">分析這一手</button>
+            
+        <div class="persistent-board-wrap" id="persistentBoardSlots">
+          <div class="persistent-board-labels">
+            <span>翻牌</span><span>轉牌</span><span>河牌</span>
+          </div>
+          <div class="persistent-board-cards">
+            <button type="button" class="persistent-board-slot" data-board-slot="0"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="1"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="2"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="3"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="4"><span class="slot-placeholder">＋</span></button>
+          </div>
+        </div>
+<button id="saAnalyzeBtn" type="button">分析這一手</button>
             <button id="saSaveBtn" class="secondary" type="button">儲存分析紀錄</button>
             <button id="saClearHandBtn" class="danger" type="button">🧹 一鍵清除本手</button>
           </div>
@@ -695,7 +710,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=4"></script>
+  <script type="module" src="hand-analyzer.js?v=6"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 </body>
 </html>

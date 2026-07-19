@@ -11,7 +11,9 @@ const POSITIONS_BY_SIZE = {
   5:["BTN","SB","BB","UTG","CO"],
   6:["BTN","SB","BB","UTG","HJ","CO"],
   7:["BTN","SB","BB","UTG","MP","HJ","CO"],
-  8:["BTN","SB","BB","UTG","UTG+1","MP","HJ","CO"]
+  8:["BTN","SB","BB","UTG","UTG+1","MP","HJ","CO"],
+  9:["BTN","SB","BB","UTG","UTG+1","MP","MP+1","HJ","CO"],
+  10:["BTN","SB","BB","UTG","UTG+1","UTG+2","MP","MP+1","HJ","CO"]
 };
 const SUITS = [
   {k:"s",symbol:"♠",name:"黑桃",red:false},
@@ -25,7 +27,7 @@ function clamp(n,min,max){ return Math.max(min,Math.min(max,n)); }
 function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 
 function positionName(pos){
-  return ({"BTN":"莊家位","SB":"小盲","BB":"大盲","UTG":"槍口","UTG+1":"槍口+1","MP":"中位","HJ":"劫持位","CO":"關煞位","我":"我"})[pos]||pos;
+  return ({"BTN":"莊家位","SB":"小盲","BB":"大盲","UTG":"槍口","UTG+1":"槍口+1","UTG+2":"槍口+2","MP":"中位","MP+1":"中位+1","HJ":"劫持位","CO":"關煞位","我":"我"})[pos]||pos;
 }
 
 function renderSeats(){
@@ -338,3 +340,72 @@ function init(){
   window.addEventListener("pokerappcontextchange",refreshUsageLogVisibility);
 }
 init();
+
+
+/* v90 persistent five-card board */
+(function(){
+  function getBoardCardsV90(){
+    var candidates = [
+      window.selectedBoardCards,
+      window.boardCards,
+      window.communityCards,
+      window.selectedCommunityCards
+    ];
+    for (var i=0;i<candidates.length;i++){
+      if (Array.isArray(candidates[i])) return candidates[i].slice(0,5);
+    }
+    /* Fallback: read visible selected cards from the existing street displays. */
+    var nodes = document.querySelectorAll(
+      '.selected-board-card,.board-card.selected,.street-card.selected,' +
+      '[data-selected-card],[data-board-card].selected'
+    );
+    return Array.from(nodes).map(function(n){
+      return n.dataset.card || n.dataset.selectedCard || n.textContent.trim();
+    }).filter(Boolean).slice(0,5);
+  }
+
+  function cardHTMLV90(card){
+    if (!card) return '<span class="slot-placeholder">＋</span>';
+    var s = String(card).trim();
+    var red = /[♥♦]/.test(s);
+    return '<span class="persistent-card-value '+(red?'red':'black')+'">'+s+'</span>';
+  }
+
+  window.renderPersistentBoardV90 = function(){
+    var wrap = document.getElementById('persistentBoardSlots');
+    if (!wrap) return;
+    var cards = getBoardCardsV90();
+    wrap.querySelectorAll('[data-board-slot]').forEach(function(slot, i){
+      slot.innerHTML = cardHTMLV90(cards[i] || '');
+      slot.classList.toggle('filled', !!cards[i]);
+    });
+  };
+
+  document.addEventListener('click', function(e){
+    var slot = e.target.closest && e.target.closest('[data-board-slot]');
+    if (slot && !slot.classList.contains('filled')) {
+      var i = Number(slot.dataset.boardSlot);
+      var tabs = document.querySelectorAll('[data-street],.street-tab,.street-btn');
+      var wanted = i < 3 ? '翻牌' : (i === 3 ? '轉牌' : '河牌');
+      Array.from(tabs).some(function(t){
+        if ((t.textContent || '').trim().indexOf(wanted) !== -1) { t.click(); return true; }
+        return false;
+      });
+    }
+    setTimeout(window.renderPersistentBoardV90, 50);
+    setTimeout(window.renderPersistentBoardV90, 250);
+  }, true);
+
+  document.addEventListener('change', function(){
+    setTimeout(window.renderPersistentBoardV90, 50);
+  }, true);
+
+  var observer = new MutationObserver(function(){
+    clearTimeout(window.__boardV90Timer);
+    window.__boardV90Timer = setTimeout(window.renderPersistentBoardV90, 40);
+  });
+  document.addEventListener('DOMContentLoaded', function(){
+    window.renderPersistentBoardV90();
+    observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+  });
+})();

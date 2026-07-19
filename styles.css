@@ -909,3 +909,75 @@ body.picker-open{overflow:hidden}
   .strategy-actions-v88{grid-template-columns:1fr}
   .strategy-actions-v88 #saClearHandBtn{grid-column:auto}
 }
+
+
+/* v89：選牌視窗再縮小，支援 9～10 人桌 */
+.card-picker-dialog{
+  max-height:88vh;
+  padding:10px;
+}
+.card-picker-title{
+  margin-bottom:6px;
+}
+.card-deck-grid{
+  grid-template-columns:repeat(4,1fr);
+  gap:4px;
+}
+.deck-card{
+  min-height:42px;
+  border-radius:8px;
+  padding:3px;
+  font-size:16px;
+}
+@media(max-width:560px){
+  .card-picker-overlay{padding:6px}
+  .card-picker-dialog{padding:9px;max-height:91vh}
+  .card-deck-grid{gap:3px}
+  .deck-card{min-height:39px;font-size:15px;padding:2px}
+  .poker-table .seat-btn{transform:translate(-50%,-50%) scale(.88)}
+}
+
+
+/* v90：固定顯示完整公共牌，翻牌3格＋轉牌1格＋河牌1格 */
+.persistent-board-wrap{
+  margin:16px 0;
+  padding:14px;
+  border:1px solid #d8e0eb;
+  border-radius:18px;
+  background:#f8fafc;
+}
+.persistent-board-labels{
+  display:grid;
+  grid-template-columns:3fr 1fr 1fr;
+  gap:6px;
+  margin-bottom:7px;
+  font-weight:800;
+  color:#344054;
+  text-align:center;
+}
+.persistent-board-cards{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:6px;
+}
+.persistent-board-slot{
+  aspect-ratio:0.72;
+  min-width:0;
+  padding:2px;
+  border:2px solid #9aa9bd;
+  border-radius:10px;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font:800 20px/1 Georgia,serif;
+}
+.persistent-board-slot .red{color:#cf2929}
+.persistent-board-slot .black{color:#101828}
+.slot-placeholder{color:#a7b2c2;font-family:system-ui,sans-serif;font-weight:500}
+@media(max-width:560px){
+  .persistent-board-wrap{padding:10px;margin:12px 0}
+  .persistent-board-cards{gap:4px}
+  .persistent-board-slot{border-radius:8px;font-size:17px}
+  .persistent-board-labels{font-size:13px}
+}
