@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "description": "Verified GTO strategy entries only. Empty by design in v92 until a licensed or user-provided strategy pack is added.",
+  "entries": []
+}

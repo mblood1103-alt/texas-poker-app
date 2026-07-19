@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=91">
+  <link rel="stylesheet" href="styles.css?v=92">
 
 
 <style id="v61-reference-match">
@@ -392,6 +392,20 @@
         <div class="collapsible-body hand-analyzer">
           <p class="hint">不用再打 AJo、KQs，也不用手打整段行動。手牌、公共牌、玩家位置與動作都可以直接按選擇。</p>
 
+          
+          <section class="analysis-mode-section">
+            <div class="analysis-mode-title">分析模式</div>
+            <div class="analysis-mode-buttons" role="group" aria-label="分析模式">
+              <button type="button" class="analysis-mode-btn active" data-analysis-mode="general">一般分析</button>
+              <button type="button" class="analysis-mode-btn" data-analysis-mode="gto">GTO 模式</button>
+            </div>
+            <p id="analysisModeHint" class="hint">
+              一般分析使用 App 內建離線策略模型；GTO 模式只在有正式策略資料的局面顯示百分比，沒有資料就會明確標示不支援。
+            </p>
+          </section>
+
+          <input id="saAnalysisMode" type="hidden" value="general">
+
           <div class="strategy-grid">
             <label>桌型
               <select id="saTableSize">
@@ -710,7 +724,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=7"></script>
+  <script type="module" src="hand-analyzer.js?v=8"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 </body>
 </html>

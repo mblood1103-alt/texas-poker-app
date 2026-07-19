@@ -1041,3 +1041,45 @@ body.picker-open{overflow:hidden}
   .persistent-mini-card span:first-child{font-size:16px}
   .persistent-mini-card span:last-child{font-size:18px}
 }
+
+
+/* v92：GTO / 一般分析雙模式 */
+.analysis-mode-section{
+  display:grid;
+  gap:8px;
+  margin-bottom:4px;
+}
+.analysis-mode-title{
+  font-weight:800;
+  color:#0f172a;
+}
+.analysis-mode-buttons{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.analysis-mode-btn{
+  border:1px solid #cbd5e1;
+  background:#f8fafc;
+  color:#334155;
+}
+.analysis-mode-btn.active{
+  background:#0f172a;
+  color:#fff;
+  border-color:#0f172a;
+}
+.gto-unavailable{
+  padding:14px;
+  border:1px solid #f59e0b;
+  background:#fffbeb;
+  border-radius:14px;
+}
+.gto-unavailable strong{
+  display:block;
+  margin-bottom:6px;
+  color:#92400e;
+}
+.gto-unavailable p{
+  margin:0 0 10px;
+  color:#78350f;
+}

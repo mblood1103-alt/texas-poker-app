@@ -6,6 +6,48 @@ let activeCardSlot = null;
 const selectedCards = {hero0:"",hero1:"",flop0:"",flop1:"",flop2:"",turn:"",river:""};
 const actionState = {preflop:[],flop:[],turn:[],river:[]};
 
+/*
+  v92 GTO mode
+  IMPORTANT:
+  This table intentionally contains only verified/curated entries.
+  Unsupported spots return "no data" instead of inventing percentages.
+  Add future verified entries to GTO_REFERENCE with exact keys.
+*/
+const GTO_REFERENCE = Object.freeze({
+  // Example schema:
+  // "6|100|BB|AJo|UTG_OPEN_2|SB_3BET_5": {raise:0,call:0,fold:100,source:"..."}
+});
+
+let analysisMode = "general";
+
+function setAnalysisMode(mode){
+  analysisMode = mode === "gto" ? "gto" : "general";
+  $("saAnalysisMode").value = analysisMode;
+  document.querySelectorAll(".analysis-mode-btn").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.analysisMode === analysisMode);
+  });
+  const hint = $("analysisModeHint");
+  if(hint){
+    hint.textContent = analysisMode === "gto"
+      ? "GTO 模式只顯示已收錄的正式策略資料。這個局面沒有資料時，不會用估算百分比假裝成 GTO。"
+      : "一般分析使用 App 內建離線策略模型，適合快速參考，但不是正式 GTO Solver。";
+  }
+}
+
+function buildGTOKey({tableSize,stack,pos,hand,preflop}){
+  // The current release keeps exact-match support only.
+  // Future verified strategy packs can extend this normalizer.
+  const p = parsePressure(preflop, Number($("saBB").value)||2);
+  const roundedStack = Math.round(Number(stack)||0);
+  return `${tableSize}|${roundedStack}|${pos}|${hand}|P${p.level}`;
+}
+
+function getGTOResult(context){
+  const key = buildGTOKey(context);
+  return GTO_REFERENCE[key] || null;
+}
+
+
 const POSITIONS_BY_SIZE = {
   4:["BTN","SB","BB","UTG"],
   5:["BTN","SB","BB","UTG","CO"],
@@ -224,6 +266,40 @@ function analyze(){
   const preflop=$("saAction").value,flopCards=$("saFlopCards").value,flopAction=$("saFlopAction").value;
   const turnCard=$("saTurnCard").value,turnAction=$("saTurnAction").value,riverCard=$("saRiverCard").value,riverAction=$("saRiverAction").value;
   const street=activeStreet(),p=parsePressure(preflop,bb);
+
+  if(analysisMode === "gto"){
+    const gto = getGTOResult({tableSize,stack,pos,hand,preflop});
+    if(!gto){
+      lastAnalysis={
+        at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,
+        blinds:`${$("saSB").value}/${$("saBB").value}`,
+        preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,
+        street,mode:"GTO",unsupported:true,
+        raise:null,call:null,fold:null,best:"目前無 GTO 資料",
+        reason:"這個局面目前沒有收錄正式 GTO 策略資料，所以 App 不會顯示猜測百分比。你可以切回「一般分析」取得離線模型參考。"
+      };
+      renderResult(lastAnalysis);
+      if(window.recordPokerAnalysisUse){
+        window.recordPokerAnalysisUse({hand,heroNames,position:pos,street}).catch(e=>console.warn("分析使用紀錄寫入失敗",e));
+      }
+      return;
+    }
+
+    lastAnalysis={
+      at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,
+      blinds:`${$("saSB").value}/${$("saBB").value}`,
+      preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,
+      street,mode:"GTO",unsupported:false,
+      raise:gto.raise,call:gto.call,fold:gto.fold,
+      best:[["加注",gto.raise],["跟注",gto.call],["棄牌",gto.fold]].sort((a,b)=>b[1]-a[1])[0][0],
+      reason:`此結果來自 App 內已收錄的 GTO 參考資料。${gto.note||""}`
+    };
+    renderResult(lastAnalysis);
+    if(window.recordPokerAnalysisUse){
+      window.recordPokerAnalysisUse({hand,heroNames,position:pos,street}).catch(e=>console.warn("分析使用紀錄寫入失敗",e));
+    }
+    return;
+  }
   let s=handStrength(hand)+positionAdjustment(pos);
   if(tableSize>=7&&/UTG/.test(preflop))s-=4;if(tableSize<=5)s+=3;if(stack<40)s+=3;if(stack>150)s-=2;
 
@@ -251,7 +327,7 @@ function analyze(){
   else if(p.level>=3)reason+="目前是高壓力再加注局面，範圍要非常緊。";
   else reason+="目前沒有偵測到明確的翻牌前加注壓力。";
 
-  lastAnalysis={at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,blinds:`${$("saSB").value}/${$("saBB").value}`,
+  lastAnalysis={at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,mode:"一般分析",blinds:`${$("saSB").value}/${$("saBB").value}`,
     preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,street,raise,call,fold,best:best[0],reason};
   renderResult(lastAnalysis);
   if(window.recordPokerAnalysisUse){
@@ -262,7 +338,30 @@ function analyze(){
 function bar(cls,label,val){return `<div class="strategy-row ${cls}"><b>${label}</b><div class="strategy-track"><div class="strategy-fill" style="width:${val}%"></div></div><strong>${val}%</strong></div>`;}
 function renderResult(r){
   const box=$("saResult");
-  box.innerHTML=`<h3>${escapeHtml(r.heroNames||r.hand)}｜${r.pos}｜剩餘 ${Number(r.remainingChips||0).toLocaleString("zh-TW")}｜目前到 ${r.street}</h3>
+  if(r.unsupported){
+    box.innerHTML=`
+      <h3>${escapeHtml(r.heroNames||r.hand)}｜${r.pos}｜GTO 模式</h3>
+      <div class="gto-unavailable">
+        <strong>此局面目前沒有正式 GTO 資料</strong>
+        <p>${escapeHtml(r.reason)}</p>
+        <button type="button" id="switchToGeneralBtn" class="secondary">切換成一般分析</button>
+      </div>
+      <div class="street-summary">
+        <div><b>翻牌前：</b>${escapeHtml(r.preflop||"尚未加入行動")}</div>
+        <div><b>翻牌：</b>${escapeHtml((r.flopCards||"未選牌面")+(r.flopAction?"｜"+r.flopAction:""))}</div>
+        <div><b>轉牌：</b>${escapeHtml((r.turnCard||"未選")+(r.turnAction?"｜"+r.turnAction:""))}</div>
+        <div><b>河牌：</b>${escapeHtml((r.riverCard||"未選")+(r.riverAction?"｜"+r.riverAction:""))}</div>
+      </div>`;
+    box.classList.remove("hidden");
+    $("switchToGeneralBtn")?.addEventListener("click",()=>{
+      setAnalysisMode("general");
+      analyze();
+    });
+    return;
+  }
+
+  const modeLabel = r.mode || "一般分析";
+  box.innerHTML=`<h3>${escapeHtml(r.heroNames||r.hand)}｜${r.pos}｜${escapeHtml(modeLabel)}｜目前到 ${r.street}</h3>
     <div class="strategy-bars">${bar("raise","加注",r.raise)}${bar("call","跟注",r.call)}${bar("fold","棄牌",r.fold)}</div>
     <div class="strategy-main"><b>主要建議：${r.best}</b><p>${escapeHtml(r.reason)}</p>
       <div class="street-summary">
@@ -272,7 +371,7 @@ function renderResult(r){
         <div><b>河牌：</b>${escapeHtml((r.riverCard||"未選")+(r.riverAction?"｜"+r.riverAction:""))}</div>
       </div>
     </div>
-    <p class="strategy-warning">⚠️ 百分比仍是 App 內建離線策略模型估算，不是即時 GTO Solver。現在輸入方式已改成點選，避免需要懂 AJo、KQs 這類縮寫。</p>`;
+    <p class="strategy-warning">${modeLabel==="GTO"?"✅ 這筆結果來自已收錄的 GTO 參考資料。":"⚠️ 一般分析使用 App 內建離線策略模型估算，不是即時 GTO Solver。"}</p>`;
   box.classList.remove("hidden");
 }
 
@@ -299,7 +398,7 @@ function renderHistory(){
     const id=escapeHtml(String(r.historyId||r.at||i));
     return `<div class="strategy-history-item history-row-v91">
       <div class="history-row-main">
-        <b>${escapeHtml(r.heroNames||r.hand)}｜${escapeHtml(r.pos)}｜${escapeHtml(r.best)}</b>
+        <b>${escapeHtml(r.heroNames||r.hand)}｜${escapeHtml(r.pos)}｜${escapeHtml(r.mode||"一般分析")}｜${escapeHtml(r.best)}</b>
         <div>加注 ${r.raise}%・跟注 ${r.call}%・棄牌 ${r.fold}%</div>
         <small>${escapeHtml(r.preflop||"尚無翻牌前行動")}<br>${new Date(r.at).toLocaleString("zh-TW",{hour12:false})}</small>
       </div>
@@ -360,6 +459,8 @@ function initStreetTabs(){
 }
 function init(){
   if(!$("handAnalyzerCard"))return;
+  document.querySelectorAll(".analysis-mode-btn").forEach(btn=>btn.addEventListener("click",()=>setAnalysisMode(btn.dataset.analysisMode)));
+  setAnalysisMode("general");
   $("saTableSize").addEventListener("change",renderSeats);
   $("saAnalyzeBtn").addEventListener("click",analyze);
   $("saSaveBtn").addEventListener("click",saveCurrent);
