@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=86">
+  <link rel="stylesheet" href="styles.css?v=87">
 
 
 <style id="v61-reference-match">
@@ -386,10 +386,11 @@
 
 
       
+      
       <details class="card collapsible-card" id="handAnalyzerCard">
         <summary class="section-summary">🧠 牌局策略分析</summary>
         <div class="collapsible-body hand-analyzer">
-          <p class="hint">先選桌型，再直接點牌桌上的座位。系統會自動標示 BTN、SB、BB、UTG 等位置，讓不熟位置名稱的人也能看懂。你也可以一路記錄翻牌、轉牌、河牌行動。</p>
+          <p class="hint">不用再打 AJo、KQs，也不用手打整段行動。手牌、公共牌、玩家位置與動作都可以直接按選擇。</p>
 
           <div class="strategy-grid">
             <label>桌型
@@ -414,7 +415,7 @@
 
           <section class="seat-picker-section" aria-labelledby="seatPickerTitle">
             <div class="seat-picker-head">
-              <h3 id="seatPickerTitle">點牌桌選擇你的位置</h3>
+              <h3 id="seatPickerTitle">① 點牌桌選擇你的位置</h3>
               <span class="viz-badge" id="saHeroPosBadge">尚未選位</span>
             </div>
             <div id="saPokerTable" class="poker-table" role="group" aria-label="德州撲克牌桌座位選擇"></div>
@@ -422,9 +423,15 @@
             <input id="saHeroPos" type="hidden" value="">
           </section>
 
-          <label>手牌
-            <input id="saHand" maxlength="3" value="AJo" placeholder="例如 AJo、AKs、77">
-          </label>
+          <section class="card-picker-section">
+            <h3>② 點選你的兩張手牌</h3>
+            <div class="selected-cards hero-cards">
+              <button type="button" class="card-slot" data-card-slot="hero0">＋<small>第 1 張</small></button>
+              <button type="button" class="card-slot" data-card-slot="hero1">＋<small>第 2 張</small></button>
+            </div>
+            <div id="saHandReadable" class="hand-readable">尚未選擇手牌</div>
+            <input id="saHand" type="hidden" value="">
+          </section>
 
           <div class="street-tabs" role="tablist" aria-label="牌局街道">
             <button type="button" class="street-tab active" data-street="preflop">翻牌前</button>
@@ -434,42 +441,112 @@
           </div>
 
           <section class="street-panel active" data-panel="preflop">
-            <label>翻牌前行動
-              <textarea id="saAction" rows="3" placeholder="例如：UTG 開到 4，SB 加注到 10">UTG 開到 4，SB 加注到 10</textarea>
-            </label>
+            <div class="action-builder" data-builder="preflop">
+              <h3>翻牌前行動</h3>
+              <div class="action-controls">
+                <label>誰行動
+                  <select class="action-actor"></select>
+                </label>
+                <label>動作
+                  <select class="action-type">
+                    <option value="開池">開池</option>
+                    <option value="跟注">跟注</option>
+                    <option value="加注">加注</option>
+                    <option value="棄牌">棄牌</option>
+                    <option value="全下">全下</option>
+                  </select>
+                </label>
+                <label class="amount-label">金額
+                  <input class="action-amount" type="number" min="0" step="0.5" placeholder="例如 8">
+                </label>
+              </div>
+              <button type="button" class="add-action-btn">＋ 加入這個行動</button>
+              <div class="action-sequence" data-sequence="preflop"></div>
+              <input id="saAction" type="hidden" value="">
+            </div>
           </section>
 
           <section class="street-panel" data-panel="flop">
-            <div class="board-input-row">
-              <label>翻牌牌面
-                <input id="saFlopCards" value="" placeholder="例如 Ah 7d 2c">
-              </label>
+            <div class="board-picker">
+              <h3>翻牌牌面</h3>
+              <div class="selected-cards board-cards">
+                <button type="button" class="card-slot" data-card-slot="flop0">＋<small>第 1 張</small></button>
+                <button type="button" class="card-slot" data-card-slot="flop1">＋<small>第 2 張</small></button>
+                <button type="button" class="card-slot" data-card-slot="flop2">＋<small>第 3 張</small></button>
+              </div>
+              <input id="saFlopCards" type="hidden" value="">
             </div>
-            <label>翻牌行動
-              <textarea id="saFlopAction" rows="3" placeholder="例如：SB 過牌，我下注 12，SB 跟注"></textarea>
-            </label>
+            <div class="action-builder" data-builder="flop">
+              <h3>翻牌行動</h3>
+              <div class="action-controls">
+                <label>誰行動<select class="action-actor"></select></label>
+                <label>動作
+                  <select class="action-type">
+                    <option value="過牌">過牌</option><option value="下注">下注</option>
+                    <option value="跟注">跟注</option><option value="加注">加注</option>
+                    <option value="棄牌">棄牌</option><option value="全下">全下</option>
+                  </select>
+                </label>
+                <label class="amount-label">金額<input class="action-amount" type="number" min="0" step="0.5" placeholder="例如 12"></label>
+              </div>
+              <button type="button" class="add-action-btn">＋ 加入這個行動</button>
+              <div class="action-sequence" data-sequence="flop"></div>
+              <input id="saFlopAction" type="hidden" value="">
+            </div>
           </section>
 
           <section class="street-panel" data-panel="turn">
-            <div class="board-input-row">
-              <label>轉牌
-                <input id="saTurnCard" value="" placeholder="例如 Js">
-              </label>
+            <div class="board-picker">
+              <h3>轉牌</h3>
+              <div class="selected-cards board-cards single">
+                <button type="button" class="card-slot" data-card-slot="turn">＋<small>轉牌</small></button>
+              </div>
+              <input id="saTurnCard" type="hidden" value="">
             </div>
-            <label>轉牌行動
-              <textarea id="saTurnAction" rows="3" placeholder="例如：SB 過牌，我下注 28，SB 跟注"></textarea>
-            </label>
+            <div class="action-builder" data-builder="turn">
+              <h3>轉牌行動</h3>
+              <div class="action-controls">
+                <label>誰行動<select class="action-actor"></select></label>
+                <label>動作
+                  <select class="action-type">
+                    <option value="過牌">過牌</option><option value="下注">下注</option>
+                    <option value="跟注">跟注</option><option value="加注">加注</option>
+                    <option value="棄牌">棄牌</option><option value="全下">全下</option>
+                  </select>
+                </label>
+                <label class="amount-label">金額<input class="action-amount" type="number" min="0" step="0.5" placeholder="例如 28"></label>
+              </div>
+              <button type="button" class="add-action-btn">＋ 加入這個行動</button>
+              <div class="action-sequence" data-sequence="turn"></div>
+              <input id="saTurnAction" type="hidden" value="">
+            </div>
           </section>
 
           <section class="street-panel" data-panel="river">
-            <div class="board-input-row">
-              <label>河牌
-                <input id="saRiverCard" value="" placeholder="例如 3h">
-              </label>
+            <div class="board-picker">
+              <h3>河牌</h3>
+              <div class="selected-cards board-cards single">
+                <button type="button" class="card-slot" data-card-slot="river">＋<small>河牌</small></button>
+              </div>
+              <input id="saRiverCard" type="hidden" value="">
             </div>
-            <label>河牌行動
-              <textarea id="saRiverAction" rows="3" placeholder="例如：SB 過牌，我全下 75，SB 棄牌"></textarea>
-            </label>
+            <div class="action-builder" data-builder="river">
+              <h3>河牌行動</h3>
+              <div class="action-controls">
+                <label>誰行動<select class="action-actor"></select></label>
+                <label>動作
+                  <select class="action-type">
+                    <option value="過牌">過牌</option><option value="下注">下注</option>
+                    <option value="跟注">跟注</option><option value="加注">加注</option>
+                    <option value="棄牌">棄牌</option><option value="全下">全下</option>
+                  </select>
+                </label>
+                <label class="amount-label">金額<input class="action-amount" type="number" min="0" step="0.5" placeholder="例如 75"></label>
+              </div>
+              <button type="button" class="add-action-btn">＋ 加入這個行動</button>
+              <div class="action-sequence" data-sequence="river"></div>
+              <input id="saRiverAction" type="hidden" value="">
+            </div>
           </section>
 
           <div class="strategy-actions">
@@ -484,6 +561,16 @@
             <div id="saHistory"></div>
             <button id="saClearHistory" class="danger small" type="button">清空分析紀錄</button>
           </details>
+
+          <div id="cardPickerOverlay" class="card-picker-overlay hidden" aria-hidden="true">
+            <div class="card-picker-dialog" role="dialog" aria-modal="true" aria-label="選擇撲克牌">
+              <div class="card-picker-title">
+                <strong>選一張牌</strong>
+                <button type="button" id="closeCardPicker" class="card-picker-close">✕</button>
+              </div>
+              <div id="cardDeckGrid" class="card-deck-grid"></div>
+            </div>
+          </div>
         </div>
       </details>
 
@@ -600,7 +687,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=2"></script>
+  <script type="module" src="hand-analyzer.js?v=3"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 </body>
 </html>
