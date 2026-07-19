@@ -981,3 +981,63 @@ body.picker-open{overflow:hidden}
   .persistent-board-slot{border-radius:8px;font-size:17px}
   .persistent-board-labels{font-size:13px}
 }
+
+
+/* v91：牌縮小、五格同步、紀錄可單筆刪除 */
+.card-slot{
+  width:46px !important;
+  height:64px !important;
+  min-width:46px !important;
+  border-radius:8px !important;
+  padding:2px !important;
+}
+.card-slot .rank{font-size:18px !important}
+.card-slot .suit{font-size:20px !important}
+.card-slot small{font-size:9px !important}
+.selected-cards{gap:5px !important}
+.persistent-board-wrap{padding:9px !important;margin:10px 0 !important}
+.persistent-board-cards{gap:4px !important}
+.persistent-board-slot{
+  aspect-ratio:.72;
+  min-height:62px;
+  border-radius:8px !important;
+  padding:2px !important;
+}
+.persistent-mini-card{
+  display:grid;
+  place-items:center;
+  line-height:1;
+  font-family:Georgia,serif;
+  font-weight:800;
+}
+.persistent-mini-card span:first-child{font-size:18px}
+.persistent-mini-card span:last-child{font-size:20px}
+.persistent-mini-card.red{color:#cf2929}
+.persistent-mini-card.black{color:#101828}
+.history-row-v91,.usage-row-v91{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+.history-row-main{min-width:0;flex:1}
+.delete-history-v91,.delete-usage-v91{
+  flex:0 0 auto;
+  width:auto !important;
+  min-width:54px;
+  padding:7px 10px !important;
+  border-radius:10px !important;
+  background:#fee2e2 !important;
+  color:#991b1b !important;
+  font-size:13px !important;
+}
+@media(max-width:560px){
+  .card-slot{
+    width:42px !important;
+    height:58px !important;
+    min-width:42px !important;
+  }
+  .persistent-board-slot{min-height:56px}
+  .persistent-mini-card span:first-child{font-size:16px}
+  .persistent-mini-card span:last-child{font-size:18px}
+}

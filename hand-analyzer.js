@@ -111,6 +111,7 @@ function renderSelectedCards(){
     }
   });
   updateHiddenCards();
+  if(window.renderPersistentBoardV91) window.renderPersistentBoardV91();
 }
 function updateHiddenCards(){
   const hero=[selectedCards.hero0,selectedCards.hero1];
@@ -276,13 +277,37 @@ function renderResult(r){
 }
 
 function loadHistory(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch{return []}}
-function saveCurrent(){if(!lastAnalysis)analyze();if(!lastAnalysis)return;const rows=loadHistory();rows.unshift(lastAnalysis);localStorage.setItem(HISTORY_KEY,JSON.stringify(rows.slice(0,100)));renderHistory();alert("已儲存這筆分析紀錄");}
-function renderHistory(){
-  const box=$("saHistory");if(!box)return;const rows=loadHistory();
-  box.innerHTML=rows.length?rows.map(r=>`<div class="strategy-history-item"><b>${escapeHtml(r.heroNames||r.hand)}｜${escapeHtml(r.pos)}｜${escapeHtml(r.best)}</b>
-    <div>加注 ${r.raise}%・跟注 ${r.call}%・棄牌 ${r.fold}%</div><small>${escapeHtml(r.preflop||"尚無翻牌前行動")}<br>${new Date(r.at).toLocaleString("zh-TW",{hour12:false})}</small></div>`).join(""):`<p class="strategy-history-empty">尚無分析紀錄。</p>`;
+function saveCurrent(){
+  if(!lastAnalysis)analyze();
+  if(!lastAnalysis)return;
+  const rows=loadHistory();
+  rows.unshift({...lastAnalysis,historyId:lastAnalysis.historyId||`${Date.now()}-${Math.random()}`});
+  localStorage.setItem(HISTORY_KEY,JSON.stringify(rows.slice(0,100)));
+  renderHistory();
+  alert("已儲存這筆分析紀錄");
 }
-
+function deleteHistoryItem(historyId){
+  if(!confirm("確定要刪除這筆分析紀錄嗎？"))return;
+  const rows=loadHistory().filter(r=>String(r.historyId||r.at)!==String(historyId));
+  localStorage.setItem(HISTORY_KEY,JSON.stringify(rows));
+  renderHistory();
+}
+function renderHistory(){
+  const box=$("saHistory");if(!box)return;
+  const rows=loadHistory();
+  box.innerHTML=rows.length?rows.map((r,i)=>{
+    const id=escapeHtml(String(r.historyId||r.at||i));
+    return `<div class="strategy-history-item history-row-v91">
+      <div class="history-row-main">
+        <b>${escapeHtml(r.heroNames||r.hand)}｜${escapeHtml(r.pos)}｜${escapeHtml(r.best)}</b>
+        <div>加注 ${r.raise}%・跟注 ${r.call}%・棄牌 ${r.fold}%</div>
+        <small>${escapeHtml(r.preflop||"尚無翻牌前行動")}<br>${new Date(r.at).toLocaleString("zh-TW",{hour12:false})}</small>
+      </div>
+      <button type="button" class="delete-history-v91" data-history-id="${id}">刪除</button>
+    </div>`;
+  }).join(""):`<p class="strategy-history-empty">尚無分析紀錄。</p>`;
+  box.querySelectorAll(".delete-history-v91").forEach(btn=>btn.addEventListener("click",()=>deleteHistoryItem(btn.dataset.historyId)));
+}
 
 function clearCurrentHand(){
   Object.keys(selectedCards).forEach(k=>selectedCards[k]="");
@@ -309,11 +334,19 @@ function refreshUsageLogVisibility(){
       const box=$("saUsageLog");
       if(!box)return;
       box.innerHTML=rows.length?rows.slice(0,100).map(r=>`
-        <div class="usage-log-item">
-          <b>${escapeHtml(r.displayName||"未命名")}｜${escapeHtml(r.mode||"")}</b>
-          <div>${escapeHtml(r.heroNames||r.hand||"未選牌")}・${escapeHtml(r.position||"")}・${escapeHtml(r.street||"翻牌前")}</div>
-          <small>${r.usedAt?new Date(r.usedAt).toLocaleString("zh-TW",{hour12:false}):""}</small>
+        <div class="usage-log-item usage-row-v91">
+          <div>
+            <b>${escapeHtml(r.displayName||"未命名")}｜${escapeHtml(r.mode||"")}</b>
+            <div>${escapeHtml(r.heroNames||r.hand||"未選牌")}・${escapeHtml(r.position||"")}・${escapeHtml(r.street||"翻牌前")}</div>
+            <small>${r.usedAt?new Date(r.usedAt).toLocaleString("zh-TW",{hour12:false}):""}</small>
+          </div>
+          <button type="button" class="delete-usage-v91" data-log-id="${escapeHtml(r.id||"")}">刪除</button>
         </div>`).join(""):`<p class="strategy-history-empty">還沒有人使用過牌局分析。</p>`;
+      box.querySelectorAll(".delete-usage-v91").forEach(btn=>btn.addEventListener("click",async()=>{
+        if(!confirm("確定要刪除這筆使用紀錄嗎？"))return;
+        try{await window.deletePokerAnalysisLog(btn.dataset.logId)}
+        catch(e){alert(e.message||"刪除失敗")}
+      }));
     });
   }
 }
@@ -341,71 +374,36 @@ function init(){
 }
 init();
 
-
-/* v90 persistent five-card board */
-(function(){
-  function getBoardCardsV90(){
-    var candidates = [
-      window.selectedBoardCards,
-      window.boardCards,
-      window.communityCards,
-      window.selectedCommunityCards
-    ];
-    for (var i=0;i<candidates.length;i++){
-      if (Array.isArray(candidates[i])) return candidates[i].slice(0,5);
-    }
-    /* Fallback: read visible selected cards from the existing street displays. */
-    var nodes = document.querySelectorAll(
-      '.selected-board-card,.board-card.selected,.street-card.selected,' +
-      '[data-selected-card],[data-board-card].selected'
-    );
-    return Array.from(nodes).map(function(n){
-      return n.dataset.card || n.dataset.selectedCard || n.textContent.trim();
-    }).filter(Boolean).slice(0,5);
-  }
-
-  function cardHTMLV90(card){
-    if (!card) return '<span class="slot-placeholder">＋</span>';
-    var s = String(card).trim();
-    var red = /[♥♦]/.test(s);
-    return '<span class="persistent-card-value '+(red?'red':'black')+'">'+s+'</span>';
-  }
-
-  window.renderPersistentBoardV90 = function(){
-    var wrap = document.getElementById('persistentBoardSlots');
-    if (!wrap) return;
-    var cards = getBoardCardsV90();
-    wrap.querySelectorAll('[data-board-slot]').forEach(function(slot, i){
-      slot.innerHTML = cardHTMLV90(cards[i] || '');
-      slot.classList.toggle('filled', !!cards[i]);
-    });
-  };
-
-  document.addEventListener('click', function(e){
-    var slot = e.target.closest && e.target.closest('[data-board-slot]');
-    if (slot && !slot.classList.contains('filled')) {
-      var i = Number(slot.dataset.boardSlot);
-      var tabs = document.querySelectorAll('[data-street],.street-tab,.street-btn');
-      var wanted = i < 3 ? '翻牌' : (i === 3 ? '轉牌' : '河牌');
-      Array.from(tabs).some(function(t){
-        if ((t.textContent || '').trim().indexOf(wanted) !== -1) { t.click(); return true; }
-        return false;
-      });
-    }
-    setTimeout(window.renderPersistentBoardV90, 50);
-    setTimeout(window.renderPersistentBoardV90, 250);
-  }, true);
-
-  document.addEventListener('change', function(){
-    setTimeout(window.renderPersistentBoardV90, 50);
-  }, true);
-
-  var observer = new MutationObserver(function(){
-    clearTimeout(window.__boardV90Timer);
-    window.__boardV90Timer = setTimeout(window.renderPersistentBoardV90, 40);
+/* v91 persistent five-card board: directly synced to selectedCards */
+function boardCardCodesV91(){
+  return [
+    selectedCards.flop0||"",
+    selectedCards.flop1||"",
+    selectedCards.flop2||"",
+    selectedCards.turn||"",
+    selectedCards.river||""
+  ];
+}
+function boardSlotHtmlV91(code){
+  if(!code)return '<span class="slot-placeholder">＋</span>';
+  const c=cardDisplay(code);
+  if(!c)return '<span class="slot-placeholder">＋</span>';
+  return `<span class="persistent-mini-card ${c.red?"red":"black"}"><span>${c.rank}</span><span>${c.suit}</span></span>`;
+}
+window.renderPersistentBoardV91=function(){
+  const wrap=document.getElementById("persistentBoardSlots");
+  if(!wrap)return;
+  const cards=boardCardCodesV91();
+  wrap.querySelectorAll("[data-board-slot]").forEach((slot,i)=>{
+    slot.innerHTML=boardSlotHtmlV91(cards[i]);
+    slot.classList.toggle("filled",!!cards[i]);
   });
-  document.addEventListener('DOMContentLoaded', function(){
-    window.renderPersistentBoardV90();
-    observer.observe(document.body,{subtree:true,childList:true,characterData:true});
-  });
-})();
+};
+document.addEventListener("click",e=>{
+  const slot=e.target.closest?.("[data-board-slot]");
+  if(!slot)return;
+  const i=Number(slot.dataset.boardSlot);
+  const target=i<3?`flop${i}`:i===3?"turn":"river";
+  openCardPicker(target);
+});
+window.renderPersistentBoardV91();

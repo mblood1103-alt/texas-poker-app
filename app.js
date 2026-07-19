@@ -89,10 +89,18 @@ window.subscribePokerAnalysisLogs=callback=>{
   if(analysisLogUnsubscribe){analysisLogUnsubscribe();analysisLogUnsubscribe=null}
   if(!isOwner||!roomCode){callback([]);return ()=>{}}
   analysisLogUnsubscribe=onSnapshot(collection(db,"rooms",roomCode,"analysisLogs"),snap=>{
-    const rows=snap.docs.map(d=>d.data()).sort((a,b)=>String(b.usedAt||"").localeCompare(String(a.usedAt||"")));
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.usedAt||"").localeCompare(String(a.usedAt||"")));
     callback(rows);
   },e=>{console.warn("分析使用紀錄讀取失敗",e);callback([])});
   return ()=>{if(analysisLogUnsubscribe){analysisLogUnsubscribe();analysisLogUnsubscribe=null}};
+};
+
+
+window.deletePokerAnalysisLog=async logId=>{
+  if(!isOwner||!roomCode||!logId)throw new Error("只有房主可以刪除分析使用紀錄");
+  const batch=writeBatch(db);
+  batch.delete(doc(db,"rooms",roomCode,"analysisLogs",logId));
+  await batch.commit();
 };
 
 function subscribe(){
