@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=85">
+  <link rel="stylesheet" href="styles.css?v=86">
 
 
 <style id="v61-reference-match">
@@ -385,16 +385,20 @@
         </details>
 
 
+      
       <details class="card collapsible-card" id="handAnalyzerCard">
         <summary class="section-summary">🧠 牌局策略分析</summary>
         <div class="collapsible-body hand-analyzer">
-          <p class="hint">輸入翻牌前局面後，系統會給「加注／跟注／棄牌」混合頻率參考。此版本為離線規則模型，不是即時 GTO Solver 或真實大數據資料庫，因此百分比是策略參考，不應冒充精準 solver 解。</p>
+          <p class="hint">先選桌型，再直接點牌桌上的座位。系統會自動標示 BTN、SB、BB、UTG 等位置，讓不熟位置名稱的人也能看懂。你也可以一路記錄翻牌、轉牌、河牌行動。</p>
 
           <div class="strategy-grid">
             <label>桌型
               <select id="saTableSize">
-                <option value="6">6 人桌</option>
-                <option value="9" selected>9 人桌</option>
+                <option value="4">4 人桌</option>
+                <option value="5">5 人桌</option>
+                <option value="6" selected>6 人桌</option>
+                <option value="7">7 人桌</option>
+                <option value="8">8 人桌</option>
               </select>
             </label>
             <label>小盲
@@ -406,20 +410,67 @@
             <label>有效籌碼（BB）
               <input id="saStack" type="number" min="10" step="5" value="100">
             </label>
-            <label>你的位置
-              <select id="saHeroPos">
-                <option>UTG</option><option>UTG+1</option><option>MP</option><option>HJ</option>
-                <option>CO</option><option>BTN</option><option>SB</option><option selected>BB</option>
-              </select>
-            </label>
-            <label>手牌
-              <input id="saHand" maxlength="3" value="AJo" placeholder="例如 AJo、AKs、77">
-            </label>
           </div>
 
-          <label>翻牌前行動
-            <textarea id="saAction" rows="3" placeholder="例如：UTG 開到 4，SB 加注到 10">UTG 開到 4，SB 加注到 10</textarea>
+          <section class="seat-picker-section" aria-labelledby="seatPickerTitle">
+            <div class="seat-picker-head">
+              <h3 id="seatPickerTitle">點牌桌選擇你的位置</h3>
+              <span class="viz-badge" id="saHeroPosBadge">尚未選位</span>
+            </div>
+            <div id="saPokerTable" class="poker-table" role="group" aria-label="德州撲克牌桌座位選擇"></div>
+            <p id="saPositionHelp" class="position-help">位置會依桌型自動排列；BTN 是莊家位，接著依順時針為 SB、BB。</p>
+            <input id="saHeroPos" type="hidden" value="">
+          </section>
+
+          <label>手牌
+            <input id="saHand" maxlength="3" value="AJo" placeholder="例如 AJo、AKs、77">
           </label>
+
+          <div class="street-tabs" role="tablist" aria-label="牌局街道">
+            <button type="button" class="street-tab active" data-street="preflop">翻牌前</button>
+            <button type="button" class="street-tab" data-street="flop">翻牌</button>
+            <button type="button" class="street-tab" data-street="turn">轉牌</button>
+            <button type="button" class="street-tab" data-street="river">河牌</button>
+          </div>
+
+          <section class="street-panel active" data-panel="preflop">
+            <label>翻牌前行動
+              <textarea id="saAction" rows="3" placeholder="例如：UTG 開到 4，SB 加注到 10">UTG 開到 4，SB 加注到 10</textarea>
+            </label>
+          </section>
+
+          <section class="street-panel" data-panel="flop">
+            <div class="board-input-row">
+              <label>翻牌牌面
+                <input id="saFlopCards" value="" placeholder="例如 Ah 7d 2c">
+              </label>
+            </div>
+            <label>翻牌行動
+              <textarea id="saFlopAction" rows="3" placeholder="例如：SB 過牌，我下注 12，SB 跟注"></textarea>
+            </label>
+          </section>
+
+          <section class="street-panel" data-panel="turn">
+            <div class="board-input-row">
+              <label>轉牌
+                <input id="saTurnCard" value="" placeholder="例如 Js">
+              </label>
+            </div>
+            <label>轉牌行動
+              <textarea id="saTurnAction" rows="3" placeholder="例如：SB 過牌，我下注 28，SB 跟注"></textarea>
+            </label>
+          </section>
+
+          <section class="street-panel" data-panel="river">
+            <div class="board-input-row">
+              <label>河牌
+                <input id="saRiverCard" value="" placeholder="例如 3h">
+              </label>
+            </div>
+            <label>河牌行動
+              <textarea id="saRiverAction" rows="3" placeholder="例如：SB 過牌，我全下 75，SB 棄牌"></textarea>
+            </label>
+          </section>
 
           <div class="strategy-actions">
             <button id="saAnalyzeBtn" type="button">分析這一手</button>
@@ -549,7 +600,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=1"></script>
+  <script type="module" src="hand-analyzer.js?v=2"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 </body>
 </html>
