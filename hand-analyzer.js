@@ -347,13 +347,16 @@ function renderDeck(){
     // v116：翻牌三張連續選牌。
     // 第 1 張選完自動開第 2 張，第 2 張選完自動開第 3 張。
     // 若下一張本來已有牌，視為「換牌」，就不強制跳過去。
-    const nextFlopSlot={
+    const nextAutoSlot={
+      hero0:"hero1",
       flop0:"flop1",
       flop1:"flop2"
     }[justSelectedSlot];
 
-    if(nextFlopSlot && !selectedCards[nextFlopSlot]){
-      activeCardSlot=nextFlopSlot;
+    // v122：首次選手牌時，第 1 張選完直接接著選第 2 張；
+    // 若第 2 張原本已有牌，代表只是單獨換第 1 張，不強制跳轉。
+    if(nextAutoSlot && !selectedCards[nextAutoSlot]){
+      activeCardSlot=nextAutoSlot;
       renderDeck();
       // overlay 保持開啟，直接讓使用者繼續選下一張
     }else{
