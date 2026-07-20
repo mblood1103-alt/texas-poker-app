@@ -454,8 +454,23 @@ function initActionBuilders(){
       amount.readOnly=false;
       renderActionSequence(street);
 
-      // 棄牌後立即刷新選單；籌碼也立即刷新。
+      // 記住本次行動座位，刷新後自動跳到牌桌順序的下一位（略過已棄牌）。
+      const positions=canonicalSeatOrder();
+      const actedIndex=positions.indexOf(actualPos);
+
       populateActors();
+
+      if(actedIndex>=0){
+        const foldedNow=getFoldedBeforeStreet(street);
+        for(let step=1;step<=positions.length;step++){
+          const nextPos=positions[(actedIndex+step)%positions.length];
+          if(foldedNow.has(nextPos)) continue;
+          const nextValue=nextPos===$("saHeroPos").value?"我":nextPos;
+          const nextOpt=[...actor.options].find(o=>o.value===nextValue&&!o.disabled);
+          if(nextOpt){ actor.value=nextValue; break; }
+        }
+      }
+
       updateHeroChipDisplays();
       document.querySelectorAll(".action-builder").forEach(refreshActionAmountUI);
     });
