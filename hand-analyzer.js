@@ -601,7 +601,7 @@ function initActionBuilders(){
         }
         const typeSel = builder.querySelector(".action-type");
         if (typeSel) typeSel.disabled = true;
-        const addBtn = builder.querySelector(".add-action");
+        const addBtn = builder.querySelector(".add-action-btn");
         if (addBtn) addBtn.disabled = true;
         if (typeof renderActions === "function") renderActions();
         return;
