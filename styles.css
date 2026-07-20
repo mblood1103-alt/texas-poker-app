@@ -1122,3 +1122,23 @@ body.picker-open{overflow:hidden}
 .player-status-v94 .alive{background:#dcfce7;color:#166534}
 .player-status-v94 .folded{background:#e5e7eb;color:#6b7280;text-decoration:line-through}
 .action-actor option:disabled{color:#9ca3af}
+
+
+/* v100：即時剩餘籌碼 */
+.hero-chip-status-v100{
+  margin:2px 0 12px;
+  padding:10px 12px;
+  border:1px solid #bbf7d0;
+  border-radius:12px;
+  background:#ecfdf5;
+  color:#166534;
+  font-weight:700;
+}
+.hero-chip-status-v100 strong{
+  font-size:1.12em;
+}
+.action-amount[readonly]{
+  background:#f1f5f9;
+  color:#0f172a;
+  font-weight:700;
+}

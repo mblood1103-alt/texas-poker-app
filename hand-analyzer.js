@@ -117,6 +117,7 @@ function selectPosition(pos){
   $("saHeroPosBadge").textContent=`${pos}｜${positionName(pos)}（我）`;
   $("saPositionHelp").textContent=`你的位置是 ${pos}（${positionName(pos)}）。牌桌上會直接標示「我」。`;
   renderSeats();
+  updateHeroChipDisplays();
 }
 
 function streetKeyFromBuilder(builder){
@@ -129,7 +130,9 @@ function getFoldedBeforeStreet(street){
   const order=["preflop","flop","turn","river"];
   const idx=order.indexOf(street);
   const folded=new Set();
-  for(let i=0;i<idx;i++){
+
+  // 包含目前這一街：一按「加入棄牌」後就立刻鎖定，不用等分析。
+  for(let i=0;i<=idx;i++){
     (actionState[order[i]]||[]).forEach(a=>{
       if(a.action==="棄牌"){
         const p=actorToPosition(a.actor);
@@ -255,26 +258,209 @@ function initCardSlots(){
 
 function actionNeedsAmount(type){ return ["開池","下注","加注","全下"].includes(type); }
 
+
+function streetOrder(){
+  return ["preflop","flop","turn","river"];
+}
+
+function isHeroActor(actor){
+  return actor==="我" || actor===($("saHeroPos").value||"");
+}
+
+function actualActorPosition(actor){
+  return actor==="我" ? ($("saHeroPos").value||"") : actor;
+}
+
+function initialStreetCommitments(street){
+  const map={};
+  canonicalSeatOrder().forEach(p=>map[p]=0);
+
+  if(street==="preflop"){
+    const sb=Number($("saSB").value)||0;
+    const bb=Number($("saBB").value)||0;
+    if("SB" in map) map.SB=sb;
+    if("BB" in map) map.BB=bb;
+  }
+  return map;
+}
+
+function simulateHeroChips(stopStreet=null, includeAllActionsInStop=true){
+  const start=Math.max(0,Number($("saStack").value)||0);
+  const hero=$("saHeroPos").value||"";
+  let remaining=start;
+  const result={remaining,start,streets:{}};
+
+  for(const street of streetOrder()){
+    const commits=initialStreetCommitments(street);
+
+    // 若 Hero 是盲注位，起手籌碼先扣掉已放入的盲注。
+    if(street==="preflop" && hero && commits[hero]>0){
+      remaining=Math.max(0,remaining-commits[hero]);
+    }
+
+    const actions=actionState[street]||[];
+    const limit=(stopStreet===street && !includeAllActionsInStop)?0:actions.length;
+
+    for(let i=0;i<limit;i++){
+      const a=actions[i];
+      const pos=actualActorPosition(a.actor);
+      if(!pos) continue;
+      if(!(pos in commits)) commits[pos]=0;
+
+      const action=a.action;
+      const current=Number(commits[pos])||0;
+      const tableHigh=Math.max(0,...Object.values(commits).map(Number));
+
+      let add=0;
+      let newCommit=current;
+
+      if(action==="跟注"){
+        newCommit=Math.max(current,tableHigh);
+        add=newCommit-current;
+      }else if(["開池","下注","加注"].includes(action)){
+        const target=Math.max(0,Number(a.amount)||0);
+        newCommit=Math.max(current,target);
+        add=newCommit-current;
+      }else if(action==="全下"){
+        if(pos===hero){
+          add=remaining;
+          newCommit=current+remaining;
+        }else{
+          const target=Math.max(0,Number(a.amount)||0);
+          if(target>0){
+            newCommit=Math.max(current,target);
+            add=newCommit-current;
+          }
+        }
+      }
+
+      commits[pos]=newCommit;
+      if(pos===hero){
+        remaining=Math.max(0,remaining-add);
+      }
+    }
+
+    result.streets[street]={remaining,commits:{...commits}};
+
+    if(stopStreet===street) break;
+  }
+
+  result.remaining=remaining;
+  return result;
+}
+
+function heroRemainingAtEndOf(street){
+  return simulateHeroChips(street,true).remaining;
+}
+
+function heroSnapshotBeforeNextAction(street){
+  const sim=simulateHeroChips(street,true);
+  const hero=$("saHeroPos").value||"";
+  const commits=sim.streets[street]?.commits||initialStreetCommitments(street);
+  return {
+    remaining:sim.remaining,
+    committed:Number(commits[hero])||0
+  };
+}
+
+function updateHeroChipDisplays(){
+  document.querySelectorAll(".action-builder").forEach(builder=>{
+    const street=builder.dataset.builder;
+    let box=builder.querySelector(".hero-chip-status-v100");
+    if(!box){
+      box=document.createElement("div");
+      box.className="hero-chip-status-v100";
+      const heading=builder.querySelector("h3");
+      if(heading) heading.insertAdjacentElement("afterend",box);
+      else builder.prepend(box);
+    }
+
+    const sim=simulateHeroChips(street,true);
+    const hero=$("saHeroPos").value;
+    box.innerHTML=hero
+      ? `💰 你目前剩餘籌碼：<strong>${sim.remaining.toLocaleString("zh-TW")}</strong>`
+      : `💰 選擇你的座位後，系統會自動計算剩餘籌碼`;
+  });
+}
+
+function refreshActionAmountUI(builder){
+  const street=builder.dataset.builder;
+  const actor=builder.querySelector(".action-actor");
+  const type=builder.querySelector(".action-type");
+  const amount=builder.querySelector(".action-amount");
+  const label=builder.querySelector(".amount-label");
+  if(!actor||!type||!amount||!label) return;
+
+  const needs=actionNeedsAmount(type.value);
+  label.style.display=needs?"grid":"none";
+
+  if(type.value==="全下" && isHeroActor(actor.value)){
+    const snap=heroSnapshotBeforeNextAction(street);
+    const allInTarget=snap.committed+snap.remaining;
+    amount.value=String(allInTarget);
+    amount.readOnly=true;
+    amount.placeholder=`自動全下，剩餘 ${snap.remaining}`;
+  }else{
+    amount.readOnly=false;
+    if(!needs) amount.value="";
+  }
+}
+
 function initActionBuilders(){
   document.querySelectorAll(".action-builder").forEach(builder=>{
     const street=builder.dataset.builder;
     const type=builder.querySelector(".action-type");
+    const actor=builder.querySelector(".action-actor");
     const amount=builder.querySelector(".action-amount");
-    const label=builder.querySelector(".amount-label");
-    const refresh=()=>{label.style.display=actionNeedsAmount(type.value)?"grid":"none"; if(!actionNeedsAmount(type.value)) amount.value="";};
-    type.addEventListener("change",refresh); refresh();
-    builder.querySelector(".add-action-btn").addEventListener("click",()=>{
-      const actor=builder.querySelector(".action-actor").value;
+    const addBtn=builder.querySelector(".add-action-btn");
+
+    const refresh=()=>refreshActionAmountUI(builder);
+    type.addEventListener("change",refresh);
+    actor.addEventListener("change",refresh);
+    refresh();
+
+    addBtn.addEventListener("click",()=>{
+      const selectedActor=actor.value;
+      const actualPos=actualActorPosition(selectedActor);
+      const folded=getFoldedBeforeStreet(street);
+
+      if(folded.has(actualPos)){
+        alert(`${actualPos} 已經棄牌，不能再加入任何動作。`);
+        populateActors();
+        return;
+      }
+
       const action=type.value;
+
+      // Hero 選全下時，自動抓目前剩餘籌碼，不用自己算。
+      if(action==="全下" && isHeroActor(selectedActor)){
+        const snap=heroSnapshotBeforeNextAction(street);
+        amount.value=String(snap.committed+snap.remaining);
+      }
+
       const amt=amount.value.trim();
-      if(actionNeedsAmount(action)&&!amt){ alert("這個動作請輸入金額。"); return; }
-      actionState[street].push({actor,action,amount:actionNeedsAmount(action)?amt:""});
+      if(actionNeedsAmount(action)&&!amt){
+        alert("這個動作請輸入金額。");
+        return;
+      }
+
+      actionState[street].push({
+        actor:selectedActor,
+        action,
+        amount:actionNeedsAmount(action)?amt:""
+      });
+
       amount.value="";
+      amount.readOnly=false;
       renderActionSequence(street);
+
+      // 棄牌後立即刷新選單；籌碼也立即刷新。
+      populateActors();
+      updateHeroChipDisplays();
+      document.querySelectorAll(".action-builder").forEach(refreshActionAmountUI);
     });
   });
 }
-
 function renderActionSequence(street){
   const box=document.querySelector(`[data-sequence="${street}"]`);
   box.innerHTML=actionState[street].length?actionState[street].map((a,i)=>`
@@ -288,6 +474,8 @@ function renderActionSequence(street){
   }));
   syncActionHidden(street);
   populateActors();
+  updateHeroChipDisplays();
+  document.querySelectorAll(".action-builder").forEach(refreshActionAmountUI);
 }
 function syncActionHidden(street){
   const text=actionState[street].map(a=>`${a.actor} ${a.action}${a.amount?`到 ${a.amount}`:""}`).join("，");
@@ -334,45 +522,218 @@ function rankValueFromCode(code){
   const r=String(code||"").slice(0,-1);
   return r==="A"?14:r==="K"?13:r==="Q"?12:r==="J"?11:r==="10"?10:Number(r);
 }
+
+function rankLabel(v){
+  return ({14:"A",13:"K",12:"Q",11:"J",10:"10"})[v]||String(v);
+}
+
+function evaluateFiveCards(cards){
+  const ranks=cards.map(rankValueFromCode).sort((a,b)=>b-a);
+  const suits=cards.map(c=>c.slice(-1));
+
+  const counts={};
+  ranks.forEach(r=>counts[r]=(counts[r]||0)+1);
+  const groups=Object.entries(counts)
+    .map(([r,c])=>({r:Number(r),c}))
+    .sort((a,b)=>b.c-a.c||b.r-a.r);
+
+  const flush=suits.every(s=>s===suits[0]);
+
+  const unique=[...new Set(ranks)].sort((a,b)=>b-a);
+  if(unique.includes(14)) unique.push(1);
+  let straightHigh=0;
+  for(let i=0;i<=unique.length-5;i++){
+    const seq=unique.slice(i,i+5);
+    if(seq.every((v,j)=>j===0||seq[j-1]-v===1)){
+      straightHigh=Math.max(straightHigh,seq[0]===5?5:seq[0]);
+    }
+  }
+
+  if(flush && straightHigh){
+    return {score:[8,straightHigh],category:8,name:`${rankLabel(straightHigh)}高同花順`};
+  }
+
+  if(groups[0]?.c===4){
+    const quad=groups[0].r;
+    const kicker=Math.max(...ranks.filter(r=>r!==quad));
+    return {score:[7,quad,kicker],category:7,name:`${rankLabel(quad)}鐵支`};
+  }
+
+  const trips=groups.filter(g=>g.c===3).map(g=>g.r).sort((a,b)=>b-a);
+  const pairs=groups.filter(g=>g.c>=2).map(g=>g.r).sort((a,b)=>b-a);
+
+  if(trips.length){
+    const trip=trips[0];
+    const pair=pairs.find(r=>r!==trip);
+    if(pair){
+      return {score:[6,trip,pair],category:6,name:`${rankLabel(trip)}帶${rankLabel(pair)}葫蘆`};
+    }
+  }
+
+  if(flush){
+    return {score:[5,...ranks],category:5,name:`${rankLabel(ranks[0])}高同花`};
+  }
+
+  if(straightHigh){
+    return {score:[4,straightHigh],category:4,name:`${rankLabel(straightHigh)}高順子`};
+  }
+
+  if(trips.length){
+    const trip=trips[0];
+    const kickers=ranks.filter(r=>r!==trip).slice(0,2);
+    return {score:[3,trip,...kickers],category:3,name:`${rankLabel(trip)}三條`};
+  }
+
+  const pairRanks=groups.filter(g=>g.c===2).map(g=>g.r).sort((a,b)=>b-a);
+  if(pairRanks.length>=2){
+    const hi=pairRanks[0],lo=pairRanks[1];
+    const kicker=Math.max(...ranks.filter(r=>r!==hi&&r!==lo));
+    return {score:[2,hi,lo,kicker],category:2,name:`${rankLabel(hi)}、${rankLabel(lo)}兩對`};
+  }
+
+  if(pairRanks.length===1){
+    const pair=pairRanks[0];
+    const kickers=ranks.filter(r=>r!==pair).slice(0,3);
+    return {score:[1,pair,...kickers],category:1,name:`${rankLabel(pair)}一對`};
+  }
+
+  return {score:[0,...ranks],category:0,name:`${rankLabel(ranks[0])}高牌`};
+}
+
+function compareScores(a,b){
+  const n=Math.max(a.length,b.length);
+  for(let i=0;i<n;i++){
+    const av=a[i]||0,bv=b[i]||0;
+    if(av>bv)return 1;
+    if(av<bv)return -1;
+  }
+  return 0;
+}
+
+function combinations(arr,k){
+  const out=[];
+  function rec(start,picked){
+    if(picked.length===k){out.push([...picked]);return;}
+    for(let i=start;i<=arr.length-(k-picked.length);i++){
+      picked.push(arr[i]);
+      rec(i+1,picked);
+      picked.pop();
+    }
+  }
+  rec(0,[]);
+  return out;
+}
+
+function evaluateBestHand(cards){
+  if(cards.length<5)return null;
+  let best=null;
+  for(const combo of combinations(cards,5)){
+    const value=evaluateFiveCards(combo);
+    if(!best||compareScores(value.score,best.score)>0){
+      best={...value,cards:combo};
+    }
+  }
+  return best;
+}
+
+function fullDeck(){
+  const deck=[];
+  for(const r of RANKS){
+    for(const s of SUITS){
+      deck.push(`${r}${s.k}`);
+    }
+  }
+  return deck;
+}
+
+function prettyCard(code){
+  const c=cardDisplay(code);
+  return c?`${c.rank}${c.suit}`:code;
+}
+
+function analyzeOpponentRisk(){
+  const hero=[selectedCards.hero0,selectedCards.hero1].filter(Boolean);
+  const board=[
+    selectedCards.flop0,selectedCards.flop1,selectedCards.flop2,
+    selectedCards.turn,selectedCards.river
+  ].filter(Boolean);
+
+  if(hero.length!==2 || board.length<3) return null;
+
+  const heroBest=evaluateBestHand([...hero,...board]);
+  if(!heroBest)return null;
+
+  const used=new Set([...hero,...board]);
+  const available=fullDeck().filter(c=>!used.has(c));
+
+  let betterCount=0;
+  let tieCount=0;
+  const categories=new Map();
+  const examples=[];
+
+  for(let i=0;i<available.length;i++){
+    for(let j=i+1;j<available.length;j++){
+      const opp=[available[i],available[j]];
+      const oppBest=evaluateBestHand([...opp,...board]);
+      const cmp=compareScores(oppBest.score,heroBest.score);
+
+      if(cmp>0){
+        betterCount++;
+        categories.set(oppBest.name,(categories.get(oppBest.name)||0)+1);
+        if(examples.length<6){
+          examples.push(`${prettyCard(opp[0])}＋${prettyCard(opp[1])} → ${oppBest.name}`);
+        }
+      }else if(cmp===0){
+        tieCount++;
+      }
+    }
+  }
+
+  const total=available.length*(available.length-1)/2;
+  const categoryList=[...categories.entries()]
+    .sort((a,b)=>b[1]-a[1])
+    .map(([name,count])=>({name,count}));
+
+  let summary="";
+  if(betterCount===0){
+    summary=`你目前是「${heroBest.name}」，以現在已發出的公共牌來看，沒有任何合法的對手兩張手牌可以擊敗你，現在是堅果牌（Nuts）。`;
+  }else{
+    const top=categoryList.slice(0,5).map(x=>x.name).join("、");
+    summary=`你目前是「${heroBest.name}」，但現在仍有 ${betterCount} 種對手兩張手牌組合可以擊敗你。主要更大牌型包含：${top||"更大的同類牌型"}。`;
+    if(examples.length){
+      summary+=` 例如：${examples.join("；")}。`;
+    }
+  }
+
+  if(board.length<5){
+    summary+=` 目前公共牌還沒發完，後續轉牌／河牌也可能讓你或對手的牌型再次改變。`;
+  }
+
+  return {
+    heroBest,
+    betterCount,
+    tieCount,
+    total,
+    categories:categoryList,
+    examples,
+    isNuts:betterCount===0,
+    summary
+  };
+}
+
 function evaluateMadeHand(){
   const cards=[
     selectedCards.hero0,selectedCards.hero1,
     selectedCards.flop0,selectedCards.flop1,selectedCards.flop2,
     selectedCards.turn,selectedCards.river
   ].filter(Boolean);
-  if(cards.length<5)return null;
-
-  const ranks=cards.map(rankValueFromCode);
-  const suits=cards.map(c=>c.slice(-1));
-  const counts={};
-  ranks.forEach(r=>counts[r]=(counts[r]||0)+1);
-  const groups=Object.entries(counts).map(([r,c])=>({r:Number(r),c})).sort((a,b)=>b.c-a.c||b.r-a.r);
-
-  const suitGroups={};
-  cards.forEach(c=>(suitGroups[c.slice(-1)]??=[]).push(rankValueFromCode(c)));
-  const flushSuit=Object.keys(suitGroups).find(s=>suitGroups[s].length>=5);
-
-  function straightHigh(vals){
-    const u=[...new Set(vals)].sort((a,b)=>a-b);
-    if(u.includes(14))u.unshift(1);
-    let run=1,best=0;
-    for(let i=1;i<u.length;i++){
-      if(u[i]===u[i-1]+1){run++; if(run>=5)best=u[i];}
-      else if(u[i]!==u[i-1])run=1;
-    }
-    return best;
-  }
-  const sfHigh=flushSuit?straightHigh(suitGroups[flushSuit]):0;
-  if(sfHigh)return {category:8,name:"同花順",strength:99};
-  if(groups[0]?.c===4)return {category:7,name:`鐵支 ${groups[0].r===14?"A":groups[0].r}`,strength:99};
-  const trips=groups.filter(g=>g.c>=3), pairs=groups.filter(g=>g.c>=2);
-  if(trips.length && (pairs.some(g=>g.r!==trips[0].r) || trips.length>=2))return {category:6,name:"葫蘆",strength:97};
-  if(flushSuit)return {category:5,name:"同花",strength:94};
-  if(straightHigh(ranks))return {category:4,name:"順子",strength:91};
-  if(trips.length)return {category:3,name:"三條",strength:84};
-  if(pairs.length>=2)return {category:2,name:"兩對",strength:74};
-  if(pairs.length===1)return {category:1,name:"一對",strength:58};
-  return {category:0,name:"高牌",strength:35};
+  const best=evaluateBestHand(cards);
+  if(!best)return null;
+  return {
+    category:best.category,
+    name:best.name,
+    score:best.score
+  };
 }
 
 function analyze(){
@@ -447,26 +808,36 @@ function analyze(){
   else reason+="目前沒有偵測到明確的翻牌前加注壓力。";
 
   const madeHand=evaluateMadeHand();
+  const risk=street!=="翻牌前" ? analyzeOpponentRisk() : null;
+
   if(street!=="翻牌前" && madeHand){
-    if(madeHand.category>=7){
-      raise=82;call=18;fold=0;best[0]="加注";best[1]=82;
-      reason=`你目前已成 ${madeHand.name}，這是非常強的成牌，不能再用翻牌前起手牌模型判斷。除非牌面存在更高同類牌型的特殊可能，策略應以取價值為主，不應建議棄牌。`;
+    // 翻牌後不再只拿翻牌前起手牌模型硬算。
+    if(risk?.isNuts){
+      raise=72;call=28;fold=0;best[0]="加注";best[1]=72;
+    }else if(madeHand.category>=7){
+      raise=68;call=31;fold=1;best[0]="加注";best[1]=68;
     }else if(madeHand.category===6){
-      raise=72;call=27;fold=1;best[0]="加注";best[1]=72;
-      reason=`你目前已成 ${madeHand.name}，屬於極強成牌。一般情況應以價值下注或加注為主。`;
+      raise=62;call=36;fold=2;best[0]="加注";best[1]=62;
     }else if(madeHand.category===5 || madeHand.category===4){
-      raise=55;call=40;fold=5;best[0]="加注";best[1]=55;
-      reason=`你目前已成 ${madeHand.name}，翻牌後分析已改用實際成牌強度，不再只看翻牌前手牌。`;
+      raise=48;call=45;fold=7;best[0]="加注";best[1]=48;
     }else if(madeHand.category===3){
-      raise=45;call=47;fold=8;best[0]="跟注";best[1]=47;
-      reason=`你目前已成 ${madeHand.name}，屬於強成牌，通常不應高比例棄牌。`;
-    }else{
-      reason+=` 目前牌型判定為「${madeHand.name}」，翻牌後會納入實際成牌強度調整。`;
+      raise=38;call=50;fold=12;best[0]="跟注";best[1]=50;
+    }else if(madeHand.category===2){
+      raise=24;call=52;fold=24;best[0]="跟注";best[1]=52;
+    }else if(madeHand.category===1){
+      raise=14;call=43;fold=43;best[0]="跟注";best[1]=43;
     }
+
+    reason=`你目前實際牌型是「${madeHand.name}」。`;
+    if(risk){
+      reason+=` ${risk.summary}`;
+    }
+    reason+=` 百分比仍是 App 內建一般策略參考，真正決策還需要看下注大小、底池賠率與對手範圍。`;
   }
 
   lastAnalysis={at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,mode:"一般分析",blinds:`${$("saSB").value}/${$("saBB").value}`,
-    preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,street,raise,call,fold,best:best[0],reason};
+    preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,street,raise,call,fold,best:best[0],reason,
+    riskSummary:risk?.summary||"",madeHandName:madeHand?.name||""};
   renderResult(lastAnalysis);
   if(window.recordPokerAnalysisUse){
     window.recordPokerAnalysisUse({hand,heroNames,position:pos,street}).catch(e=>console.warn("分析使用紀錄寫入失敗",e));
@@ -551,6 +922,7 @@ function clearCurrentHand(){
   Object.keys(actionState).forEach(k=>actionState[k]=[]);
   renderSelectedCards();
   Object.keys(actionState).forEach(renderActionSequence);
+  updateHeroChipDisplays();
   $("saResult").classList.add("hidden");
   $("saResult").innerHTML="";
   lastAnalysis=null;
@@ -601,7 +973,11 @@ function init(){
   if(!$("handAnalyzerCard"))return;
   document.querySelectorAll(".analysis-mode-btn").forEach(btn=>btn.addEventListener("click",()=>setAnalysisMode(btn.dataset.analysisMode)));
   setAnalysisMode("general");
-  $("saTableSize").addEventListener("change",renderSeats);
+  $("saTableSize").addEventListener("change",()=>{renderSeats();updateHeroChipDisplays();});
+  ["saSB","saBB","saStack"].forEach(id=>$(id)?.addEventListener("input",()=>{
+    updateHeroChipDisplays();
+    document.querySelectorAll(".action-builder").forEach(refreshActionAmountUI);
+  }));
   $("saAnalyzeBtn").addEventListener("click",analyze);
   $("saSaveBtn").addEventListener("click",saveCurrent);
   $("saClearHandBtn").addEventListener("click",clearCurrentHand);
@@ -610,6 +986,7 @@ function init(){
   renderSeats();renderSelectedCards();
   Object.keys(actionState).forEach(renderActionSequence);
   renderHistory();
+  updateHeroChipDisplays();
   refreshUsageLogVisibility();
   window.addEventListener("pokerappcontextchange",refreshUsageLogVisibility);
 }
