@@ -1143,8 +1143,23 @@ body.picker-open{overflow:hidden}
   font-weight:700;
 }
 
-/* v111：手牌＋公共牌集中顯示 */
-.v111-board-inline{
-  margin-top:14px !important;
-  margin-bottom:16px !important;
+
+/* v112：手牌與五張公共牌集中在同一區 */
+.hole-board-combined-v112{
+  margin-top:12px;
+  padding:12px;
+  border:1px solid #dbe4ef;
+  border-radius:16px;
+  background:#f8fafc;
+}
+.hole-board-combined-v112 .combined-board-title{
+  font-weight:800;
+  margin-bottom:8px;
+  color:#334155;
+}
+.hole-board-combined-v112 .persistent-board-wrap{
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
 }

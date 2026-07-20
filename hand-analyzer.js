@@ -587,15 +587,8 @@ function initActionBuilders(){
           livePositions.every(p => responded.has(p));
       }
 
-      const roundKey = "roundCompleteCount_" + currentStreet;
-      const savedCompleteCount = Number(builder.dataset[roundKey] || 0);
-      if (roundComplete && savedCompleteCount && actions.length < savedCompleteCount) {
-        roundComplete = false;
-        builder.dataset[roundKey] = "";
-      }
       if (roundComplete) {
-        builder.dataset[roundKey] = String(actions.length);
-        // v111：完成後顯示完成本輪；刪除任一動作後立即恢復新增。
+        // v110：本輪完成後不要把編輯功能鎖死。
         // 顯示完成狀態；只要使用者刪除下面任一行動，renderActions()
         // 會重新計算下一位並恢復正常的「＋加入這個行動」。
         const actorSel = builder.querySelector(".action-actor");
@@ -609,7 +602,7 @@ function initActionBuilders(){
           typeSel.disabled = true;
         }
         if (addBtn) {
-          addBtn.disabled = false;
+          addBtn.disabled = true;
           addBtn.textContent = "✅ 完成本輪";
           addBtn.dataset.roundComplete = "1";
         }
@@ -648,6 +641,29 @@ function renderActionSequence(street){
     </span>`).join(""):`<span class="position-help">尚未加入行動</span>`;
   box.querySelectorAll("[data-remove]").forEach(btn=>btn.addEventListener("click",()=>{
     actionState[street].splice(Number(btn.dataset.remove),1);
+
+    // v112：只要刪除任何一筆行動，就立即退出「完成本輪」狀態，
+    // 重新開放選單與加入按鈕，讓使用者可以重新補登。
+    const builder=document.querySelector(`.action-builder[data-builder="${street}"]`);
+    if(builder){
+      const actorSel=builder.querySelector(".action-actor");
+      const typeSel=builder.querySelector(".action-type");
+      const addBtn=builder.querySelector(".add-action-btn");
+
+      if(actorSel) actorSel.disabled=false;
+      if(typeSel) typeSel.disabled=false;
+      if(addBtn){
+        addBtn.disabled=false;
+        addBtn.textContent="＋加入這個行動";
+        delete addBtn.dataset.roundComplete;
+      }
+
+      // 清掉所有完成輪次的暫存標記，避免刪除後又被舊狀態鎖回去。
+      Object.keys(builder.dataset).forEach(key=>{
+        if(key.startsWith("roundCompleteCount")) delete builder.dataset[key];
+      });
+    }
+
     renderActionSequence(street);
     populateActors();
   }));
@@ -1244,34 +1260,3 @@ function renderStillInHandReminderV94(){
 document.addEventListener("click",()=>setTimeout(()=>{populateActors();renderStillInHandReminderV94();},0));
 document.addEventListener("change",()=>setTimeout(()=>{populateActors();renderStillInHandReminderV94();},0));
 setTimeout(()=>{populateActors();renderStillInHandReminderV94();},300);
-
-
-// v111：把兩張手牌與五張公共牌集中在同一區，避免手機上下滑太遠。
-function v111MergeCardAreas(){
-  const holeSummary = [...document.querySelectorAll("*")].find(el =>
-    el.children.length === 0 && /你的手牌[:：]/.test(el.textContent || "")
-  );
-  if(!holeSummary) return;
-
-  const boardLabels = [...document.querySelectorAll("*")].filter(el =>
-    el.children.length === 0 && /^(翻牌|轉牌|河牌)$/.test((el.textContent || "").trim())
-  );
-  if(!boardLabels.length) return;
-
-  let boardBox = boardLabels[0];
-  while(boardBox.parentElement && !boardLabels.every(x => boardBox.parentElement.contains(x))){
-    boardBox = boardBox.parentElement;
-  }
-  if(!boardBox || boardBox.dataset.v111Merged === "1") return;
-
-  const holeSection = holeSummary.parentElement;
-  if(!holeSection || holeSection.contains(boardBox)) return;
-
-  boardBox.dataset.v111Merged = "1";
-  boardBox.classList.add("v111-board-inline");
-  holeSummary.insertAdjacentElement("afterend", boardBox);
-}
-document.addEventListener("DOMContentLoaded", () => {
-  setTimeout(v111MergeCardAreas, 0);
-  setTimeout(v111MergeCardAreas, 500);
-});

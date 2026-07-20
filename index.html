@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=111">
+  <link rel="stylesheet" href="styles.css?v=112">
 
 
 <style id="v61-reference-match">
@@ -446,6 +446,21 @@
               <button type="button" class="card-slot" data-card-slot="hero1">＋<small>第 2 張</small></button>
             </div>
             <div id="saHandReadable" class="hand-readable">尚未選擇手牌</div>
+            <div class="hole-board-combined-v112">
+              <div class="combined-board-title">公共牌</div>
+<div class="persistent-board-wrap" id="persistentBoardSlots">
+          <div class="persistent-board-labels">
+            <span>翻牌</span><span>轉牌</span><span>河牌</span>
+          </div>
+          <div class="persistent-board-cards">
+            <button type="button" class="persistent-board-slot" data-board-slot="0"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="1"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="2"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="3"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="4"><span class="slot-placeholder">＋</span></button>
+          </div>
+        </div>
+            </div>
             <input id="saHand" type="hidden" value="">
           </section>
 
@@ -566,19 +581,6 @@
           </section>
 
           <div class="strategy-actions strategy-actions-v88">
-            
-        <div class="persistent-board-wrap" id="persistentBoardSlots">
-          <div class="persistent-board-labels">
-            <span>翻牌</span><span>轉牌</span><span>河牌</span>
-          </div>
-          <div class="persistent-board-cards">
-            <button type="button" class="persistent-board-slot" data-board-slot="0"><span class="slot-placeholder">＋</span></button>
-            <button type="button" class="persistent-board-slot" data-board-slot="1"><span class="slot-placeholder">＋</span></button>
-            <button type="button" class="persistent-board-slot" data-board-slot="2"><span class="slot-placeholder">＋</span></button>
-            <button type="button" class="persistent-board-slot" data-board-slot="3"><span class="slot-placeholder">＋</span></button>
-            <button type="button" class="persistent-board-slot" data-board-slot="4"><span class="slot-placeholder">＋</span></button>
-          </div>
-        </div>
 <button id="saAnalyzeBtn" type="button">分析這一手</button>
             <button id="saSaveBtn" class="secondary" type="button">儲存分析紀錄</button>
             <button id="saClearHandBtn" class="danger" type="button">🧹 一鍵清除本手</button>
@@ -724,7 +726,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=111"></script>
+  <script type="module" src="hand-analyzer.js?v=112"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 </body>
 </html>
