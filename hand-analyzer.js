@@ -127,29 +127,35 @@ function getFoldedBeforeStreet(street){
 function populateActors(){
   const positions=POSITIONS_BY_SIZE[Number($("saTableSize").value)]||POSITIONS_BY_SIZE[6];
   const hero=$("saHeroPos").value;
+
   document.querySelectorAll(".action-builder").forEach(builder=>{
     const sel=builder.querySelector(".action-actor");
     if(!sel)return;
+
     const street=streetKeyFromBuilder(builder);
     const folded=getFoldedBeforeStreet(street);
     const old=sel.value;
 
-    const opts=[];
-    if(hero){
-      const heroFolded=folded.has(hero);
-      opts.push(`<option value="我" ${heroFolded?"disabled":""}>${hero}｜${positionName(hero)}（我）${heroFolded?"（已棄牌）":""}</option>`);
-    }
-    positions.filter(p=>p!==hero).forEach(p=>{
+    // 永遠依牌桌固定順序排列，不把「我」另外移到最上面。
+    const opts=positions.map(p=>{
+      const isHero=p===hero;
       const isFolded=folded.has(p);
-      opts.push(`<option value="${p}" ${isFolded?"disabled":""}>${p}｜${positionName(p)}${isFolded?"（已棄牌）":""}</option>`);
+      const label=`${p}｜${positionName(p)}${isHero?"（我）":""}${isFolded?"（已棄牌）":""}`;
+      // 我的座位仍用 value="我"，其他位置用原位置代碼。
+      const value=isHero?"我":p;
+      return `<option value="${value}" ${isFolded?"disabled":""}>${label}</option>`;
     });
+
     sel.innerHTML=opts.join("");
-    if([...sel.options].some(o=>o.value===old&&!o.disabled)) sel.value=old;
-    else {
+
+    if([...sel.options].some(o=>o.value===old&&!o.disabled)){
+      sel.value=old;
+    }else{
       const first=[...sel.options].find(o=>!o.disabled);
       if(first) sel.value=first.value;
     }
   });
+
   renderStillInHandReminderV94();
 }
 function cardDisplay(code){
