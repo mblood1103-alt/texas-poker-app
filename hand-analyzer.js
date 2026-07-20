@@ -566,12 +566,26 @@ function initActionBuilders(){
         if (["開池", "加注", "加註", "全下"].includes(a.action)) lastAggressive = i;
       });
 
-      const responseStart = Math.max(0, lastAggressive);
+      // v108：下注輪完成不能要求「最後一次進攻者自己再回應一次」。
+      // 開池／加註者的動作本身已經算完成；只需要檢查其後所有仍在局玩家
+      // 是否都已經回應（跟注／棄牌／全下，或有人再次加註則重新起算）。
+      const responseStart = lastAggressive >= 0 ? lastAggressive + 1 : 0;
       const responseActions = streetActions.slice(responseStart);
       const responded = new Set(responseActions.map(normalizedActor));
-      const roundComplete =
-        livePositions.length > 0 &&
-        livePositions.every(p => responded.has(p));
+
+      let roundComplete = false;
+      if (lastAggressive >= 0) {
+        const aggressor = normalizedActor(streetActions[lastAggressive]);
+        const needResponse = livePositions.filter(p => p !== aggressor);
+        roundComplete =
+          needResponse.length === 0 ||
+          needResponse.every(p => responded.has(p));
+      } else {
+        // 沒有開池／加註時，所有仍在局玩家各完成一次行動即結束。
+        roundComplete =
+          livePositions.length > 0 &&
+          livePositions.every(p => responded.has(p));
+      }
 
       if (roundComplete) {
         const actorSel = builder.querySelector(".action-actor");
@@ -582,6 +596,7 @@ function initActionBuilders(){
           doneOpt.textContent = "✅ 本街行動已完成";
           doneOpt.selected = true;
           actorSel.appendChild(doneOpt);
+          actorSel.value = "";
           actorSel.disabled = true;
         }
         const typeSel = builder.querySelector(".action-type");
