@@ -1142,3 +1142,9 @@ body.picker-open{overflow:hidden}
   color:#0f172a;
   font-weight:700;
 }
+
+/* v111：手牌＋公共牌集中顯示 */
+.v111-board-inline{
+  margin-top:14px !important;
+  margin-bottom:16px !important;
+}
