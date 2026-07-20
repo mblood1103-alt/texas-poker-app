@@ -498,6 +498,14 @@ function refreshActionTypeOptions(builder){
   refreshActionAmountUI(builder);
 }
 
+
+function clearReentryHintV113(builder){
+  if(!builder)return;
+  const actorSel=builder.querySelector(".action-actor");
+  actorSel?.classList.remove("needs-reentry-v113");
+  builder.querySelector(".reentry-hint-v113")?.remove();
+}
+
 function initActionBuilders(){
   document.querySelectorAll(".action-builder").forEach(builder=>{
     const street=builder.dataset.builder;
@@ -509,6 +517,7 @@ function initActionBuilders(){
     const refresh=()=>refreshActionAmountUI(builder);
     type.addEventListener("change",refresh);
     actor.addEventListener("change",()=>{
+      clearReentryHintV113(builder);
       refreshActionTypeOptions(builder);
     });
     refreshActionTypeOptions(builder);
@@ -543,6 +552,7 @@ function initActionBuilders(){
         action,
         amount:actionNeedsAmount(action)?amt:""
       });
+      clearReentryHintV113(builder);
 
       amount.value="";
       amount.readOnly=false;
@@ -640,17 +650,22 @@ function renderActionSequence(street){
       <button type="button" data-remove="${i}" aria-label="刪除">×</button>
     </span>`).join(""):`<span class="position-help">尚未加入行動</span>`;
   box.querySelectorAll("[data-remove]").forEach(btn=>btn.addEventListener("click",()=>{
-    actionState[street].splice(Number(btn.dataset.remove),1);
+    const removeIndex=Number(btn.dataset.remove);
+    const removedAction=actionState[street][removeIndex];
+    actionState[street].splice(removeIndex,1);
 
-    // v112：只要刪除任何一筆行動，就立即退出「完成本輪」狀態，
-    // 重新開放選單與加入按鈕，讓使用者可以重新補登。
+    // v113：刪除哪一位，就優先把「誰行動」切回那一位，
+    // 並用灰底提示「這一位需要重新補登」。
     const builder=document.querySelector(`.action-builder[data-builder="${street}"]`);
     if(builder){
       const actorSel=builder.querySelector(".action-actor");
       const typeSel=builder.querySelector(".action-type");
       const addBtn=builder.querySelector(".add-action-btn");
 
-      if(actorSel) actorSel.disabled=false;
+      if(actorSel){
+        actorSel.disabled=false;
+        actorSel.classList.remove("needs-reentry-v113");
+      }
       if(typeSel) typeSel.disabled=false;
       if(addBtn){
         addBtn.disabled=false;
@@ -658,7 +673,6 @@ function renderActionSequence(street){
         delete addBtn.dataset.roundComplete;
       }
 
-      // 清掉所有完成輪次的暫存標記，避免刪除後又被舊狀態鎖回去。
       Object.keys(builder.dataset).forEach(key=>{
         if(key.startsWith("roundCompleteCount")) delete builder.dataset[key];
       });
@@ -666,6 +680,27 @@ function renderActionSequence(street){
 
     renderActionSequence(street);
     populateActors();
+
+    if(builder && removedAction){
+      const actorSel=builder.querySelector(".action-actor");
+      const removedPos=actualActorPosition(removedAction.actor);
+      const hero=$("saHeroPos").value;
+      const wantedValue=removedPos===hero ? "我" : removedPos;
+
+      const target=[...actorSel.options].find(o=>o.value===wantedValue && !o.disabled);
+      if(target){
+        actorSel.value=wantedValue;
+        actorSel.classList.add("needs-reentry-v113");
+
+        let hint=builder.querySelector(".reentry-hint-v113");
+        if(!hint){
+          hint=document.createElement("div");
+          hint.className="reentry-hint-v113";
+          actorSel.closest(".action-builder")?.insertBefore(hint, actorSel.closest(".action-builder").querySelector(".add-action-btn"));
+        }
+        hint.textContent=`↩️ 剛剛刪除的是 ${target.textContent}，請重新補登這一位`;
+      }
+    }
   }));
   syncActionHidden(street);
   populateActors();
