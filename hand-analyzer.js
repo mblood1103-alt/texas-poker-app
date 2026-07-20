@@ -588,22 +588,24 @@ function initActionBuilders(){
       }
 
       if (roundComplete) {
+        // v110：本輪完成後不要把編輯功能鎖死。
+        // 顯示完成狀態；只要使用者刪除下面任一行動，renderActions()
+        // 會重新計算下一位並恢復正常的「＋加入這個行動」。
         const actorSel = builder.querySelector(".action-actor");
+        const typeSel = builder.querySelector(".action-type");
+        const addBtn = builder.querySelector(".add-action-btn");
+
         if (actorSel) {
-          actorSel.innerHTML = "";
-          const doneOpt = document.createElement("option");
-          doneOpt.value = "";
-          doneOpt.textContent = "✅ 本街行動已完成";
-          doneOpt.selected = true;
-          actorSel.appendChild(doneOpt);
-          actorSel.value = "";
           actorSel.disabled = true;
         }
-        const typeSel = builder.querySelector(".action-type");
-        if (typeSel) typeSel.disabled = true;
-        const addBtn = builder.querySelector(".add-action-btn");
-        if (addBtn) addBtn.disabled = true;
-        if (typeof renderActions === "function") renderActions();
+        if (typeSel) {
+          typeSel.disabled = true;
+        }
+        if (addBtn) {
+          addBtn.disabled = false;
+          addBtn.textContent = "✅ 完成本輪";
+          addBtn.dataset.roundComplete = "1";
+        }
         return;
       }
 
