@@ -1083,3 +1083,19 @@ body.picker-open{overflow:hidden}
   margin:0 0 10px;
   color:#78350f;
 }
+
+/* v93：目前仍在牌局玩家提醒 */
+.still-in-hand-v93{
+  margin:0 0 14px;
+  padding:12px 14px;
+  border:1px solid #cbd5e1;
+  border-radius:14px;
+  background:#f8fafc;
+  color:#0f172a;
+}
+.still-in-hand-v93 b{display:block;margin-bottom:8px}
+.still-in-hand-v93 div{display:flex;flex-wrap:wrap;gap:7px}
+.still-in-hand-v93 span{
+  display:inline-flex;padding:6px 10px;border-radius:999px;
+  background:#e2e8f0;font-weight:700;font-size:14px;
+}

@@ -508,3 +508,42 @@ document.addEventListener("click",e=>{
   openCardPicker(target);
 });
 window.renderPersistentBoardV91();
+
+
+/* v93：自動提醒目前仍在牌局的玩家 */
+function getPlayersStillInHand(targetStreet){
+  const seats=getPositions(Number($("saTableSize")?.value)||6);
+  const hero=selectedPosition||"";
+  let players=[...new Set([hero,...seats].filter(Boolean))];
+  const order=["preflop","flop","turn","river"];
+  const targetIndex=order.indexOf(targetStreet);
+  for(let i=0;i<targetIndex;i++){
+    const actions=actionState[order[i]]||[];
+    actions.forEach(a=>{
+      const who=String(a.who||a.player||"").trim();
+      const act=String(a.action||a.act||"").trim();
+      if(who && /棄牌|fold/i.test(act)) players=players.filter(p=>p!==who && !(who==="我"&&p===hero));
+    });
+  }
+  return players;
+}
+function renderStillInHandReminder(){
+  const street=activeStreet();
+  let box=document.getElementById("stillInHandReminderV93");
+  const panel=document.querySelector(`[data-action-panel="${street}"]`) || document.querySelector(".street-action-panel:not(.hidden)");
+  if(!panel)return;
+  if(!box){
+    box=document.createElement("div");
+    box.id="stillInHandReminderV93";
+    box.className="still-in-hand-v93";
+    panel.prepend(box);
+  }else if(box.parentElement!==panel){ panel.prepend(box); }
+  if(street==="preflop"){box.style.display="none";return}
+  const names=getPlayersStillInHand(street);
+  box.style.display="";
+  const label=street==="flop"?"進入翻牌":street==="turn"?"進入轉牌":"進入河牌";
+  box.innerHTML=`<b>🎯 ${label}的玩家</b><div>${names.length?names.map(n=>`<span>${escapeHtml(n===selectedPosition?"我":n)}</span>`).join(""):"尚無可判斷的玩家"}</div>`;
+}
+document.addEventListener("click",()=>setTimeout(renderStillInHandReminder,0));
+document.addEventListener("change",()=>setTimeout(renderStillInHandReminder,0));
+setTimeout(renderStillInHandReminder,300);
