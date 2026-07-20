@@ -211,7 +211,13 @@ function renderDeck(){
   })).join("");
   document.querySelectorAll(".deck-card:not(.used)").forEach(btn=>btn.addEventListener("click",()=>{
     selectedCards[activeCardSlot]=btn.dataset.card;
-    renderSelectedCards(); closeCardPicker();
+    renderSelectedCards();
+    closeCardPicker();
+
+    // 如果已經分析過，換任何一張牌都立即用目前局面重新分析。
+    if(lastAnalysis){
+      setTimeout(()=>analyze(),0);
+    }
   }));
 }
 function renderSelectedCards(){
@@ -406,6 +412,64 @@ function refreshActionAmountUI(builder){
   }
 }
 
+
+function highestCommittedOnStreet(street){
+  const commits=initialStreetCommitments(street);
+  const actions=actionState[street]||[];
+  for(const a of actions){
+    const pos=actualActorPosition(a.actor);
+    if(!pos) continue;
+    if(!(pos in commits)) commits[pos]=0;
+    const current=Number(commits[pos])||0;
+    const high=Math.max(0,...Object.values(commits).map(Number));
+
+    if(a.action==="跟注"){
+      commits[pos]=Math.max(current,high);
+    }else if(["開池","下注","加注","全下"].includes(a.action)){
+      const target=Number(a.amount)||0;
+      if(target>0) commits[pos]=Math.max(current,target);
+    }
+  }
+  return Math.max(0,...Object.values(commits).map(Number));
+}
+
+function hasAggressiveBetOnStreet(street){
+  return (actionState[street]||[]).some(a=>["開池","下注","加注","全下"].includes(a.action));
+}
+
+function allowedActionsForCurrentState(street, actorValue){
+  const hasBet=hasAggressiveBetOnStreet(street);
+
+  // 翻牌前尚未有人開池：可以開池、跟注（limp）、棄牌、全下。
+  // 一旦有人開池或加注：後面只能跟注、加注、棄牌、全下，不能再「開池」。
+  if(street==="preflop"){
+    return hasBet
+      ? ["跟注","加注","棄牌","全下"]
+      : ["開池","跟注","棄牌","全下"];
+  }
+
+  // 翻牌後尚未有人下注：過牌、下注、棄牌、全下。
+  // 已有人下注後：跟注、加注、棄牌、全下。
+  return hasBet
+    ? ["跟注","加注","棄牌","全下"]
+    : ["過牌","下注","棄牌","全下"];
+}
+
+function refreshActionTypeOptions(builder){
+  const street=builder.dataset.builder;
+  const actor=builder.querySelector(".action-actor");
+  const type=builder.querySelector(".action-type");
+  if(!actor||!type)return;
+
+  const old=type.value;
+  const allowed=allowedActionsForCurrentState(street,actor.value);
+
+  type.innerHTML=allowed.map(a=>`<option value="${a}">${a}</option>`).join("");
+  if(allowed.includes(old)) type.value=old;
+
+  refreshActionAmountUI(builder);
+}
+
 function initActionBuilders(){
   document.querySelectorAll(".action-builder").forEach(builder=>{
     const street=builder.dataset.builder;
@@ -416,8 +480,10 @@ function initActionBuilders(){
 
     const refresh=()=>refreshActionAmountUI(builder);
     type.addEventListener("change",refresh);
-    actor.addEventListener("change",refresh);
-    refresh();
+    actor.addEventListener("change",()=>{
+      refreshActionTypeOptions(builder);
+    });
+    refreshActionTypeOptions(builder);
 
     addBtn.addEventListener("click",()=>{
       const selectedActor=actor.value;
@@ -472,7 +538,10 @@ function initActionBuilders(){
       }
 
       updateHeroChipDisplays();
-      document.querySelectorAll(".action-builder").forEach(refreshActionAmountUI);
+      document.querySelectorAll(".action-builder").forEach(b=>{
+        refreshActionTypeOptions(b);
+        refreshActionAmountUI(b);
+      });
     });
   });
 }
@@ -490,7 +559,10 @@ function renderActionSequence(street){
   syncActionHidden(street);
   populateActors();
   updateHeroChipDisplays();
-  document.querySelectorAll(".action-builder").forEach(refreshActionAmountUI);
+  document.querySelectorAll(".action-builder").forEach(b=>{
+    refreshActionTypeOptions(b);
+    refreshActionAmountUI(b);
+  });
 }
 function syncActionHidden(street){
   const text=actionState[street].map(a=>`${a.actor} ${a.action}${a.amount?`到 ${a.amount}`:""}`).join("，");
@@ -998,6 +1070,7 @@ function init(){
   $("saClearHandBtn").addEventListener("click",clearCurrentHand);
   $("saClearHistory").addEventListener("click",()=>{if(confirm("確定清空這台裝置上的牌局分析紀錄嗎？")){localStorage.removeItem(HISTORY_KEY);renderHistory();}});
   initStreetTabs();initCardSlots();initActionBuilders();
+  document.querySelectorAll(".action-builder").forEach(refreshActionTypeOptions);
   renderSeats();renderSelectedCards();
   Object.keys(actionState).forEach(renderActionSequence);
   renderHistory();
