@@ -1181,3 +1181,22 @@ body.picker-open{overflow:hidden}
   font-size:14px;
   font-weight:700;
 }
+
+
+/* v114：本輪已行動選項由原生 disabled 呈現灰色；待補登保持可選 */
+.action-actor.needs-reentry-v114{
+  background:#e5e7eb !important;
+  border-color:#94a3b8 !important;
+  color:#334155 !important;
+  box-shadow:0 0 0 3px rgba(148,163,184,.18);
+}
+.reentry-hint-v114{
+  margin:10px 0 0;
+  padding:10px 12px;
+  border-radius:12px;
+  background:#f1f5f9;
+  color:#475569;
+  font-size:14px;
+  font-weight:800;
+  line-height:1.5;
+}

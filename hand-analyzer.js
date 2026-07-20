@@ -151,63 +151,159 @@ function actionOrderForStreet(street){
   return positions.slice(idx+1).concat(positions.slice(0,idx+1));
 }
 
+
+const reentryPendingV114 = {
+  preflop: [],
+  flop: [],
+  turn: [],
+  river: []
+};
+
+function addReentryPendingV114(street,pos){
+  if(!pos)return;
+  const list=reentryPendingV114[street]||[];
+  if(!list.includes(pos)) list.push(pos);
+  reentryPendingV114[street]=list;
+}
+
+function removeReentryPendingV114(street,pos){
+  reentryPendingV114[street]=(reentryPendingV114[street]||[]).filter(p=>p!==pos);
+}
+
+function clearReentryPendingV114(street=null){
+  const streets=street?[street]:Object.keys(reentryPendingV114);
+  streets.forEach(s=>reentryPendingV114[s]=[]);
+  document.querySelectorAll(".reentry-hint-v113,.reentry-hint-v114").forEach(el=>el.remove());
+  document.querySelectorAll(".action-actor").forEach(el=>el.classList.remove("needs-reentry-v113","needs-reentry-v114"));
+}
+
+function normalizedActorPosV114(a){
+  if(!a)return "";
+  return actualActorPosition(a.actor) || (a.actor==="我" ? $("saHeroPos").value : a.actor);
+}
+
+function actedThisBettingRoundV114(street){
+  const actions=actionState[street]||[];
+  const aggressiveActions=["開池","下注","加注","加註","全下"];
+
+  let lastAggressive=-1;
+  actions.forEach((a,i)=>{
+    if(aggressiveActions.includes(a.action)) lastAggressive=i;
+  });
+
+  const acted=new Set();
+
+  if(lastAggressive>=0){
+    // 新的下注/加注會重開行動；加注者本身已完成，之後已回應者也完成。
+    acted.add(normalizedActorPosV114(actions[lastAggressive]));
+    actions.slice(lastAggressive+1).forEach(a=>acted.add(normalizedActorPosV114(a)));
+  }else{
+    // 尚無下注/加注時，這一輪已經操作過的人先灰掉。
+    actions.forEach(a=>acted.add(normalizedActorPosV114(a)));
+  }
+
+  return acted;
+}
+
+function renderReentryHintV114(street,builder){
+  if(!builder)return;
+  builder.querySelector(".reentry-hint-v113")?.remove();
+  builder.querySelector(".reentry-hint-v114")?.remove();
+
+  const pending=(reentryPendingV114[street]||[]);
+  if(!pending.length)return;
+
+  const hint=document.createElement("div");
+  hint.className="reentry-hint-v114";
+  const hero=$("saHeroPos").value;
+  const labels=pending.map(p=>`${p}｜${positionName(p)}${p===hero?"（我）":""}`);
+  hint.textContent=`↩️ 待重新補登：${labels.join("、")}`;
+  const addBtn=builder.querySelector(".add-action-btn");
+  if(addBtn) builder.insertBefore(hint,addBtn);
+}
+
 function populateActors(){
   const hero=$("saHeroPos").value;
 
   document.querySelectorAll(".action-builder").forEach(builder=>{
     const sel=builder.querySelector(".action-actor");
     if(!sel)return;
-    sel.disabled=false;
-    const typeSel=builder.querySelector(".action-type");
-    if(typeSel) typeSel.disabled=false;
-    const addBtn=builder.querySelector(".add-action");
-    if(addBtn) addBtn.disabled=false;
 
     const street=streetKeyFromBuilder(builder);
     const positions=actionOrderForStreet(street);
     const folded=getFoldedBeforeStreet(street);
+    const acted=actedThisBettingRoundV114(street);
+    const pending=new Set(reentryPendingV114[street]||[]);
 
-    // 記住目前選中的實際座位，不讓「我」這個 value 影響排序。
-    const currentActual = sel.value==="我" ? hero : sel.value;
+    // 保留目前實際座位
+    const currentActual=sel.value==="我"?hero:sel.value;
 
+    sel.disabled=false;
     sel.innerHTML="";
 
-    // 依固定牌桌順序逐一建立，絕不把「我」移到第一個。
     positions.forEach(p=>{
       const opt=document.createElement("option");
       const isHero=p===hero;
       const isFolded=folded.has(p);
+      const alreadyActed=acted.has(p);
+      const needsReentry=pending.has(p);
 
       opt.value=isHero?"我":p;
-      opt.disabled=isFolded;
-      opt.textContent=`${p}｜${positionName(p)}${isHero?"（我）":""}${isFolded?"（已棄牌）":""}`;
 
+      // 已棄牌永遠不能選。
+      // 本輪已行動者變灰不可再選；但如果該筆動作被刪除，重新開放讓你補登。
+      opt.disabled=isFolded || (alreadyActed && !needsReentry);
+
+      let suffix="";
+      if(isHero)suffix+="（我）";
+      if(isFolded)suffix+="（已棄牌）";
+      else if(alreadyActed && !needsReentry)suffix+="（已行動）";
+      else if(needsReentry)suffix+="（待補登）";
+
+      opt.textContent=`${p}｜${positionName(p)}${suffix}`;
       sel.appendChild(opt);
     });
 
-    // 恢復原本選擇；沒有才選第一個可用座位。
-    const wantedValue=currentActual===hero?"我":currentActual;
-    const wanted=[...sel.options].find(o=>o.value===wantedValue&&!o.disabled);
-    if(wanted){
-      sel.value=wanted.value;
+    // 優先選「待補登」中依牌桌順序最前面的那位
+    const firstPending=positions.find(p=>pending.has(p) && !folded.has(p));
+    if(firstPending){
+      const value=firstPending===hero?"我":firstPending;
+      if([...sel.options].some(o=>o.value===value&&!o.disabled)){
+        sel.value=value;
+        sel.classList.add("needs-reentry-v114");
+      }
     }else{
-      const first=[...sel.options].find(o=>!o.disabled);
-      if(first)sel.value=first.value;
+      sel.classList.remove("needs-reentry-v114","needs-reentry-v113");
+      const wantedValue=currentActual===hero?"我":currentActual;
+      const wanted=[...sel.options].find(o=>o.value===wantedValue&&!o.disabled);
+      if(wanted){
+        sel.value=wanted.value;
+      }else{
+        const first=[...sel.options].find(o=>!o.disabled);
+        if(first)sel.value=first.value;
+      }
     }
-  });
 
-  document.querySelectorAll(".action-builder").forEach(builder=>{
-    const street=streetKeyFromBuilder(builder);
-    if((actionState[street]||[]).length>0)return;
-    const sel=builder.querySelector(".action-actor");
-    if(!sel)return;
-    const folded=getFoldedBeforeStreet(street);
-    const first=actionOrderForStreet(street).find(p=>!folded.has(p));
-    const hero=$("saHeroPos").value;
-    const value=first===hero?"我":first;
-    if(value && [...sel.options].some(o=>o.value===value&&!o.disabled)){
-      sel.value=value;
+    // 完成本輪時維持鎖定；否則保持可編輯
+    const addBtn=builder.querySelector(".add-action-btn");
+    const typeSel=builder.querySelector(".action-type");
+    const roundDone=addBtn?.dataset.roundComplete==="1";
+    if(roundDone && !pending.size){
+      sel.disabled=true;
+      if(typeSel)typeSel.disabled=true;
+    }else{
+      sel.disabled=false;
+      if(typeSel)typeSel.disabled=false;
+      if(addBtn){
+        addBtn.disabled=false;
+        if(addBtn.dataset.roundComplete==="1" && pending.size){
+          delete addBtn.dataset.roundComplete;
+          addBtn.textContent="＋加入這個行動";
+        }
+      }
     }
+
+    renderReentryHintV114(street,builder);
   });
 
   if(typeof renderStillInHandReminderV94==="function") renderStillInHandReminderV94();
@@ -517,7 +613,7 @@ function initActionBuilders(){
     const refresh=()=>refreshActionAmountUI(builder);
     type.addEventListener("change",refresh);
     actor.addEventListener("change",()=>{
-      clearReentryHintV113(builder);
+      actor.classList.remove("needs-reentry-v113");
       refreshActionTypeOptions(builder);
     });
     refreshActionTypeOptions(builder);
@@ -552,8 +648,8 @@ function initActionBuilders(){
         action,
         amount:actionNeedsAmount(action)?amt:""
       });
-      clearReentryHintV113(builder);
-
+      removeReentryPendingV114(street,actualPos);
+      renderReentryHintV114(street,builder);
       amount.value="";
       amount.readOnly=false;
       renderActionSequence(street);
@@ -652,55 +748,28 @@ function renderActionSequence(street){
   box.querySelectorAll("[data-remove]").forEach(btn=>btn.addEventListener("click",()=>{
     const removeIndex=Number(btn.dataset.remove);
     const removedAction=actionState[street][removeIndex];
-    actionState[street].splice(removeIndex,1);
+    const removedPos=normalizedActorPosV114(removedAction);
 
-    // v113：刪除哪一位，就優先把「誰行動」切回那一位，
-    // 並用灰底提示「這一位需要重新補登」。
+    actionState[street].splice(removeIndex,1);
+    addReentryPendingV114(street,removedPos);
+
     const builder=document.querySelector(`.action-builder[data-builder="${street}"]`);
     if(builder){
       const actorSel=builder.querySelector(".action-actor");
       const typeSel=builder.querySelector(".action-type");
       const addBtn=builder.querySelector(".add-action-btn");
 
-      if(actorSel){
-        actorSel.disabled=false;
-        actorSel.classList.remove("needs-reentry-v113");
-      }
-      if(typeSel) typeSel.disabled=false;
+      if(actorSel)actorSel.disabled=false;
+      if(typeSel)typeSel.disabled=false;
       if(addBtn){
         addBtn.disabled=false;
         addBtn.textContent="＋加入這個行動";
         delete addBtn.dataset.roundComplete;
       }
-
-      Object.keys(builder.dataset).forEach(key=>{
-        if(key.startsWith("roundCompleteCount")) delete builder.dataset[key];
-      });
     }
 
     renderActionSequence(street);
     populateActors();
-
-    if(builder && removedAction){
-      const actorSel=builder.querySelector(".action-actor");
-      const removedPos=actualActorPosition(removedAction.actor);
-      const hero=$("saHeroPos").value;
-      const wantedValue=removedPos===hero ? "我" : removedPos;
-
-      const target=[...actorSel.options].find(o=>o.value===wantedValue && !o.disabled);
-      if(target){
-        actorSel.value=wantedValue;
-        actorSel.classList.add("needs-reentry-v113");
-
-        let hint=builder.querySelector(".reentry-hint-v113");
-        if(!hint){
-          hint=document.createElement("div");
-          hint.className="reentry-hint-v113";
-          actorSel.closest(".action-builder")?.insertBefore(hint, actorSel.closest(".action-builder").querySelector(".add-action-btn"));
-        }
-        hint.textContent=`↩️ 剛剛刪除的是 ${target.textContent}，請重新補登這一位`;
-      }
-    }
   }));
   syncActionHidden(street);
   populateActors();
@@ -1151,6 +1220,7 @@ function renderHistory(){
 }
 
 function clearCurrentHand(){
+  clearReentryPendingV114();
   Object.keys(selectedCards).forEach(k=>selectedCards[k]="");
   Object.keys(actionState).forEach(k=>actionState[k]=[]);
   renderSelectedCards();
