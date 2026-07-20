@@ -142,8 +142,16 @@ function getFoldedBeforeStreet(street){
   }
   return folded;
 }
-function populateActors(){
+
+function actionOrderForStreet(street){
   const positions=canonicalSeatOrder();
+  const anchor=street==="preflop" ? "BB" : "BTN";
+  const idx=positions.indexOf(anchor);
+  if(idx<0)return positions.slice();
+  return positions.slice(idx+1).concat(positions.slice(0,idx+1));
+}
+
+function populateActors(){
   const hero=$("saHeroPos").value;
 
   document.querySelectorAll(".action-builder").forEach(builder=>{
@@ -151,6 +159,7 @@ function populateActors(){
     if(!sel)return;
 
     const street=streetKeyFromBuilder(builder);
+    const positions=actionOrderForStreet(street);
     const folded=getFoldedBeforeStreet(street);
 
     // 記住目前選中的實際座位，不讓「我」這個 value 影響排序。
@@ -179,6 +188,20 @@ function populateActors(){
     }else{
       const first=[...sel.options].find(o=>!o.disabled);
       if(first)sel.value=first.value;
+    }
+  });
+
+  document.querySelectorAll(".action-builder").forEach(builder=>{
+    const street=streetKeyFromBuilder(builder);
+    if((actionState[street]||[]).length>0)return;
+    const sel=builder.querySelector(".action-actor");
+    if(!sel)return;
+    const folded=getFoldedBeforeStreet(street);
+    const first=actionOrderForStreet(street).find(p=>!folded.has(p));
+    const hero=$("saHeroPos").value;
+    const value=first===hero?"我":first;
+    if(value && [...sel.options].some(o=>o.value===value&&!o.disabled)){
+      sel.value=value;
     }
   });
 
@@ -521,7 +544,7 @@ function initActionBuilders(){
       renderActionSequence(street);
 
       // 記住本次行動座位，刷新後自動跳到牌桌順序的下一位（略過已棄牌）。
-      const positions=canonicalSeatOrder();
+      const positions=actionOrderForStreet(street);
       const actedIndex=positions.indexOf(actualPos);
 
       populateActors();
