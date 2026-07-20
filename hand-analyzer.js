@@ -684,3 +684,98 @@ function renderStillInHandReminderV94(){
 document.addEventListener("click",()=>setTimeout(()=>{populateActors();renderStillInHandReminderV94();},0));
 document.addEventListener("change",()=>setTimeout(()=>{populateActors();renderStillInHandReminderV94();},0));
 setTimeout(()=>{populateActors();renderStillInHandReminderV94();},300);
+
+/* v98：即時棄牌鎖定、籌碼自動計算、All-in、自動完整牌型風險 */
+function foldedThroughStreetV98(street){
+  const order=["preflop","flop","turn","river"], idx=order.indexOf(street), folded=new Set();
+  for(let i=0;i<=idx;i++) (actionState[order[i]]||[]).forEach(a=>{if(a.action==="棄牌"){const p=actorToPosition(a.actor);if(p)folded.add(p);}});
+  return folded;
+}
+function heroCommittedV98(){
+  let total=0;
+  Object.values(actionState).flat().forEach(a=>{
+    if(actorToPosition(a.actor)!==$("saHeroPos").value)return;
+    if(["開池","下注","加注","全下","跟注"].includes(a.action) && a.amount) total+=Number(a.amount)||0;
+  });
+  return total;
+}
+function heroRemainingV98(){return Math.max(0,(Number($("saStack")?.value)||0)-heroCommittedV98());}
+function updateStackHintV98(){
+  document.querySelectorAll(".stack-hint-v98").forEach(x=>x.remove());
+  const hero=$("saHeroPos")?.value;if(!hero)return;
+  const remaining=heroRemainingV98();
+  document.querySelectorAll(".action-builder").forEach(b=>{
+    const d=document.createElement("div");d.className="stack-hint-v98";
+    d.innerHTML=`💰 你的起始籌碼：<b>${Number($("saStack")?.value)||0}</b>　已投入：<b>${heroCommittedV98()}</b>　目前剩餘：<b>${remaining}</b>`;
+    b.querySelector(".action-controls")?.after(d);
+  });
+}
+
+// v98 重新建立玩家選單：固定 BTN → SB → BB → UTG → 前位 → HJ → CO；已棄牌立即禁用。
+function populateActors(){
+  const positions=canonicalSeatOrder(), hero=$("saHeroPos").value;
+  document.querySelectorAll(".action-builder").forEach(builder=>{
+    const sel=builder.querySelector(".action-actor");if(!sel)return;
+    const street=streetKeyFromBuilder(builder), folded=foldedThroughStreetV98(street);
+    const currentActual=actorToPosition(sel.value);
+    sel.innerHTML="";
+    positions.forEach(p=>{
+      const o=document.createElement("option"), isFolded=folded.has(p);
+      o.value=p;o.disabled=isFolded;
+      o.textContent=`${p}｜${positionName(p)}${p===hero?"（我）":""}${isFolded?"（已棄牌）":""}`;
+      sel.appendChild(o);
+    });
+    const wanted=[...sel.options].find(o=>o.value===currentActual&&!o.disabled);
+    const first=[...sel.options].find(o=>!o.disabled);
+    if(wanted)sel.value=wanted.value;else if(first)sel.value=first.value;
+  });
+  if(typeof renderStillInHandReminderV94==="function")renderStillInHandReminderV94();
+  updateStackHintV98();
+}
+
+// 攔截 v97 的加入行動按鈕：All-in 不必自己算，直接填目前剩餘籌碼；自己每次動作後顯示剩餘。
+document.querySelectorAll(".action-builder").forEach(builder=>{
+  const btn=builder.querySelector(".add-action-btn"), type=builder.querySelector(".action-type"), amount=builder.querySelector(".action-amount"), actor=builder.querySelector(".action-actor");
+  if(!btn||btn.dataset.v98)return;btn.dataset.v98="1";
+  btn.addEventListener("click",()=>setTimeout(()=>{updateStackHintV98();populateActors();},0),true);
+  type?.addEventListener("change",()=>{
+    const p=actorToPosition(actor.value);
+    if(type.value==="全下"&&p===$("saHeroPos").value){amount.value=heroRemainingV98();amount.readOnly=true;}
+    else amount.readOnly=false;
+  });
+  actor?.addEventListener("change",()=>{if(type.value==="全下"){const p=actorToPosition(actor.value);if(p===$("saHeroPos").value){amount.value=heroRemainingV98();amount.readOnly=true;}else amount.readOnly=false;}});
+});
+
+function rank5V98(cs){
+  const rv=c=>({"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"10":10,J:11,Q:12,K:13,A:14})[c.slice(0,-1)];
+  const rs=cs.map(rv).sort((a,b)=>b-a), suits=cs.map(c=>c.slice(-1)), cnt={};rs.forEach(r=>cnt[r]=(cnt[r]||0)+1);
+  const groups=Object.entries(cnt).map(([r,c])=>[Number(c),Number(r)]).sort((a,b)=>b[0]-a[0]||b[1]-a[1]);
+  const uniq=[...new Set(rs)];if(uniq.includes(14))uniq.push(1);let sh=0;for(let h=14;h>=5;h--)if([0,1,2,3,4].every(i=>uniq.includes(h-i))){sh=h;break;}
+  const flush=new Set(suits).size===1;
+  if(flush&&sh)return [8,sh];if(groups[0][0]===4)return [7,groups[0][1],...rs.filter(r=>r!==groups[0][1])];
+  if(groups[0][0]===3&&groups[1]?.[0]===2)return [6,groups[0][1],groups[1][1]];if(flush)return [5,...rs];if(sh)return [4,sh];
+  if(groups[0][0]===3)return [3,groups[0][1],...rs.filter(r=>r!==groups[0][1])];if(groups[0][0]===2&&groups[1]?.[0]===2)return [2,groups[0][1],groups[1][1],...rs.filter(r=>r!==groups[0][1]&&r!==groups[1][1])];
+  if(groups[0][0]===2)return [1,groups[0][1],...rs.filter(r=>r!==groups[0][1])];return [0,...rs];
+}
+function cmpV98(a,b){for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||0)-(b[i]||0);if(d)return d;}return 0;}
+function best7V98(cards){let best=null;for(let a=0;a<cards.length-4;a++)for(let b=a+1;b<cards.length-3;b++)for(let c=b+1;c<cards.length-2;c++)for(let d=c+1;d<cards.length-1;d++)for(let e=d+1;e<cards.length;e++){const r=rank5V98([cards[a],cards[b],cards[c],cards[d],cards[e]]);if(!best||cmpV98(r,best)>0)best=r;}return best;}
+function fullRiskV98(){
+  const hero=[selectedCards.hero0,selectedCards.hero1].filter(Boolean), board=[selectedCards.flop0,selectedCards.flop1,selectedCards.flop2,selectedCards.turn,selectedCards.river].filter(Boolean);
+  if(hero.length<2||board.length<3)return "";
+  const ranks=["A","K","Q","J","10","9","8","7","6","5","4","3","2"], suits=["s","h","d","c"], deck=[];ranks.forEach(r=>suits.forEach(s=>deck.push(r+s)));
+  const used=new Set([...hero,...board]), rem=deck.filter(c=>!used.has(c)), my=best7V98([...hero,...board]), names=["高牌","一對","兩對","三條","順子","同花","葫蘆","鐵支","同花順"];
+  const threats=new Map();let beat=0,total=0;
+  for(let i=0;i<rem.length;i++)for(let j=i+1;j<rem.length;j++){total++;const opp=best7V98([rem[i],rem[j],...board]);if(cmpV98(opp,my)>0){beat++;const n=names[opp[0]];if(!threats.has(n))threats.set(n,[]);if(threats.get(n).length<3)threats.get(n).push(`${cardDisplay(rem[i]).name}+${cardDisplay(rem[j]).name}`);}}
+  if(!beat)return `風險檢查：依目前已知牌面，沒有任何合法的兩張對手手牌能組成比你更大的牌；你目前是絕對最大牌（Nuts）。`;
+  const ordered=[...threats.keys()].sort((a,b)=>names.indexOf(b)-names.indexOf(a));
+  return `風險檢查：仍有 ${beat} 種對手兩張手牌組合可能擊敗你（未考慮對手實際範圍）。主要更大牌型：${ordered.join("、")}。例如：${ordered.slice(0,3).map(n=>`${n}：${threats.get(n).join(" / ")}`).join("；")}。`;
+}
+const renderResultV97=renderResult;
+renderResult=function(r){
+  if(r&&!r.unsupported&&r.street!=="翻牌前"){
+    const risk=fullRiskV98();if(risk&&!String(r.reason||"").includes("風險檢查"))r.reason=`${r.reason||""}\n\n${risk}`;
+  }
+  return renderResultV97(r);
+};
+
+setTimeout(()=>{populateActors();updateStackHintV98();},500);
