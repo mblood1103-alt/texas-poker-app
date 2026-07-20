@@ -143,7 +143,7 @@ function getFoldedBeforeStreet(street){
   return folded;
 }
 function populateActors(){
-  const positions=canonicalSeatOrder();
+  const positions=actionOrderForStreet(street);
   const hero=$("saHeroPos").value;
 
   document.querySelectorAll(".action-builder").forEach(builder=>{
@@ -470,6 +470,39 @@ function refreshActionTypeOptions(builder){
   refreshActionAmountUI(builder);
 }
 
+
+function actionOrderForStreet(street){
+  const positions=canonicalSeatOrder();
+
+  // 依既有牌桌固定順序 [BTN, SB, BB, ...前位..., CO] 旋轉：
+  // 翻牌前從 BB 後一位開始（6 人桌即 UTG）
+  // 翻牌後從 BTN 後一位開始（通常 SB）
+  const anchor = street==="preflop" ? "BB" : "BTN";
+  const idx = positions.indexOf(anchor);
+  if(idx<0) return positions.slice();
+  return positions.slice(idx+1).concat(positions.slice(0,idx+1));
+}
+
+function firstAvailableActorValue(street){
+  const hero=$("saHeroPos").value;
+  const folded=getFoldedBeforeStreet(street);
+  const first=actionOrderForStreet(street).find(p=>!folded.has(p));
+  return first ? (first===hero ? "我" : first) : "";
+}
+
+function setFirstActorForStreet(street){
+  const builder=document.querySelector(`.action-builder[data-builder="${street}"]`);
+  if(!builder)return;
+  const sel=builder.querySelector(".action-actor");
+  if(!sel)return;
+  const value=firstAvailableActorValue(street);
+  if(value && [...sel.options].some(o=>o.value===value&&!o.disabled)){
+    sel.value=value;
+  }
+  if(typeof refreshActionTypeOptions==="function") refreshActionTypeOptions(builder);
+  if(typeof refreshActionAmountUI==="function") refreshActionAmountUI(builder);
+}
+
 function initActionBuilders(){
   document.querySelectorAll(".action-builder").forEach(builder=>{
     const street=builder.dataset.builder;
@@ -515,6 +548,30 @@ function initActionBuilders(){
         action,
         amount:actionNeedsAmount(action)?amt:""
       });
+
+      /* v104 next actor override */
+      setTimeout(()=>{
+        const sel=builder.querySelector(".action-actor");
+        const hero=$("saHeroPos").value;
+        const folded=getFoldedBeforeStreet(street);
+        const order=actionOrderForStreet(street);
+        const actualCurrent=actualActorPosition(selectedActor);
+        const currentIdx=order.indexOf(actualCurrent);
+        if(currentIdx>=0){
+          for(let step=1;step<=order.length;step++){
+            const pos=order[(currentIdx+step)%order.length];
+            if(folded.has(pos)) continue;
+            const value=pos===hero?"我":pos;
+            const opt=[...sel.options].find(o=>o.value===value&&!o.disabled);
+            if(opt){
+              sel.value=value;
+              if(typeof refreshActionTypeOptions==="function") refreshActionTypeOptions(builder);
+              if(typeof refreshActionAmountUI==="function") refreshActionAmountUI(builder);
+              break;
+            }
+          }
+        }
+      },0);
 
       amount.value="";
       amount.readOnly=false;
@@ -1070,6 +1127,7 @@ function init(){
   $("saClearHandBtn").addEventListener("click",clearCurrentHand);
   $("saClearHistory").addEventListener("click",()=>{if(confirm("確定清空這台裝置上的牌局分析紀錄嗎？")){localStorage.removeItem(HISTORY_KEY);renderHistory();}});
   initStreetTabs();initCardSlots();initActionBuilders();
+  setTimeout(()=>["preflop","flop","turn","river"].forEach(setFirstActorForStreet),0);
   document.querySelectorAll(".action-builder").forEach(refreshActionTypeOptions);
   renderSeats();renderSelectedCards();
   Object.keys(actionState).forEach(renderActionSequence);
@@ -1103,6 +1161,7 @@ window.renderPersistentBoardV91=function(){
   wrap.querySelectorAll("[data-board-slot]").forEach((slot,i)=>{
     slot.innerHTML=boardSlotHtmlV91(cards[i]);
     slot.classList.toggle("filled",!!cards[i]);
+    if((actionState[street]||[]).length===0) setTimeout(()=>setFirstActorForStreet(street),0);
   });
 };
 document.addEventListener("click",e=>{
