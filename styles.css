@@ -1200,3 +1200,16 @@ body.picker-open{overflow:hidden}
   font-weight:800;
   line-height:1.5;
 }
+
+
+/* v120：聽牌提醒 */
+.draw-alert-v120{
+  margin:14px 0;
+  padding:12px 14px;
+  border-radius:14px;
+  background:#fff7d6;
+  border:1px solid #f1d36a;
+  color:#795800;
+  font-weight:800;
+  line-height:1.55;
+}

@@ -2,6 +2,12 @@
 const $ = id => document.getElementById(id);
 const HISTORY_KEY = "pokerStrategyHistoryV87";
 let lastAnalysis = null;
+const analysisByStreet = {
+  "翻牌前": null,
+  "翻牌": null,
+  "轉牌": null,
+  "河牌": null
+};
 let activeCardSlot = null;
 const selectedCards = {hero0:"",hero1:"",flop0:"",flop1:"",flop2:"",turn:"",river:""};
 const actionState = {preflop:[],flop:[],turn:[],river:[]};
@@ -837,9 +843,10 @@ function parsePressure(text,bb){
 function positionAdjustment(pos){return ({UTG:-10,"UTG+1":-8,MP:-5,HJ:-2,CO:2,BTN:6,SB:-3,BB:0})[pos]||0;}
 
 function activeStreet(){
-  // v118：分析以使用者目前點選的街為準，不再因為前後街已有牌/行動而誤判。
-  const active=document.querySelector(".street-tab.active")?.dataset?.street;
-  return ({preflop:"翻牌前",flop:"翻牌",turn:"轉牌",river:"河牌"})[active]||"翻牌前";
+  const activeTab=[...document.querySelectorAll(".street-tab")].find(b=>b.classList.contains("active"));
+  const visiblePanel=[...document.querySelectorAll(".street-panel")].find(p=>p.classList.contains("active"));
+  const key=activeTab?.dataset?.street || visiblePanel?.dataset?.panel || "preflop";
+  return ({preflop:"翻牌前",flop:"翻牌",turn:"轉牌",river:"河牌"})[key] || "翻牌前";
 }
 function boardCardsForStreetV118(street){
   if(street==="翻牌前") return [];
@@ -1000,6 +1007,97 @@ function getBoardSnapshotForStreet(street){
   return cards.slice(0, count == null ? cards.length : count);
 }
 
+
+function getDrawInfoV120(holeCards, boardCards){
+  if(!holeCards || holeCards.length!==2 || !boardCards || boardCards.length<3 || boardCards.length>=5){
+    return null;
+  }
+
+  const all=[...holeCards,...boardCards].filter(Boolean);
+  const used=new Set(all);
+  const rankMap={"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"10":10,"J":11,"Q":12,"K":13,"A":14};
+  const rankName={14:"A",13:"K",12:"Q",11:"J",10:"10",9:"9",8:"8",7:"7",6:"6",5:"5",4:"4",3:"3",2:"2"};
+  const suits=["s","h","d","c"];
+  const ranks=["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+
+  const rankVals=all.map(c=>rankMap[c.slice(0,-1)]);
+  const unique=new Set(rankVals);
+  if(unique.has(14)) unique.add(1);
+
+  const straightOutRanks=new Set();
+  // 所有可能 5 張連號窗口：A2345 到 TJQKA
+  for(let start=1;start<=10;start++){
+    const seq=[start,start+1,start+2,start+3,start+4];
+    const missing=seq.filter(v=>!unique.has(v));
+    if(missing.length===1){
+      let m=missing[0];
+      if(m===1)m=14;
+      straightOutRanks.add(m);
+    }
+  }
+
+  const availableStraightCards=[];
+  for(const rv of straightOutRanks){
+    const r=rankName[rv];
+    for(const s of suits){
+      const c=`${r}${s}`;
+      if(!used.has(c)) availableStraightCards.push(c);
+    }
+  }
+
+  const suitCounts={};
+  all.forEach(c=>{
+    const s=c.slice(-1);
+    suitCounts[s]=(suitCounts[s]||0)+1;
+  });
+  const flushSuit=Object.entries(suitCounts).find(([,n])=>n===4)?.[0] || null;
+  const flushCards=flushSuit
+    ? ranks.map(r=>`${r}${flushSuit}`).filter(c=>!used.has(c))
+    : [];
+
+  // 用真正牌型評估找「下一張會讓牌型升級」的牌，避免只看順子/同花
+  const currentBest=evaluateBestHand(all);
+  const improvementCards=[];
+  if(currentBest){
+    for(const r of ranks){
+      for(const s of suits){
+        const c=`${r}${s}`;
+        if(used.has(c))continue;
+        const nextBest=evaluateBestHand([...all,c]);
+        if(nextBest && compareScores(nextBest.score,currentBest.score)>0){
+          improvementCards.push({card:c,name:nextBest.name});
+        }
+      }
+    }
+  }
+
+  const drawParts=[];
+  if(availableStraightCards.length){
+    const ranksText=[...straightOutRanks].sort((a,b)=>a-b).map(v=>rankName[v]).join("、");
+    drawParts.push(`順子聽牌：${ranksText} 可完成順子，共 ${availableStraightCards.length} 張未開牌`);
+  }
+  if(flushCards.length){
+    const suitText=({s:"黑桃",h:"紅心",d:"方塊",c:"梅花"})[flushSuit] || flushSuit;
+    drawParts.push(`${suitText}同花聽牌：還有 ${flushCards.length} 張可完成同花`);
+  }
+
+  const uniqueImprovement=[...new Set(improvementCards.map(x=>x.card))];
+  const totalUnknown=52-used.size;
+  const nextPct=totalUnknown>0 ? Math.round(uniqueImprovement.length/totalUnknown*100) : 0;
+
+  if(!drawParts.length && !uniqueImprovement.length)return null;
+
+  return {
+    straightOuts: availableStraightCards,
+    flushOuts: flushCards,
+    improvementOuts: uniqueImprovement,
+    nextPercent: nextPct,
+    text: drawParts.length
+      ? `💡 聽牌提醒：${drawParts.join("；")}。`
+      : `💡 改善提醒：下一張約有 ${uniqueImprovement.length} 張牌能讓目前牌型提升（約 ${nextPct}%）。`
+  };
+}
+
 function analyzeOpponentRisk(){
   const hero=[selectedCards.hero0,selectedCards.hero1].filter(Boolean);
   const board=[
@@ -1055,7 +1153,9 @@ function analyzeOpponentRisk(){
   }
 
   if(board.length<5){
-    summary+=` 目前公共牌還沒發完，後續轉牌／河牌也可能讓你或對手的牌型再次改變。${(() => { const d=getImprovementDraws(holeCards, boardCards); return d ? " " + d.text : ""; })()}`;
+    summary+=" 目前公共牌還沒發完，後續轉牌／河牌也可能讓你或對手的牌型再次改變。";
+    const drawInfo=getDrawInfoV120(hero,board);
+    if(drawInfo) summary+=" "+drawInfo.text;
   }
 
   return {
@@ -1089,115 +1189,206 @@ function analyze(){
 
   ["preflop","flop","turn","river"].forEach(syncActionHidden);
   renderSelectedCards();
-  const bb=Number($("saBB").value)||2,remainingChips=Number($("saStack").value)||0,stack=bb>0?remainingChips/bb:0,tableSize=Number($("saTableSize").value)||6;
+
+  const bb=Number($("saBB").value)||2;
+  const remainingChips=Number($("saStack").value)||0;
+  const stack=bb>0?remainingChips/bb:0;
+  const tableSize=Number($("saTableSize").value)||6;
   const street=activeStreet();
-  // v119：分析直接從 selectedCards/actionState 取當下完整快照，不再依賴可能落後一拍的 hidden input。
-  const preflop=actionTextForStreetV118("翻牌前") || $("saAction").value;
-  const flopCards=[selectedCards.flop0,selectedCards.flop1,selectedCards.flop2].filter(Boolean).join(" ");
-  const flopAction=actionTextForStreetV118("翻牌") || $("saFlopAction").value;
-  const turnCard=selectedCards.turn || $("saTurnCard").value;
-  const turnAction=actionTextForStreetV118("轉牌") || $("saTurnAction").value;
-  const riverCard=selectedCards.river || $("saRiverCard").value;
-  const riverAction=actionTextForStreetV118("河牌") || $("saRiverAction").value;
+
+  const preflop=actionTextForStreetV118("翻牌前") || $("saAction").value || "";
+  const flopBoard=boardCardsForStreetV118("翻牌");
+  const turnBoard=boardCardsForStreetV118("轉牌");
+  const riverBoard=boardCardsForStreetV118("河牌");
+
+  const flopCards=flopBoard.join(" ");
+  const flopAction=actionTextForStreetV118("翻牌") || "";
+  const turnCard=selectedCards.turn || "";
+  const turnAction=actionTextForStreetV118("轉牌") || "";
+  const riverCard=selectedCards.river || "";
+  const riverAction=actionTextForStreetV118("河牌") || "";
+
+  const heroCards=[selectedCards.hero0,selectedCards.hero1].filter(Boolean);
+  const heroNames=heroCards.map(c=>cardDisplay(c)?.name).join("、");
+  const boardNow=boardCardsForStreetV118(street);
+  const actionNow=actionTextForStreetV118(street);
   const p=parsePressure(preflop,bb);
 
-  if(analysisMode === "gto"){
-    const gto = getGTOResult({tableSize,stack,pos,hand,preflop});
-    if(!gto){
-      lastAnalysis={
-        at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,
-        blinds:`${$("saSB").value}/${$("saBB").value}`,
-        preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,
-        street,mode:"GTO",unsupported:true,
-        raise:null,call:null,fold:null,best:"目前無 GTO 資料",
-        reason:"這個局面目前沒有收錄正式 GTO 策略資料，所以 App 不會顯示猜測百分比。你可以切回「一般分析」取得離線模型參考。"
-      };
-      renderResult(lastAnalysis);
-      if(window.recordPokerAnalysisUse){
-        window.recordPokerAnalysisUse({hand,heroNames,position:pos,street}).catch(e=>console.warn("分析使用紀錄寫入失敗",e));
-      }
-      return;
-    }
-
-    lastAnalysis={
+  // GTO 模式保留原本翻牌前資料；翻牌後沒有正式 solver 資料時明確提示
+  if(analysisMode==="gto"){
+    const gto=getGTOResult({tableSize,stack,pos,hand,preflop});
+    const result={
       at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,
       blinds:`${$("saSB").value}/${$("saBB").value}`,
       preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,
-      street,mode:"GTO",unsupported:false,
-      raise:gto.raise,call:gto.call,fold:gto.fold,
-      best:[["加注",gto.raise],["跟注",gto.call],["棄牌",gto.fold]].sort((a,b)=>b[1]-a[1])[0][0],
-      reason:`此結果來自 App 內已收錄的 GTO 參考資料。${gto.note||""}`
+      boardSnapshot:[...boardNow],actionSnapshot:actionNow,street,mode:"GTO"
     };
-    renderResult(lastAnalysis);
-    if(window.recordPokerAnalysisUse){
-      window.recordPokerAnalysisUse({hand,heroNames,position:pos,street}).catch(e=>console.warn("分析使用紀錄寫入失敗",e));
+    if(!gto || street!=="翻牌前"){
+      Object.assign(result,{
+        unsupported:true,raise:null,call:null,fold:null,best:"目前無正式 GTO 資料",
+        reason:street==="翻牌前"
+          ?"這個翻牌前局面目前沒有收錄正式 GTO 策略資料。"
+          :"目前 App 沒有即時 Postflop GTO Solver，翻牌後請切回一般分析查看牌型、聽牌與風險。"
+      });
+    }else{
+      Object.assign(result,{
+        unsupported:false,raise:gto.raise,call:gto.call,fold:gto.fold,
+        best:[["加注",gto.raise],["跟注",gto.call],["棄牌",gto.fold]].sort((a,b)=>b[1]-a[1])[0][0],
+        reason:`此結果來自 App 內已收錄的 GTO 參考資料。${gto.note||""}`
+      });
     }
+    analysisByStreet[street]=result;
+    lastAnalysis=result;
+    renderResult(result);
     return;
   }
-  let s=handStrength(hand)+positionAdjustment(pos);
-  if(tableSize>=7&&/UTG/.test(preflop))s-=4;if(tableSize<=5)s+=3;if(stack<40)s+=3;if(stack>150)s-=2;
 
-  let raise=0,call=0,fold=0;
-  if(p.level>=3){raise=clamp((s-82)*1.5,0,32);call=clamp((s-70)*1.2,0,35);}
-  else if(p.level===2){raise=clamp((s-76)*1.3,0,42);call=clamp((s-55)*1.25,0,55);if(pos==="BB")call+=4;}
-  else if(p.level===1){raise=clamp((s-58)*1.45,2,68);call=clamp(72-Math.abs(s-60)*1.15,4,58);if(pos==="BB")call+=8;}
-  else{raise=clamp((s-45)*1.5,8,78);call=clamp(55-Math.abs(s-52),5,45);}
+  let raise=0,call=0,fold=0,bestAction="";
 
-  if(p.level===2&&/^(AJ|AT|KQ|KJ|QJ)o$/.test(hand)&&/UTG/.test(preflop)){
-    const target=hand==="AJo"?{raise:3,call:7,fold:90}:{raise:2,call:5,fold:93};raise=target.raise;call=target.call;fold=target.fold;
-  }
-  if(/^(AA|KK)$/.test(hand)){raise=p.level>=2?88:82;call=100-raise;fold=0;}
-  if(hand==="QQ"&&p.level===2){raise=54;call=44;fold=2;}
-  if(/^AKs?$/.test(hand)&&p.level===2){raise=58;call=39;fold=3;}
+  // -------- 翻牌前：只用翻牌前模型 --------
+  if(street==="翻牌前"){
+    let s=handStrength(hand)+positionAdjustment(pos);
+    if(tableSize>=7&&/UTG/.test(preflop))s-=4;
+    if(tableSize<=5)s+=3;
+    if(stack<40)s+=3;
+    if(stack>150)s-=2;
 
-  raise=clamp(raise,0,90);call=clamp(call,0,90-raise);fold=100-raise-call;
-  const total=raise+call+fold;raise=Math.round(raise/total*100);call=Math.round(call/total*100);fold=100-raise-call;
-  const best=[["加注",raise],["跟注",call],["棄牌",fold]].sort((a,b)=>b[1]-a[1])[0];
+    if(p.level>=3){raise=clamp((s-82)*1.5,0,32);call=clamp((s-70)*1.2,0,35);}
+    else if(p.level===2){raise=clamp((s-76)*1.3,0,42);call=clamp((s-55)*1.25,0,55);if(pos==="BB")call+=4;}
+    else if(p.level===1){raise=clamp((s-58)*1.45,2,68);call=clamp(72-Math.abs(s-60)*1.15,4,58);if(pos==="BB")call+=8;}
+    else{raise=clamp((s-45)*1.5,8,78);call=clamp(55-Math.abs(s-52),5,45);}
 
-  const heroNames=[selectedCards.hero0,selectedCards.hero1].map(c=>cardDisplay(c)?.name).join("、");
-  let reason=`你的手牌是 ${heroNames}，位置在 ${pos}（${positionName(pos)}）。`;
-  if(p.level===2)reason+="面對前面開池後又有人加注，翻牌前繼續範圍需要明顯收緊。";
-  else if(p.level===1)reason+="目前主要面對一次開池，可以依位置與牌力考慮跟注或再加注。";
-  else if(p.level>=3)reason+="目前是高壓力再加注局面，範圍要非常緊。";
-  else reason+="目前沒有偵測到明確的翻牌前加注壓力。";
-
-  const madeHand=evaluateMadeHand(street);
-  const risk=street!=="翻牌前" ? analyzeOpponentRisk() : null;
-
-  if(street!=="翻牌前" && madeHand){
-    // 翻牌後不再只拿翻牌前起手牌模型硬算。
-    if(risk?.isNuts){
-      raise=72;call=28;fold=0;best[0]="加注";best[1]=72;
-    }else if(madeHand.category>=7){
-      raise=68;call=31;fold=1;best[0]="加注";best[1]=68;
-    }else if(madeHand.category===6){
-      raise=62;call=36;fold=2;best[0]="加注";best[1]=62;
-    }else if(madeHand.category===5 || madeHand.category===4){
-      raise=48;call=45;fold=7;best[0]="加注";best[1]=48;
-    }else if(madeHand.category===3){
-      raise=38;call=50;fold=12;best[0]="跟注";best[1]=50;
-    }else if(madeHand.category===2){
-      raise=24;call=52;fold=24;best[0]="跟注";best[1]=52;
-    }else if(madeHand.category===1){
-      raise=14;call=43;fold=43;best[0]="跟注";best[1]=43;
+    if(p.level===2&&/^(AJ|AT|KQ|KJ|QJ)o$/.test(hand)&&/UTG/.test(preflop)){
+      const target=hand==="AJo"?{raise:3,call:7,fold:90}:{raise:2,call:5,fold:93};
+      raise=target.raise;call=target.call;fold=target.fold;
     }
+    if(/^(AA|KK)$/.test(hand)){raise=p.level>=2?88:82;call=100-raise;fold=0;}
+    if(hand==="QQ"&&p.level===2){raise=54;call=44;fold=2;}
+    if(/^AKs?$/.test(hand)&&p.level===2){raise=58;call=39;fold=3;}
 
-    reason=`你目前實際牌型是「${madeHand.name}」。`;
-    if(risk){
-      reason+=` ${risk.summary}`;
+    raise=clamp(raise,0,90);call=clamp(call,0,90-raise);fold=100-raise-call;
+    const total=raise+call+fold;
+    raise=Math.round(raise/total*100);call=Math.round(call/total*100);fold=100-raise-call;
+    bestAction=[["加注",raise],["跟注",call],["棄牌",fold]].sort((a,b)=>b[1]-a[1])[0][0];
+
+    let reason=`你的手牌是 ${heroNames}，位置在 ${pos}（${positionName(pos)}）。`;
+    if(p.level===2)reason+=" 面對前面開池後又有人加注，翻牌前繼續範圍需要明顯收緊。";
+    else if(p.level===1)reason+=" 目前主要面對一次開池，可以依位置與牌力考慮跟注或再加注。";
+    else if(p.level>=3)reason+=" 目前是高壓力再加注局面，範圍要非常緊。";
+    else reason+=" 目前沒有偵測到明確的翻牌前加注壓力。";
+
+    const result={
+      at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,mode:"一般分析",
+      blinds:`${$("saSB").value}/${$("saBB").value}`,
+      preflop,flopCards:"",flopAction:"",turnCard:"",turnAction:"",riverCard:"",riverAction:"",
+      boardSnapshot:[],actionSnapshot:preflop,street,
+      raise,call,fold,best:bestAction,reason,riskSummary:"",madeHandName:""
+    };
+    analysisByStreet[street]=result;
+    lastAnalysis=result;
+    renderResult(result);
+    return;
+  }
+
+  // -------- 翻牌後：完全不用翻牌前百分比，依當下牌型/聽牌重新計算 --------
+  if(boardNow.length<3){
+    alert("請先選完整的翻牌三張牌。");
+    return;
+  }
+
+  const madeHand=evaluateBestHand([...heroCards,...boardNow]);
+  const risk=analyzeOpponentRiskForStreetV120(heroCards,boardNow);
+  const drawInfo=getDrawInfoV120(heroCards,boardNow);
+  const category=madeHand?.category ?? 0;
+
+  // 基礎策略按實際成牌強度
+  if(risk?.isNuts){raise=74;call=26;fold=0;}
+  else if(category>=7){raise=68;call=31;fold=1;}
+  else if(category===6){raise=62;call=36;fold=2;}
+  else if(category===5){raise=55;call=40;fold=5;}
+  else if(category===4){raise=48;call=45;fold=7;}
+  else if(category===3){raise=38;call=50;fold=12;}
+  else if(category===2){raise=25;call=52;fold=23;}
+  else if(category===1){raise=14;call=46;fold=40;}
+  else {raise=8;call=30;fold=62;}
+
+  // 有強聽牌時，提高繼續遊戲比例，不再把順子聽牌當純空氣
+  if(drawInfo?.straightOuts?.length>=8){
+    raise=Math.max(raise,24);
+    call=Math.max(call,52);
+    fold=Math.max(0,100-raise-call);
+  }else if(drawInfo?.straightOuts?.length>=4 || drawInfo?.flushOuts?.length>=9){
+    raise=Math.max(raise,18);
+    call=Math.max(call,48);
+    fold=Math.max(0,100-raise-call);
+  }
+
+  // 正規化到 100
+  const total2=raise+call+fold || 100;
+  raise=Math.round(raise/total2*100);
+  call=Math.round(call/total2*100);
+  fold=100-raise-call;
+  bestAction=[["加注",raise],["跟注",call],["棄牌",fold]].sort((a,b)=>b[1]-a[1])[0][0];
+
+  let reason=`你目前在${street}的實際牌型是「${madeHand?.name||"尚未成牌"}」。`;
+  if(drawInfo) reason+=` ${drawInfo.text}`;
+  if(risk?.summary) reason+=` ${risk.summary}`;
+  if(actionNow) reason+=`\n\n${street}行動：${actionNow}。`;
+  else reason+=`\n\n${street}行動：尚未加入行動。`;
+  reason+=" 百分比是依目前這一街的實際牌面重新估算，不會沿用翻牌前分析。";
+
+  const result={
+    at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,mode:"一般分析",
+    blinds:`${$("saSB").value}/${$("saBB").value}`,
+    preflop,
+    flopCards:street==="翻牌"?boardNow.join(" "):flopBoard.join(" "),
+    flopAction,
+    turnCard:street==="轉牌"||street==="河牌" ? (selectedCards.turn||"") : "",
+    turnAction,
+    riverCard:street==="河牌" ? (selectedCards.river||"") : "",
+    riverAction,
+    boardSnapshot:[...boardNow],actionSnapshot:actionNow,street,
+    raise,call,fold,best:bestAction,reason,
+    riskSummary:risk?.summary||"",madeHandName:madeHand?.name||"",
+    drawInfo:drawInfo||null
+  };
+
+  analysisByStreet[street]=result;
+  lastAnalysis=result;
+  renderResult(result);
+}
+
+function analyzeOpponentRiskForStreetV120(hero,board){
+  if(hero.length!==2 || board.length<3)return null;
+  const heroBest=evaluateBestHand([...hero,...board]);
+  if(!heroBest)return null;
+
+  const used=new Set([...hero,...board]);
+  const available=fullDeck().filter(c=>!used.has(c));
+  let betterCount=0,tieCount=0;
+  const categories=new Map();
+  const examples=[];
+
+  for(let i=0;i<available.length;i++){
+    for(let j=i+1;j<available.length;j++){
+      const opp=[available[i],available[j]];
+      const oppBest=evaluateBestHand([...opp,...board]);
+      const cmp=compareScores(oppBest.score,heroBest.score);
+      if(cmp>0){
+        betterCount++;
+        categories.set(oppBest.name,(categories.get(oppBest.name)||0)+1);
+        if(examples.length<5)examples.push(`${prettyCard(opp[0])}＋${prettyCard(opp[1])} → ${oppBest.name}`);
+      }else if(cmp===0)tieCount++;
     }
-    reason+=` 百分比仍是 App 內建一般策略參考，真正決策還需要看下注大小、底池賠率與對手範圍。`;
-    const currentActions=actionTextForStreetV118(street);
-    if(currentActions) reason+=`\n\n${street}行動：${currentActions}。`;
   }
 
-  lastAnalysis={at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,mode:"一般分析",blinds:`${$("saSB").value}/${$("saBB").value}`,
-    preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,street,raise,call,fold,best:best[0],reason,
-    riskSummary:risk?.summary||"",madeHandName:madeHand?.name||""};
-  renderResult(lastAnalysis);
-  if(window.recordPokerAnalysisUse){
-    window.recordPokerAnalysisUse({hand,heroNames,position:pos,street}).catch(e=>console.warn("分析使用紀錄寫入失敗",e));
-  }
+  const categoryList=[...categories.entries()].sort((a,b)=>b[1]-a[1]).map(([name,count])=>({name,count}));
+  let summary=betterCount===0
+    ? `以目前${board.length}張公共牌來看，你現在是堅果牌（Nuts）。`
+    : `目前仍有 ${betterCount} 種對手兩張手牌組合可以擊敗你，主要更大牌型包含：${categoryList.slice(0,4).map(x=>x.name).join("、")||"更大的牌型"}。`;
+
+  if(examples.length)summary+=` 例如：${examples.join("；")}。`;
+  return {heroBest,betterCount,tieCount,categories:categoryList,examples,isNuts:betterCount===0,summary};
 }
 
 function bar(cls,label,val){return `<div class="strategy-row ${cls}"><b>${label}</b><div class="strategy-track"><div class="strategy-fill" style="width:${val}%"></div></div><strong>${val}%</strong></div>`;}
@@ -1228,7 +1419,7 @@ function renderResult(r){
   const modeLabel = r.mode || "一般分析";
   box.innerHTML=`<h3>${escapeHtml(r.heroNames||r.hand)}｜${r.pos}｜${escapeHtml(modeLabel)}｜目前到 ${r.street}</h3>
     <div class="strategy-bars">${bar("raise","加注",r.raise)}${bar("call","跟注",r.call)}${bar("fold","棄牌",r.fold)}</div>
-    <div class="strategy-main"><b>主要建議：${r.best}</b><p>${escapeHtml(r.reason)}</p>${r.street!=="翻牌前"?`<div class="street-action-note"><b>${escapeHtml(r.street)}行動：</b>${escapeHtml((r.street==="翻牌"?r.flopAction:r.street==="轉牌"?r.turnAction:r.riverAction)||"尚未加入行動")}</div>`:""}
+    <div class="strategy-main"><b>主要建議：${r.best}</b>${r.drawInfo?.text?`<div class="draw-alert-v120">${escapeHtml(r.drawInfo.text)}</div>`:""}<p>${escapeHtml(r.reason)}</p>${r.street!=="翻牌前"?`<div class="street-action-note"><b>${escapeHtml(r.street)}行動：</b>${escapeHtml((r.street==="翻牌"?r.flopAction:r.street==="轉牌"?r.turnAction:r.riverAction)||"尚未加入行動")}</div>`:""}
       <div class="street-summary">
         <div><b>翻牌前：</b>${escapeHtml(r.preflop||"尚未加入行動")}</div>
         <div><b>翻牌：</b>${escapeHtml((r.flopCards||"未選牌面")+(r.flopAction?"｜"+r.flopAction:""))}</div>
@@ -1283,6 +1474,7 @@ function clearCurrentHand(){
   $("saResult").classList.add("hidden");
   $("saResult").innerHTML="";
   lastAnalysis=null;
+  Object.keys(analysisByStreet).forEach(k=>analysisByStreet[k]=null);
   document.querySelectorAll(".street-tab").forEach((b,i)=>b.classList.toggle("active",i===0));
   document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel==="preflop"));
 
@@ -1354,8 +1546,17 @@ function initStreetTabs(){
     document.querySelectorAll(".street-tab").forEach(b=>b.classList.toggle("active",b===btn));
     document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel===street));
     populateActors();
-    // v119：切換街道時若已有分析，立即以該街目前牌面/行動重新計算。
-    if(lastAnalysis) setTimeout(()=>analyze(),0);
+    // v120：每一街分析獨立保存。切換街道只顯示該街既有分析，不改寫其他街。
+    const streetZh=activeStreet();
+    const saved=analysisByStreet[streetZh];
+    if(saved){
+      lastAnalysis=saved;
+      renderResult(saved);
+    }else{
+      $("saResult").classList.add("hidden");
+      $("saResult").innerHTML="";
+      lastAnalysis=null;
+    }
     renderStillInHandReminderV94();
   }));
 }
