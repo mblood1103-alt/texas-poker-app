@@ -1008,6 +1008,70 @@ function getBoardSnapshotForStreet(street){
 }
 
 
+
+function formatCardListV121(value){
+  if(!value) return "";
+  const cards=Array.isArray(value) ? value : String(value).trim().split(/\s+/).filter(Boolean);
+  return cards.map(c=>prettyCard(c)).join("、");
+}
+
+function getFlushRiskV121(heroCards, boardCards, madeHand){
+  if(!madeHand || madeHand.category!==5) return null;
+
+  const all=[...heroCards,...boardCards];
+  const suitCounts={};
+  all.forEach(c=>{
+    const s=c.slice(-1);
+    suitCounts[s]=(suitCounts[s]||0)+1;
+  });
+  const flushSuit=Object.entries(suitCounts).find(([,n])=>n>=5)?.[0];
+  if(!flushSuit) return null;
+
+  const rankValue={"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"10":10,"J":11,"Q":12,"K":13,"A":14};
+  const rankName={14:"A",13:"K",12:"Q",11:"J",10:"10",9:"9",8:"8",7:"7",6:"6",5:"5",4:"4",3:"3",2:"2"};
+  const suitSymbol={s:"♠",h:"♥",d:"♦",c:"♣"}[flushSuit] || flushSuit;
+  const used=new Set(all);
+
+  const heroFlush=all
+    .filter(c=>c.endsWith(flushSuit))
+    .map(c=>rankValue[c.slice(0,-1)])
+    .sort((a,b)=>b-a)
+    .slice(0,5);
+
+  if(heroFlush.length<5) return null;
+
+  const danger=[];
+  for(let v=14;v>=2;v--){
+    const code=`${rankName[v]}${flushSuit}`;
+    if(used.has(code)) continue;
+
+    // 模擬對手持有這張同花牌，再搭配一張很低的同花牌，
+    // 若仍能形成比玩家更大的同花，就列為關鍵危險牌。
+    const availableLow=[];
+    for(let x=2;x<=14;x++){
+      const lowCode=`${rankName[x]}${flushSuit}`;
+      if(lowCode!==code && !used.has(lowCode)) availableLow.push(lowCode);
+    }
+
+    let beats=false;
+    for(const second of availableLow){
+      const oppBest=evaluateBestHand([...boardCards, code, second]);
+      if(oppBest && compareScores(oppBest.score,madeHand.score)>0){
+        beats=true;
+        break;
+      }
+    }
+    if(beats) danger.push(`${rankName[v]}${suitSymbol}`);
+  }
+
+  if(!danger.length) return null;
+
+  return {
+    cards: danger,
+    text:`⚠️ 同花風險：你目前是「${madeHand.name}」。對手若持有 ${danger.join("、")} 等較高${suitSymbol}，再搭配另一張${suitSymbol}，可能組成比你更大的同花。`
+  };
+}
+
 function getDrawInfoV120(holeCards, boardCards){
   if(!holeCards || holeCards.length!==2 || !boardCards || boardCards.length<3 || boardCards.length>=5){
     return null;
@@ -1299,6 +1363,7 @@ function analyze(){
   const madeHand=evaluateBestHand([...heroCards,...boardNow]);
   const risk=analyzeOpponentRiskForStreetV120(heroCards,boardNow);
   const drawInfo=getDrawInfoV120(heroCards,boardNow);
+  const flushRisk=getFlushRiskV121(heroCards,boardNow,madeHand);
   const category=madeHand?.category ?? 0;
 
   // 基礎策略按實際成牌強度
@@ -1332,6 +1397,7 @@ function analyze(){
 
   let reason=`你目前在${street}的實際牌型是「${madeHand?.name||"尚未成牌"}」。`;
   if(drawInfo) reason+=` ${drawInfo.text}`;
+  if(flushRisk) reason+=` ${flushRisk.text}`;
   if(risk?.summary) reason+=` ${risk.summary}`;
   if(actionNow) reason+=`\n\n${street}行動：${actionNow}。`;
   else reason+=`\n\n${street}行動：尚未加入行動。`;
@@ -1350,7 +1416,8 @@ function analyze(){
     boardSnapshot:[...boardNow],actionSnapshot:actionNow,street,
     raise,call,fold,best:bestAction,reason,
     riskSummary:risk?.summary||"",madeHandName:madeHand?.name||"",
-    drawInfo:drawInfo||null
+    drawInfo:drawInfo||null,
+    flushRisk:flushRisk||null
   };
 
   analysisByStreet[street]=result;
@@ -1404,9 +1471,9 @@ function renderResult(r){
       </div>
       <div class="street-summary">
         <div><b>翻牌前：</b>${escapeHtml(r.preflop||"尚未加入行動")}</div>
-        <div><b>翻牌：</b>${escapeHtml((r.flopCards||"未選牌面")+(r.flopAction?"｜"+r.flopAction:""))}</div>
-        <div><b>轉牌：</b>${escapeHtml((r.turnCard||"未選")+(r.turnAction?"｜"+r.turnAction:""))}</div>
-        <div><b>河牌：</b>${escapeHtml((r.riverCard||"未選")+(r.riverAction?"｜"+r.riverAction:""))}</div>
+        <div><b>翻牌：</b>${escapeHtml((r.flopCards?formatCardListV121(r.flopCards):"未選牌面")+(r.flopAction?"｜"+r.flopAction:""))}</div>
+        <div><b>轉牌：</b>${escapeHtml((r.turnCard?formatCardListV121(r.turnCard):"未選")+(r.turnAction?"｜"+r.turnAction:""))}</div>
+        <div><b>河牌：</b>${escapeHtml((r.riverCard?formatCardListV121(r.riverCard):"未選")+(r.riverAction?"｜"+r.riverAction:""))}</div>
       </div>`;
     box.classList.remove("hidden");
     $("switchToGeneralBtn")?.addEventListener("click",()=>{
@@ -1419,12 +1486,12 @@ function renderResult(r){
   const modeLabel = r.mode || "一般分析";
   box.innerHTML=`<h3>${escapeHtml(r.heroNames||r.hand)}｜${r.pos}｜${escapeHtml(modeLabel)}｜目前到 ${r.street}</h3>
     <div class="strategy-bars">${bar("raise","加注",r.raise)}${bar("call","跟注",r.call)}${bar("fold","棄牌",r.fold)}</div>
-    <div class="strategy-main"><b>主要建議：${r.best}</b>${r.drawInfo?.text?`<div class="draw-alert-v120">${escapeHtml(r.drawInfo.text)}</div>`:""}<p>${escapeHtml(r.reason)}</p>${r.street!=="翻牌前"?`<div class="street-action-note"><b>${escapeHtml(r.street)}行動：</b>${escapeHtml((r.street==="翻牌"?r.flopAction:r.street==="轉牌"?r.turnAction:r.riverAction)||"尚未加入行動")}</div>`:""}
+    <div class="strategy-main"><b>主要建議：${r.best}</b>${r.drawInfo?.text?`<div class="draw-alert-v120">${escapeHtml(r.drawInfo.text)}</div>`:""}${r.flushRisk?.text?`<div class="draw-alert-v120">${escapeHtml(r.flushRisk.text)}</div>`:""}<p>${escapeHtml(r.reason)}</p>${r.street!=="翻牌前"?`<div class="street-action-note"><b>${escapeHtml(r.street)}行動：</b>${escapeHtml((r.street==="翻牌"?r.flopAction:r.street==="轉牌"?r.turnAction:r.riverAction)||"尚未加入行動")}</div>`:""}
       <div class="street-summary">
         <div><b>翻牌前：</b>${escapeHtml(r.preflop||"尚未加入行動")}</div>
-        <div><b>翻牌：</b>${escapeHtml((r.flopCards||"未選牌面")+(r.flopAction?"｜"+r.flopAction:""))}</div>
-        <div><b>轉牌：</b>${escapeHtml((r.turnCard||"未選")+(r.turnAction?"｜"+r.turnAction:""))}</div>
-        <div><b>河牌：</b>${escapeHtml((r.riverCard||"未選")+(r.riverAction?"｜"+r.riverAction:""))}</div>
+        <div><b>翻牌：</b>${escapeHtml((r.flopCards?formatCardListV121(r.flopCards):"未選牌面")+(r.flopAction?"｜"+r.flopAction:""))}</div>
+        <div><b>轉牌：</b>${escapeHtml((r.turnCard?formatCardListV121(r.turnCard):"未選")+(r.turnAction?"｜"+r.turnAction:""))}</div>
+        <div><b>河牌：</b>${escapeHtml((r.riverCard?formatCardListV121(r.riverCard):"未選")+(r.riverAction?"｜"+r.riverAction:""))}</div>
       </div>
     </div>
     <p class="strategy-warning">${modeLabel==="GTO"?"✅ 這筆結果來自已收錄的 GTO 參考資料。":"⚠️ 一般分析使用 App 內建離線策略模型估算，不是即時 GTO Solver。"}</p>`;
