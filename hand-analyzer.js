@@ -354,9 +354,17 @@ function renderDeck(){
       closeCardPicker();
     }
 
-    // 如果已經分析過，換任何一張牌都立即用目前局面重新分析。
+    // v119：牌面變更後，等 DOM/hidden 欄位同步完成再重新分析。
+    // 翻牌必須三張都選完才更新翻牌分析，避免第 1/2 張的暫存結果覆蓋完整三張。
     if(lastAnalysis){
-      setTimeout(()=>analyze(),0);
+      clearTimeout(window.__pokerReanalyzeTimer);
+      window.__pokerReanalyzeTimer=setTimeout(()=>{
+        updateHiddenCards();
+        const st=activeStreet();
+        const board=boardCardsForStreetV118(st);
+        const need=st==="翻牌"?3:st==="轉牌"?4:st==="河牌"?5:0;
+        if(board.length>=need) analyze();
+      },80);
     }
   }));
 }
@@ -1082,9 +1090,16 @@ function analyze(){
   ["preflop","flop","turn","river"].forEach(syncActionHidden);
   renderSelectedCards();
   const bb=Number($("saBB").value)||2,remainingChips=Number($("saStack").value)||0,stack=bb>0?remainingChips/bb:0,tableSize=Number($("saTableSize").value)||6;
-  const preflop=$("saAction").value,flopCards=$("saFlopCards").value,flopAction=$("saFlopAction").value;
-  const turnCard=$("saTurnCard").value,turnAction=$("saTurnAction").value,riverCard=$("saRiverCard").value,riverAction=$("saRiverAction").value;
-  const street=activeStreet(),p=parsePressure(preflop,bb);
+  const street=activeStreet();
+  // v119：分析直接從 selectedCards/actionState 取當下完整快照，不再依賴可能落後一拍的 hidden input。
+  const preflop=actionTextForStreetV118("翻牌前") || $("saAction").value;
+  const flopCards=[selectedCards.flop0,selectedCards.flop1,selectedCards.flop2].filter(Boolean).join(" ");
+  const flopAction=actionTextForStreetV118("翻牌") || $("saFlopAction").value;
+  const turnCard=selectedCards.turn || $("saTurnCard").value;
+  const turnAction=actionTextForStreetV118("轉牌") || $("saTurnAction").value;
+  const riverCard=selectedCards.river || $("saRiverCard").value;
+  const riverAction=actionTextForStreetV118("河牌") || $("saRiverAction").value;
+  const p=parsePressure(preflop,bb);
 
   if(analysisMode === "gto"){
     const gto = getGTOResult({tableSize,stack,pos,hand,preflop});
@@ -1339,6 +1354,8 @@ function initStreetTabs(){
     document.querySelectorAll(".street-tab").forEach(b=>b.classList.toggle("active",b===btn));
     document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel===street));
     populateActors();
+    // v119：切換街道時若已有分析，立即以該街目前牌面/行動重新計算。
+    if(lastAnalysis) setTimeout(()=>analyze(),0);
     renderStillInHandReminderV94();
   }));
 }
