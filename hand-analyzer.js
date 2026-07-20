@@ -72,9 +72,24 @@ function positionName(pos){
   return ({"BTN":"莊家位","SB":"小盲","BB":"大盲","UTG":"槍口","UTG+1":"槍口+1","UTG+2":"槍口+2","MP":"中位","MP+1":"中位+1","HJ":"劫持位","CO":"關煞位","我":"我"})[pos]||pos;
 }
 
+
+function canonicalSeatOrder(){
+  const size=Number($("saTableSize").value)||6;
+  const map={
+    4:["BTN","SB","BB","UTG"],
+    5:["BTN","SB","BB","UTG","CO"],
+    6:["BTN","SB","BB","UTG","HJ","CO"],
+    7:["BTN","SB","BB","UTG","MP","HJ","CO"],
+    8:["BTN","SB","BB","UTG","UTG+1","MP","HJ","CO"],
+    9:["BTN","SB","BB","UTG","UTG+1","MP","MP+1","HJ","CO"],
+    10:["BTN","SB","BB","UTG","UTG+1","UTG+2","MP","MP+1","HJ","CO"]
+  };
+  return map[size]||map[6];
+}
+
 function renderSeats(){
   const size=Number($("saTableSize").value);
-  const positions=POSITIONS_BY_SIZE[size]||POSITIONS_BY_SIZE[6];
+  const positions=canonicalSeatOrder();
   const table=$("saPokerTable");
   const current=$("saHeroPos").value;
   table.innerHTML="";
@@ -125,7 +140,7 @@ function getFoldedBeforeStreet(street){
   return folded;
 }
 function populateActors(){
-  const positions=POSITIONS_BY_SIZE[Number($("saTableSize").value)]||POSITIONS_BY_SIZE[6];
+  const positions=canonicalSeatOrder();
   const hero=$("saHeroPos").value;
 
   document.querySelectorAll(".action-builder").forEach(builder=>{
@@ -134,29 +149,37 @@ function populateActors(){
 
     const street=streetKeyFromBuilder(builder);
     const folded=getFoldedBeforeStreet(street);
-    const old=sel.value;
 
-    // 永遠依牌桌固定順序排列，不把「我」另外移到最上面。
-    const opts=positions.map(p=>{
+    // 記住目前選中的實際座位，不讓「我」這個 value 影響排序。
+    const currentActual = sel.value==="我" ? hero : sel.value;
+
+    sel.innerHTML="";
+
+    // 依固定牌桌順序逐一建立，絕不把「我」移到第一個。
+    positions.forEach(p=>{
+      const opt=document.createElement("option");
       const isHero=p===hero;
       const isFolded=folded.has(p);
-      const label=`${p}｜${positionName(p)}${isHero?"（我）":""}${isFolded?"（已棄牌）":""}`;
-      // 我的座位仍用 value="我"，其他位置用原位置代碼。
-      const value=isHero?"我":p;
-      return `<option value="${value}" ${isFolded?"disabled":""}>${label}</option>`;
+
+      opt.value=isHero?"我":p;
+      opt.disabled=isFolded;
+      opt.textContent=`${p}｜${positionName(p)}${isHero?"（我）":""}${isFolded?"（已棄牌）":""}`;
+
+      sel.appendChild(opt);
     });
 
-    sel.innerHTML=opts.join("");
-
-    if([...sel.options].some(o=>o.value===old&&!o.disabled)){
-      sel.value=old;
+    // 恢復原本選擇；沒有才選第一個可用座位。
+    const wantedValue=currentActual===hero?"我":currentActual;
+    const wanted=[...sel.options].find(o=>o.value===wantedValue&&!o.disabled);
+    if(wanted){
+      sel.value=wanted.value;
     }else{
       const first=[...sel.options].find(o=>!o.disabled);
-      if(first) sel.value=first.value;
+      if(first)sel.value=first.value;
     }
   });
 
-  renderStillInHandReminderV94();
+  if(typeof renderStillInHandReminderV94==="function") renderStillInHandReminderV94();
 }
 function cardDisplay(code){
   if(!code)return null;
