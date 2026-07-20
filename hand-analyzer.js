@@ -969,6 +969,19 @@ function prettyCard(code){
   return c?`${c.rank}${c.suit}`:code;
 }
 
+
+function getBoardSnapshotForStreet(street){
+  const cards=[
+    selectedCards.flop0,
+    selectedCards.flop1,
+    selectedCards.flop2,
+    selectedCards.turn,
+    selectedCards.river
+  ].filter(Boolean);
+  const count={preflop:0,flop:3,turn:4,river:5}[street];
+  return cards.slice(0, count == null ? cards.length : count);
+}
+
 function analyzeOpponentRisk(){
   const hero=[selectedCards.hero0,selectedCards.hero1].filter(Boolean);
   const board=[
@@ -1024,7 +1037,7 @@ function analyzeOpponentRisk(){
   }
 
   if(board.length<5){
-    summary+=` 目前公共牌還沒發完，後續轉牌／河牌也可能讓你或對手的牌型再次改變。`;
+    summary+=` 目前公共牌還沒發完，後續轉牌／河牌也可能讓你或對手的牌型再次改變。${(() => { const d=getImprovementDraws(holeCards, boardCards); return d ? " " + d.text : ""; })()}`;
   }
 
   return {
@@ -1412,3 +1425,73 @@ function renderStillInHandReminderV94(){
 document.addEventListener("click",()=>setTimeout(()=>{populateActors();renderStillInHandReminderV94();},0));
 document.addEventListener("change",()=>setTimeout(()=>{populateActors();renderStillInHandReminderV94();},0));
 setTimeout(()=>{populateActors();renderStillInHandReminderV94();},300);
+
+
+// v117：計算下一張牌可帶來的明顯牌型改善（順子、同花、三條、兩對等）。
+function getImprovementDraws(holeCards, boardCards){
+  if(!holeCards || holeCards.length!==2 || !boardCards || boardCards.length<3 || boardCards.length>=5) return null;
+
+  const used=new Set([...holeCards,...boardCards]);
+  const ranks=["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+  const suits=["s","h","d","c"];
+  const deck=[];
+  for(const r of ranks) for(const s of suits){
+    const c=r+s;
+    if(!used.has(c)) deck.push(c);
+  }
+
+  function parse(c){
+    const suit=c.slice(-1);
+    const rank=c.slice(0,-1);
+    return {rank,suit,v:({"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"10":10,"J":11,"Q":12,"K":13,"A":14})[rank]};
+  }
+  function strength(cards){
+    const ps=cards.map(parse);
+    const counts={};
+    ps.forEach(x=>counts[x.v]=(counts[x.v]||0)+1);
+    const vals=Object.keys(counts).map(Number);
+    const groups=Object.values(counts).sort((a,b)=>b-a);
+    const suitCounts={};
+    ps.forEach(x=>suitCounts[x.suit]=(suitCounts[x.suit]||0)+1);
+    const flush=Object.values(suitCounts).some(n=>n>=5);
+    let uniq=[...new Set(vals)].sort((a,b)=>a-b);
+    if(uniq.includes(14)) uniq=[1,...uniq];
+    let straight=false;
+    for(let i=0;i<=uniq.length-5;i++){
+      if(uniq[i+4]-uniq[i]===4) straight=true;
+    }
+    if(flush && straight) return 8;
+    if(groups[0]>=4) return 7;
+    if(groups[0]>=3 && groups[1]>=2) return 6;
+    if(flush) return 5;
+    if(straight) return 4;
+    if(groups[0]>=3) return 3;
+    if(groups[0]>=2 && groups[1]>=2) return 2;
+    if(groups[0]>=2) return 1;
+    return 0;
+  }
+  function label(n){
+    return ["高牌","一對","兩對","三條","順子","同花","葫蘆","四條","同花順"][n]||"更強牌型";
+  }
+
+  const now=strength([...holeCards,...boardCards]);
+  const improved=deck.map(c=>({card:c,s:strength([...holeCards,...boardCards,c])}))
+                     .filter(x=>x.s>now);
+  if(!improved.length) return null;
+
+  const byType={};
+  improved.forEach(x=>{
+    const k=label(x.s);
+    (byType[k] ||= []).push(x.card);
+  });
+  const total=deck.length;
+  const pct=Math.round(improved.length/total*100);
+  const details=Object.entries(byType).map(([k,v])=>`${k} ${v.length} 張`).join("、");
+  return {
+    outs: improved.length,
+    total,
+    percent:pct,
+    details,
+    text:`💡 改善提醒：下一張約有 ${improved.length} 張牌可讓目前牌型提升（約 ${pct}%）：${details}。`
+  };
+}
