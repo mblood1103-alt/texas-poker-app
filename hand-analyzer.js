@@ -1248,6 +1248,56 @@ function evaluateMadeHand(street=activeStreet()){
   };
 }
 
+
+function getAllHandRiskV123(heroCards, boardCards, madeHand){
+  if(!madeHand || !boardCards || boardCards.length<3) return null;
+  const names=["高牌","一對","兩對","三條","順子","同花","葫蘆","四條","同花順"];
+  const ranks=["A","K","Q","J","10","9","8","7","6","5","4","3","2"], suits=["s","h","d","c"];
+  const sym={s:"♠",h:"♥",d:"♦",c:"♣"};
+  const used=new Set([...heroCards,...boardCards]), deck=[];
+  for(const r of ranks) for(const s of suits){const c=r+s;if(!used.has(c))deck.push(c);}
+  const beating=[];
+  for(let i=0;i<deck.length;i++) for(let j=i+1;j<deck.length;j++){
+    const hand=evaluateBestHand([...boardCards,deck[i],deck[j]]);
+    if(hand&&compareScores(hand.score,madeHand.score)>0) beating.push({cards:[deck[i],deck[j]],hand});
+  }
+  if(!beating.length) return {text:`🛡️ 目前依已知牌面，沒有偵測到可擊敗你「${madeHand.name}」的對手兩張手牌組合。`};
+  const by={}; for(const x of beating)(by[x.hand.category]??=[]).push(x);
+  const parts=[];
+  const stronger=Object.keys(by).map(Number).filter(c=>c>madeHand.category).sort((a,b)=>b-a).map(c=>names[c]);
+  if(stronger.length) parts.push(`要注意更高牌型：${[...new Set(stronger)].join("、")}`);
+  const same=by[madeHand.category]||[];
+  if(same.length) parts.push(`同牌型更大組合例如：${same.slice(0,5).map(x=>x.cards.map(prettyCard).join("＋")).join("、")}`);
+
+  const tips=[
+    "高牌風險：注意對手配成一對、兩對、三條、順子或同花",
+    "一對風險：注意更大一對、兩對、三條，以及順子或同花",
+    "兩對風險：注意更大兩對、三條與葫蘆，牌面成對時尤其危險",
+    "三條風險：注意更大三條、順子、同花與葫蘆",
+    "順子風險：注意更高順子，以及同花、葫蘆或四條",
+    "同花風險：注意更高同花，牌面成對時也要防葫蘆或四條",
+    "葫蘆風險：注意更大葫蘆與四條",
+    "四條風險：注意更大四條；若四條在公共牌上還要比較踢腳",
+    "同花順風險：只有更大的同花順能擊敗你；皇家同花順沒有更大牌型"
+  ];
+  parts.push(tips[madeHand.category]);
+
+  if(madeHand.category===5){
+    const cnt={};[...heroCards,...boardCards].forEach(c=>cnt[c.slice(-1)]=(cnt[c.slice(-1)]||0)+1);
+    const fs=Object.entries(cnt).find(([,n])=>n>=5)?.[0];
+    if(fs){
+      const danger=[];
+      for(const r of ranks){
+        const c=r+fs;if(used.has(c))continue;
+        if(same.some(x=>x.cards.includes(c)))danger.push(`${r}${sym[fs]}`);
+      }
+      if(danger.length)parts.push(`比你大的同花關鍵牌：${danger.join("、")}`);
+    }
+  }
+  parts.push(`實際危險手牌例如：${beating.slice(0,5).map(x=>`${x.cards.map(prettyCard).join("＋")}（${x.hand.name}）`).join("、")}`);
+  return {count:beating.length,text:`⚠️ 全牌型風險：你目前是「${madeHand.name}」。${parts.join("；")}。目前共有 ${beating.length} 種對手兩張手牌組合可以擊敗你。`};
+}
+
 function analyze(){
   const hand=normalizeHand($("saHand").value);
   if(!hand){alert("請先點選你的兩張手牌。");return;}
@@ -1364,6 +1414,7 @@ function analyze(){
   }
 
   const madeHand=evaluateBestHand([...heroCards,...boardNow]);
+  const allHandRisk=getAllHandRiskV123(heroCards,boardNow,madeHand);
   const risk=analyzeOpponentRiskForStreetV120(heroCards,boardNow);
   const drawInfo=getDrawInfoV120(heroCards,boardNow);
   const flushRisk=getFlushRiskV121(heroCards,boardNow,madeHand);
@@ -1420,7 +1471,8 @@ function analyze(){
     raise,call,fold,best:bestAction,reason,
     riskSummary:risk?.summary||"",madeHandName:madeHand?.name||"",
     drawInfo:drawInfo||null,
-    flushRisk:flushRisk||null
+    flushRisk:flushRisk||null,
+    allHandRisk:allHandRisk||null
   };
 
   analysisByStreet[street]=result;
@@ -1489,7 +1541,7 @@ function renderResult(r){
   const modeLabel = r.mode || "一般分析";
   box.innerHTML=`<h3>${escapeHtml(r.heroNames||r.hand)}｜${r.pos}｜${escapeHtml(modeLabel)}｜目前到 ${r.street}</h3>
     <div class="strategy-bars">${bar("raise","加注",r.raise)}${bar("call","跟注",r.call)}${bar("fold","棄牌",r.fold)}</div>
-    <div class="strategy-main"><b>主要建議：${r.best}</b>${r.drawInfo?.text?`<div class="draw-alert-v120">${escapeHtml(r.drawInfo.text)}</div>`:""}${r.flushRisk?.text?`<div class="draw-alert-v120">${escapeHtml(r.flushRisk.text)}</div>`:""}<p>${escapeHtml(r.reason)}</p>${r.street!=="翻牌前"?`<div class="street-action-note"><b>${escapeHtml(r.street)}行動：</b>${escapeHtml((r.street==="翻牌"?r.flopAction:r.street==="轉牌"?r.turnAction:r.riverAction)||"尚未加入行動")}</div>`:""}
+    <div class="strategy-main"><b>主要建議：${r.best}</b>${r.drawInfo?.text?`<div class="draw-alert-v120">${escapeHtml(r.drawInfo.text)}</div>`:""}${r.allHandRisk?.text?`<div class="draw-alert-v120">${escapeHtml(r.allHandRisk.text)}</div>`:""}<p>${escapeHtml(r.reason)}</p>${r.street!=="翻牌前"?`<div class="street-action-note"><b>${escapeHtml(r.street)}行動：</b>${escapeHtml((r.street==="翻牌"?r.flopAction:r.street==="轉牌"?r.turnAction:r.riverAction)||"尚未加入行動")}</div>`:""}
       <div class="street-summary">
         <div><b>翻牌前：</b>${escapeHtml(r.preflop||"尚未加入行動")}</div>
         <div><b>翻牌：</b>${escapeHtml((r.flopCards?formatCardListV121(r.flopCards):"未選牌面")+(r.flopAction?"｜"+r.flopAction:""))}</div>
