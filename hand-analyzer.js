@@ -51,7 +51,7 @@ function getGTOResult(context){
 const POSITIONS_BY_SIZE = {
   4:["BTN","SB","BB","UTG"],
   5:["BTN","SB","BB","UTG","CO"],
-  6:["BTN","SB","BB","UTG","HJ","CO"],
+  6:canonicalStreetOrder(street),
   7:["BTN","SB","BB","UTG","MP","HJ","CO"],
   8:["BTN","SB","BB","UTG","UTG+1","MP","HJ","CO"],
   9:["BTN","SB","BB","UTG","UTG+1","MP","MP+1","HJ","CO"],
@@ -78,7 +78,7 @@ function canonicalSeatOrder(){
   const map={
     4:["BTN","SB","BB","UTG"],
     5:["BTN","SB","BB","UTG","CO"],
-    6:["BTN","SB","BB","UTG","HJ","CO"],
+    6:canonicalStreetOrder(street),
     7:["BTN","SB","BB","UTG","MP","HJ","CO"],
     8:["BTN","SB","BB","UTG","UTG+1","MP","HJ","CO"],
     9:["BTN","SB","BB","UTG","UTG+1","MP","MP+1","HJ","CO"],
@@ -468,6 +468,16 @@ function refreshActionTypeOptions(builder){
   if(allowed.includes(old)) type.value=old;
 
   refreshActionAmountUI(builder);
+}
+
+
+function canonicalStreetOrder(street){
+  const positions=getPositions();
+  if(!positions.length)return [];
+  const anchor=street==="preflop" ? "BB" : "BTN";
+  const idx=positions.indexOf(anchor);
+  if(idx<0)return positions.slice();
+  return positions.slice(idx+1).concat(positions.slice(0,idx+1));
 }
 
 function initActionBuilders(){
@@ -1047,6 +1057,19 @@ function refreshUsageLogVisibility(){
   }
 }
 
+
+function setFirstActorForStreet(street){
+  const builder=document.querySelector(`.action-builder[data-builder="${street}"]`);
+  if(!builder)return;
+  const actor=builder.querySelector(".action-actor");
+  if(!actor)return;
+  const folded=getFoldedBeforeOrOnStreet(street);
+  const first=canonicalStreetOrder(street).find(pos=>!folded.has(pos));
+  if(first) actor.value=first===heroPosition ? "hero" : first;
+  if(typeof refreshActionTypeOptions==="function") refreshActionTypeOptions(builder);
+  refreshActionAmountUI(builder);
+}
+
 function initStreetTabs(){
   document.querySelectorAll(".street-tab").forEach(btn=>btn.addEventListener("click",()=>{
     const street=btn.dataset.street;
@@ -1071,6 +1094,7 @@ function init(){
   $("saClearHistory").addEventListener("click",()=>{if(confirm("確定清空這台裝置上的牌局分析紀錄嗎？")){localStorage.removeItem(HISTORY_KEY);renderHistory();}});
   initStreetTabs();initCardSlots();initActionBuilders();
   document.querySelectorAll(".action-builder").forEach(refreshActionTypeOptions);
+  ["preflop","flop","turn","river"].forEach(setFirstActorForStreet);
   renderSeats();renderSelectedCards();
   Object.keys(actionState).forEach(renderActionSequence);
   renderHistory();
