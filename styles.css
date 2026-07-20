@@ -1099,3 +1099,26 @@ body.picker-open{overflow:hidden}
   display:inline-flex;padding:6px 10px;border-radius:999px;
   background:#e2e8f0;font-weight:700;font-size:14px;
 }
+
+
+/* v94：我的座位、已棄牌狀態、在局玩家 */
+.seat-btn.selected strong::after{content:"";margin-left:2px}
+.still-in-hand-v94{
+  margin:0 0 12px;
+  padding:12px;
+  border:1px solid #cbd5e1;
+  border-radius:14px;
+  background:#f8fafc;
+}
+.still-in-hand-v94 b{display:block;margin-bottom:8px}
+.player-status-v94{display:flex;flex-wrap:wrap;gap:7px}
+.player-status-v94 span{
+  display:inline-flex;
+  padding:6px 9px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+}
+.player-status-v94 .alive{background:#dcfce7;color:#166534}
+.player-status-v94 .folded{background:#e5e7eb;color:#6b7280;text-decoration:line-through}
+.action-actor option:disabled{color:#9ca3af}

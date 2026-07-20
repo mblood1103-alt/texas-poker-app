@@ -82,35 +82,76 @@ function renderSeats(){
     const angle=(90+i*(360/positions.length))*Math.PI/180;
     const x=50+43*Math.cos(angle), y=50+42*Math.sin(angle);
     const btn=document.createElement("button");
-    btn.type="button"; btn.className="seat-btn"+(pos===current?" selected":"");
+    btn.type="button";
+    btn.className="seat-btn"+(pos===current?" selected":"");
     btn.style.left=x+"%"; btn.style.top=y+"%"; btn.dataset.pos=pos;
-    btn.innerHTML=`<strong>${pos}</strong><small>${positionName(pos)}</small>`;
+    const me = pos===current ? "（我）" : "";
+    btn.innerHTML=`<strong>${pos}${me}</strong><small>${positionName(pos)}</small>`;
     btn.addEventListener("click",()=>selectPosition(pos));
     table.appendChild(btn);
   });
   if(current&&!positions.includes(current)){
-    $("saHeroPos").value=""; $("saHeroPosBadge").textContent="尚未選位";
+    $("saHeroPos").value="";
+    $("saHeroPosBadge").textContent="尚未選位";
   }
   populateActors();
 }
 
 function selectPosition(pos){
   $("saHeroPos").value=pos;
-  $("saHeroPosBadge").textContent=`${pos}｜${positionName(pos)}`;
-  document.querySelectorAll(".seat-btn").forEach(b=>b.classList.toggle("selected",b.dataset.pos===pos));
-  $("saPositionHelp").textContent=`你選的是 ${pos}（${positionName(pos)}）。BTN 後面依序是 SB、BB，再進入前位。`;
-  populateActors();
+  $("saHeroPosBadge").textContent=`${pos}｜${positionName(pos)}（我）`;
+  $("saPositionHelp").textContent=`你的位置是 ${pos}（${positionName(pos)}）。牌桌上會直接標示「我」。`;
+  renderSeats();
 }
 
+function streetKeyFromBuilder(builder){
+  return builder?.dataset?.builder || "preflop";
+}
+function actorToPosition(actor){
+  return actor==="我" ? ($("saHeroPos").value||"") : actor;
+}
+function getFoldedBeforeStreet(street){
+  const order=["preflop","flop","turn","river"];
+  const idx=order.indexOf(street);
+  const folded=new Set();
+  for(let i=0;i<idx;i++){
+    (actionState[order[i]]||[]).forEach(a=>{
+      if(a.action==="棄牌"){
+        const p=actorToPosition(a.actor);
+        if(p) folded.add(p);
+      }
+    });
+  }
+  return folded;
+}
 function populateActors(){
   const positions=POSITIONS_BY_SIZE[Number($("saTableSize").value)]||POSITIONS_BY_SIZE[6];
-  document.querySelectorAll(".action-actor").forEach(sel=>{
+  const hero=$("saHeroPos").value;
+  document.querySelectorAll(".action-builder").forEach(builder=>{
+    const sel=builder.querySelector(".action-actor");
+    if(!sel)return;
+    const street=streetKeyFromBuilder(builder);
+    const folded=getFoldedBeforeStreet(street);
     const old=sel.value;
-    sel.innerHTML=`<option value="我">我</option>`+positions.map(p=>`<option value="${p}">${p}｜${positionName(p)}</option>`).join("");
-    if([...sel.options].some(o=>o.value===old)) sel.value=old;
-  });
-}
 
+    const opts=[];
+    if(hero){
+      const heroFolded=folded.has(hero);
+      opts.push(`<option value="我" ${heroFolded?"disabled":""}>${hero}｜${positionName(hero)}（我）${heroFolded?"（已棄牌）":""}</option>`);
+    }
+    positions.filter(p=>p!==hero).forEach(p=>{
+      const isFolded=folded.has(p);
+      opts.push(`<option value="${p}" ${isFolded?"disabled":""}>${p}｜${positionName(p)}${isFolded?"（已棄牌）":""}</option>`);
+    });
+    sel.innerHTML=opts.join("");
+    if([...sel.options].some(o=>o.value===old&&!o.disabled)) sel.value=old;
+    else {
+      const first=[...sel.options].find(o=>!o.disabled);
+      if(first) sel.value=first.value;
+    }
+  });
+  renderStillInHandReminderV94();
+}
 function cardDisplay(code){
   if(!code)return null;
   const m=code.match(/^(10|[2-9AJQK])([shdc])$/);
@@ -212,9 +253,12 @@ function renderActionSequence(street){
       <button type="button" data-remove="${i}" aria-label="刪除">×</button>
     </span>`).join(""):`<span class="position-help">尚未加入行動</span>`;
   box.querySelectorAll("[data-remove]").forEach(btn=>btn.addEventListener("click",()=>{
-    actionState[street].splice(Number(btn.dataset.remove),1); renderActionSequence(street);
+    actionState[street].splice(Number(btn.dataset.remove),1);
+    renderActionSequence(street);
+    populateActors();
   }));
   syncActionHidden(street);
+  populateActors();
 }
 function syncActionHidden(street){
   const text=actionState[street].map(a=>`${a.actor} ${a.action}${a.amount?`到 ${a.amount}`:""}`).join("，");
@@ -254,6 +298,52 @@ function activeStreet(){
   if(actionState.turn.length||selectedCards.turn)return "轉牌";
   if(actionState.flop.length||selectedCards.flop0)return "翻牌";
   return "翻牌前";
+}
+
+
+function rankValueFromCode(code){
+  const r=String(code||"").slice(0,-1);
+  return r==="A"?14:r==="K"?13:r==="Q"?12:r==="J"?11:r==="10"?10:Number(r);
+}
+function evaluateMadeHand(){
+  const cards=[
+    selectedCards.hero0,selectedCards.hero1,
+    selectedCards.flop0,selectedCards.flop1,selectedCards.flop2,
+    selectedCards.turn,selectedCards.river
+  ].filter(Boolean);
+  if(cards.length<5)return null;
+
+  const ranks=cards.map(rankValueFromCode);
+  const suits=cards.map(c=>c.slice(-1));
+  const counts={};
+  ranks.forEach(r=>counts[r]=(counts[r]||0)+1);
+  const groups=Object.entries(counts).map(([r,c])=>({r:Number(r),c})).sort((a,b)=>b.c-a.c||b.r-a.r);
+
+  const suitGroups={};
+  cards.forEach(c=>(suitGroups[c.slice(-1)]??=[]).push(rankValueFromCode(c)));
+  const flushSuit=Object.keys(suitGroups).find(s=>suitGroups[s].length>=5);
+
+  function straightHigh(vals){
+    const u=[...new Set(vals)].sort((a,b)=>a-b);
+    if(u.includes(14))u.unshift(1);
+    let run=1,best=0;
+    for(let i=1;i<u.length;i++){
+      if(u[i]===u[i-1]+1){run++; if(run>=5)best=u[i];}
+      else if(u[i]!==u[i-1])run=1;
+    }
+    return best;
+  }
+  const sfHigh=flushSuit?straightHigh(suitGroups[flushSuit]):0;
+  if(sfHigh)return {category:8,name:"同花順",strength:99};
+  if(groups[0]?.c===4)return {category:7,name:`鐵支 ${groups[0].r===14?"A":groups[0].r}`,strength:99};
+  const trips=groups.filter(g=>g.c>=3), pairs=groups.filter(g=>g.c>=2);
+  if(trips.length && (pairs.some(g=>g.r!==trips[0].r) || trips.length>=2))return {category:6,name:"葫蘆",strength:97};
+  if(flushSuit)return {category:5,name:"同花",strength:94};
+  if(straightHigh(ranks))return {category:4,name:"順子",strength:91};
+  if(trips.length)return {category:3,name:"三條",strength:84};
+  if(pairs.length>=2)return {category:2,name:"兩對",strength:74};
+  if(pairs.length===1)return {category:1,name:"一對",strength:58};
+  return {category:0,name:"高牌",strength:35};
 }
 
 function analyze(){
@@ -326,6 +416,25 @@ function analyze(){
   else if(p.level===1)reason+="目前主要面對一次開池，可以依位置與牌力考慮跟注或再加注。";
   else if(p.level>=3)reason+="目前是高壓力再加注局面，範圍要非常緊。";
   else reason+="目前沒有偵測到明確的翻牌前加注壓力。";
+
+  const madeHand=evaluateMadeHand();
+  if(street!=="翻牌前" && madeHand){
+    if(madeHand.category>=7){
+      raise=82;call=18;fold=0;best[0]="加注";best[1]=82;
+      reason=`你目前已成 ${madeHand.name}，這是非常強的成牌，不能再用翻牌前起手牌模型判斷。除非牌面存在更高同類牌型的特殊可能，策略應以取價值為主，不應建議棄牌。`;
+    }else if(madeHand.category===6){
+      raise=72;call=27;fold=1;best[0]="加注";best[1]=72;
+      reason=`你目前已成 ${madeHand.name}，屬於極強成牌。一般情況應以價值下注或加注為主。`;
+    }else if(madeHand.category===5 || madeHand.category===4){
+      raise=55;call=40;fold=5;best[0]="加注";best[1]=55;
+      reason=`你目前已成 ${madeHand.name}，翻牌後分析已改用實際成牌強度，不再只看翻牌前手牌。`;
+    }else if(madeHand.category===3){
+      raise=45;call=47;fold=8;best[0]="跟注";best[1]=47;
+      reason=`你目前已成 ${madeHand.name}，屬於強成牌，通常不應高比例棄牌。`;
+    }else{
+      reason+=` 目前牌型判定為「${madeHand.name}」，翻牌後會納入實際成牌強度調整。`;
+    }
+  }
 
   lastAnalysis={at:new Date().toISOString(),hand,heroNames,pos,tableSize,stack,remainingChips,mode:"一般分析",blinds:`${$("saSB").value}/${$("saBB").value}`,
     preflop,flopCards,flopAction,turnCard,turnAction,riverCard,riverAction,street,raise,call,fold,best:best[0],reason};
@@ -455,6 +564,8 @@ function initStreetTabs(){
     const street=btn.dataset.street;
     document.querySelectorAll(".street-tab").forEach(b=>b.classList.toggle("active",b===btn));
     document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel===street));
+    populateActors();
+    renderStillInHandReminderV94();
   }));
 }
 function init(){
@@ -509,41 +620,38 @@ document.addEventListener("click",e=>{
 });
 window.renderPersistentBoardV91();
 
+/* v94：自動提醒在局玩家、已棄牌狀態 */
+function currentStreetKeyV94(){
+  const active=document.querySelector(".street-tab.active");
+  return active?.dataset?.street || "preflop";
+}
+function getPlayersStillInHandV94(targetStreet){
+  const positions=POSITIONS_BY_SIZE[Number($("saTableSize")?.value)||6]||POSITIONS_BY_SIZE[6];
+  const folded=getFoldedBeforeStreet(targetStreet);
+  return positions.filter(p=>!folded.has(p));
+}
+function renderStillInHandReminderV94(){
+  const street=currentStreetKeyV94();
+  document.querySelectorAll(".still-in-hand-v94").forEach(el=>el.remove());
+  if(street==="preflop")return;
 
-/* v93：自動提醒目前仍在牌局的玩家 */
-function getPlayersStillInHand(targetStreet){
-  const seats=getPositions(Number($("saTableSize")?.value)||6);
-  const hero=selectedPosition||"";
-  let players=[...new Set([hero,...seats].filter(Boolean))];
-  const order=["preflop","flop","turn","river"];
-  const targetIndex=order.indexOf(targetStreet);
-  for(let i=0;i<targetIndex;i++){
-    const actions=actionState[order[i]]||[];
-    actions.forEach(a=>{
-      const who=String(a.who||a.player||"").trim();
-      const act=String(a.action||a.act||"").trim();
-      if(who && /棄牌|fold/i.test(act)) players=players.filter(p=>p!==who && !(who==="我"&&p===hero));
-    });
-  }
-  return players;
+  const builder=document.querySelector(`.action-builder[data-builder="${street}"]`);
+  if(!builder)return;
+  const hero=$("saHeroPos").value;
+  const positions=POSITIONS_BY_SIZE[Number($("saTableSize")?.value)||6]||POSITIONS_BY_SIZE[6];
+  const folded=getFoldedBeforeStreet(street);
+  const active=positions.filter(p=>!folded.has(p));
+
+  const box=document.createElement("div");
+  box.className="still-in-hand-v94";
+  box.innerHTML=`
+    <b>🎯 目前還在牌局</b>
+    <div class="player-status-v94">
+      ${active.map(p=>`<span class="alive">${escapeHtml(p)}${p===hero?"（我）":""}</span>`).join("")}
+      ${[...folded].map(p=>`<span class="folded">${escapeHtml(p)}${p===hero?"（我）":""}（已棄牌）</span>`).join("")}
+    </div>`;
+  builder.prepend(box);
 }
-function renderStillInHandReminder(){
-  const street=activeStreet();
-  let box=document.getElementById("stillInHandReminderV93");
-  const panel=document.querySelector(`[data-action-panel="${street}"]`) || document.querySelector(".street-action-panel:not(.hidden)");
-  if(!panel)return;
-  if(!box){
-    box=document.createElement("div");
-    box.id="stillInHandReminderV93";
-    box.className="still-in-hand-v93";
-    panel.prepend(box);
-  }else if(box.parentElement!==panel){ panel.prepend(box); }
-  if(street==="preflop"){box.style.display="none";return}
-  const names=getPlayersStillInHand(street);
-  box.style.display="";
-  const label=street==="flop"?"進入翻牌":street==="turn"?"進入轉牌":"進入河牌";
-  box.innerHTML=`<b>🎯 ${label}的玩家</b><div>${names.length?names.map(n=>`<span>${escapeHtml(n===selectedPosition?"我":n)}</span>`).join(""):"尚無可判斷的玩家"}</div>`;
-}
-document.addEventListener("click",()=>setTimeout(renderStillInHandReminder,0));
-document.addEventListener("change",()=>setTimeout(renderStillInHandReminder,0));
-setTimeout(renderStillInHandReminder,300);
+document.addEventListener("click",()=>setTimeout(()=>{populateActors();renderStillInHandReminderV94();},0));
+document.addEventListener("change",()=>setTimeout(()=>{populateActors();renderStillInHandReminderV94();},0));
+setTimeout(()=>{populateActors();renderStillInHandReminderV94();},300);
