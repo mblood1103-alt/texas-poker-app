@@ -334,9 +334,25 @@ function renderDeck(){
     return `<button type="button" class="deck-card ${s.red?"red-card":""} ${used.has(code)?"used":""}" data-card="${code}">${rank}${s.symbol}</button>`;
   })).join("");
   document.querySelectorAll(".deck-card:not(.used)").forEach(btn=>btn.addEventListener("click",()=>{
-    selectedCards[activeCardSlot]=btn.dataset.card;
+    const justSelectedSlot=activeCardSlot;
+    selectedCards[justSelectedSlot]=btn.dataset.card;
     renderSelectedCards();
-    closeCardPicker();
+
+    // v116：翻牌三張連續選牌。
+    // 第 1 張選完自動開第 2 張，第 2 張選完自動開第 3 張。
+    // 若下一張本來已有牌，視為「換牌」，就不強制跳過去。
+    const nextFlopSlot={
+      flop0:"flop1",
+      flop1:"flop2"
+    }[justSelectedSlot];
+
+    if(nextFlopSlot && !selectedCards[nextFlopSlot]){
+      activeCardSlot=nextFlopSlot;
+      renderDeck();
+      // overlay 保持開啟，直接讓使用者繼續選下一張
+    }else{
+      closeCardPicker();
+    }
 
     // 如果已經分析過，換任何一張牌都立即用目前局面重新分析。
     if(lastAnalysis){
@@ -666,10 +682,10 @@ function initActionBuilders(){
         return p || (a.actor === "我" ? heroPosNow : a.actor);
       };
 
-      // 最後一次開池／加註／全下後，所有仍在局中的玩家都必須完成回應。
+      // 最後一次開池／下注／加註／全下後，所有仍在局中的玩家都必須完成回應。
       let lastAggressive = -1;
       streetActions.forEach((a, i) => {
-        if (["開池", "加注", "加註", "全下"].includes(a.action)) lastAggressive = i;
+        if (["開池", "下注", "加注", "加註", "全下"].includes(a.action)) lastAggressive = i;
       });
 
       // v108：下注輪完成不能要求「最後一次進攻者自己再回應一次」。
