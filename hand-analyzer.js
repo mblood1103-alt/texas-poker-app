@@ -1231,6 +1231,37 @@ function clearCurrentHand(){
   lastAnalysis=null;
   document.querySelectorAll(".street-tab").forEach((b,i)=>b.classList.toggle("active",i===0));
   document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel==="preflop"));
+
+  // v115：一鍵清除後，完整恢復所有街道的操作功能
+  document.querySelectorAll(".action-builder").forEach(builder=>{
+    const actorSel=builder.querySelector(".action-actor");
+    const typeSel=builder.querySelector(".action-type");
+    const addBtn=builder.querySelector(".add-action-btn");
+
+    if(actorSel){
+      actorSel.disabled=false;
+      actorSel.classList.remove("needs-reentry-v113","needs-reentry-v114");
+    }
+    if(typeSel) typeSel.disabled=false;
+    if(addBtn){
+      addBtn.disabled=false;
+      addBtn.textContent="＋加入這個行動";
+      delete addBtn.dataset.roundComplete;
+    }
+
+    Object.keys(builder.dataset).forEach(key=>{
+      if(key.startsWith("roundCompleteCount")) delete builder.dataset[key];
+    });
+
+    builder.querySelectorAll(".reentry-hint-v113,.reentry-hint-v114").forEach(el=>el.remove());
+  });
+
+  // 清除後重新建立各街正確的第一位行動者與合法動作
+  populateActors();
+  document.querySelectorAll(".action-builder").forEach(builder=>{
+    if(typeof refreshActionTypeOptions==="function") refreshActionTypeOptions(builder);
+    if(typeof refreshActionAmountUI==="function") refreshActionAmountUI(builder);
+  });
 }
 
 let stopUsageLog=null;
