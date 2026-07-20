@@ -157,6 +157,11 @@ function populateActors(){
   document.querySelectorAll(".action-builder").forEach(builder=>{
     const sel=builder.querySelector(".action-actor");
     if(!sel)return;
+    sel.disabled=false;
+    const typeSel=builder.querySelector(".action-type");
+    if(typeSel) typeSel.disabled=false;
+    const addBtn=builder.querySelector(".add-action");
+    if(addBtn) addBtn.disabled=false;
 
     const street=streetKeyFromBuilder(builder);
     const positions=actionOrderForStreet(street);
@@ -544,6 +549,49 @@ function initActionBuilders(){
       renderActionSequence(street);
 
       // 記住本次行動座位，刷新後自動跳到牌桌順序的下一位（略過已棄牌）。
+      // v107：若本街所有仍在牌局的玩家都已完成回應，就停止循環跳位。
+      const streetActions = actionState[street] || [];
+      const foldedNow = getFoldedBeforeStreet(street);
+      const livePositions = actionOrderForStreet(street).filter(p => !foldedNow.has(p));
+      const heroPosNow = $("saHeroPos").value;
+
+      const normalizedActor = a => {
+        const p = actualActorPosition(a.actor);
+        return p || (a.actor === "我" ? heroPosNow : a.actor);
+      };
+
+      // 最後一次開池／加註／全下後，所有仍在局中的玩家都必須完成回應。
+      let lastAggressive = -1;
+      streetActions.forEach((a, i) => {
+        if (["開池", "加注", "加註", "全下"].includes(a.action)) lastAggressive = i;
+      });
+
+      const responseStart = Math.max(0, lastAggressive);
+      const responseActions = streetActions.slice(responseStart);
+      const responded = new Set(responseActions.map(normalizedActor));
+      const roundComplete =
+        livePositions.length > 0 &&
+        livePositions.every(p => responded.has(p));
+
+      if (roundComplete) {
+        const actorSel = builder.querySelector(".action-actor");
+        if (actorSel) {
+          actorSel.innerHTML = "";
+          const doneOpt = document.createElement("option");
+          doneOpt.value = "";
+          doneOpt.textContent = "✅ 本街行動已完成";
+          doneOpt.selected = true;
+          actorSel.appendChild(doneOpt);
+          actorSel.disabled = true;
+        }
+        const typeSel = builder.querySelector(".action-type");
+        if (typeSel) typeSel.disabled = true;
+        const addBtn = builder.querySelector(".add-action");
+        if (addBtn) addBtn.disabled = true;
+        if (typeof renderActions === "function") renderActions();
+        return;
+      }
+
       const positions=actionOrderForStreet(street);
       const actedIndex=positions.indexOf(actualPos);
 
