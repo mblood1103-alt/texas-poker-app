@@ -1,3 +1,4 @@
+try{localStorage.setItem("analysisMode","general");}catch(e){}
 
 const $ = id => document.getElementById(id);
 const HISTORY_KEY = "pokerStrategyHistoryV87";

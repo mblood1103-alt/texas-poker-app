@@ -182,7 +182,9 @@
 #settlementSummary>div:nth-child(1) svg,#auditSummary>div:nth-child(1) svg,[data-audit-grid]>div:nth-child(1) svg{visibility:visible!important;display:block!important;width:43px!important;height:43px!important;min-width:43px!important;color:#c98a00!important;stroke-width:2.6!important}
 @media(max-width:430px){#settlementSummary>div:nth-child(1) svg,#auditSummary>div:nth-child(1) svg,[data-audit-grid]>div:nth-child(1) svg{width:39px!important;height:39px!important;min-width:39px!important}}
 </style>
-</head>
+<style>
+#gtoModeBtn,.gto-mode-btn,[data-mode="gto"],[data-analysis-mode="gto"]{display:none!important}
+</style></head>
 <body>
   <header class="top">
     <div>
@@ -393,16 +395,7 @@
           <p class="hint">不用再打 AJo、KQs，也不用手打整段行動。手牌、公共牌、玩家位置與動作都可以直接按選擇。</p>
 
           
-          <section class="analysis-mode-section">
-            <div class="analysis-mode-title">分析模式</div>
-            <div class="analysis-mode-buttons" role="group" aria-label="分析模式">
-              <button type="button" class="analysis-mode-btn active" data-analysis-mode="general">一般分析</button>
-              <button type="button" class="analysis-mode-btn" data-analysis-mode="gto">GTO 模式</button>
-            </div>
-            <p id="analysisModeHint" class="hint">
-              一般分析使用 App 內建離線策略模型；GTO 模式只在有正式策略資料的局面顯示百分比，沒有資料就會明確標示不支援。
-            </p>
-          </section>
+          
 
           <input id="saAnalysisMode" type="hidden" value="general">
 
@@ -726,7 +719,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=123"></script>
+  <script type="module" src="hand-analyzer.js?v=125"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 </body>
 </html>
