@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=135">
+  <link rel="stylesheet" href="styles.css?v=136">
 
 
 <style id="v61-reference-match">
@@ -720,7 +720,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=135"></script>
+  <script type="module" src="hand-analyzer.js?v=136"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 
@@ -811,6 +811,86 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const norm = s => (s || "").replace(/\s+/g, "").trim();
+
+  // ===== 1. 剩餘籌碼移到「翻牌前行動」標題右側 =====
+  document.querySelectorAll(".street-panel").forEach(panel => {
+    const heading = [...panel.querySelectorAll("h2,h3,h4,strong")].find(el =>
+      /翻牌前行動|翻牌行動|轉牌行動|河牌行動/.test(norm(el.textContent))
+    );
+    const stack = [...panel.querySelectorAll("div,p,span")].find(el =>
+      norm(el.textContent).startsWith("💰你目前剩餘籌碼：") &&
+      ![...el.children].some(c => norm(c.textContent).startsWith("💰你目前剩餘籌碼："))
+    );
+
+    if (heading && stack) {
+      let row = heading.parentElement;
+      if (!row.classList.contains("street-title-row-v136")) {
+        const wrap = document.createElement("div");
+        wrap.className = "street-title-row-v136";
+        heading.parentNode.insertBefore(wrap, heading);
+        wrap.appendChild(heading);
+        wrap.appendChild(stack);
+      }
+    }
+  });
+
+  // ===== 2. 行動膠囊只縮小實際按鈕，不亂套其他元素 =====
+  document.querySelectorAll(".street-panel button").forEach(btn => {
+    const t = norm(btn.textContent);
+    if (
+      /^(我|BTN|SB|BB|UTG|HJ|CO)/.test(t) &&
+      /跟注|過牌|下注|加注|棄牌|全下|開池/.test(t) &&
+      t.includes("×")
+    ) {
+      btn.classList.add("action-chip-v136");
+    }
+  });
+
+  // ===== 3. 手牌未選提示移到標題右側，移除下面大框 =====
+  const handTitle = [...document.querySelectorAll("h2,h3,h4,div,strong")].find(el =>
+    norm(el.textContent) === "點選你的兩張手牌"
+  );
+  const incomplete = [...document.querySelectorAll("div,p,span")].find(el =>
+    norm(el.textContent) === "尚未選擇完整兩張手牌" &&
+    ![...el.children].some(c => norm(c.textContent) === "尚未選擇完整兩張手牌")
+  );
+
+  if (handTitle && incomplete) {
+    let titleRow = handTitle.parentElement;
+    if (!titleRow.classList.contains("hand-title-row-v136")) {
+      const wrap = document.createElement("div");
+      wrap.className = "hand-title-row-v136";
+      handTitle.parentNode.insertBefore(wrap, handTitle);
+      wrap.appendChild(handTitle);
+      wrap.appendChild(incomplete);
+      incomplete.classList.add("hand-warning-v136");
+    }
+  }
+
+  // ===== 4. 公共牌只縮小牌格本身，保持 5 張正常可見 =====
+  const publicTitle = [...document.querySelectorAll("h2,h3,h4,strong,div")].find(el =>
+    norm(el.textContent) === "公共牌"
+  );
+  if (publicTitle) {
+    let block = publicTitle.parentElement;
+    while (block && block.querySelectorAll("button").length < 5) block = block.parentElement;
+    if (block) {
+      block.classList.add("public-cards-v136");
+      [...block.querySelectorAll("button")].forEach(btn => {
+        const t = norm(btn.textContent);
+        if (t === "+" || /[2-9TJQKA][♠♥♦♣]/.test(t)) {
+          btn.classList.add("public-card-slot-v136");
+        }
+      });
+    }
+  }
+});
+</script>
 
 </body>
 </html>

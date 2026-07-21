@@ -1341,141 +1341,120 @@ body.picker-open{overflow:hidden}
 }
 
 
-/* ===== v135：行動與牌面進一步緊湊 ===== */
 
-/* 1. 各街「剩餘籌碼」縮成標題右側的小提示，行動欄位整體往上 */
+
+/* ===== v136 精準版面修正 ===== */
+
+/* 1. 街別標題 + 剩餘籌碼同一排 */
+#handAnalyzerCard .street-title-row-v136{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 6px;
+}
+#handAnalyzerCard .street-title-row-v136 > h2,
+#handAnalyzerCard .street-title-row-v136 > h3,
+#handAnalyzerCard .street-title-row-v136 > h4,
+#handAnalyzerCard .street-title-row-v136 > strong{
+  margin:0 !important;
+}
+#handAnalyzerCard .street-title-row-v136 > :last-child{
+  width:auto !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:3px 8px !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  font-size:13px !important;
+  line-height:1.2 !important;
+  white-space:nowrap;
+}
 #handAnalyzerCard .street-panel{
-  position: relative;
+  padding-top:8px !important;
 }
-#handAnalyzerCard .street-panel > h3:first-child{
-  margin-bottom: 2px !important;
-  padding-right: 150px;
-}
-#handAnalyzerCard .street-panel .stack-status,
-#handAnalyzerCard .street-panel .remaining-stack,
-#handAnalyzerCard .street-panel [class*="stack-status"]{
-  position: absolute !important;
-  top: 8px !important;
-  right: 12px !important;
-  width: auto !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  padding: 4px 8px !important;
-  border: 0 !important;
-  background: transparent !important;
-  font-size: 13px !important;
-  line-height: 1.2 !important;
-  box-shadow: none !important;
-}
-#handAnalyzerCard .street-panel .action-grid,
-#handAnalyzerCard .street-panel .action-row,
-#handAnalyzerCard .street-panel [class*="action-form"]{
-  margin-top: 4px !important;
+#handAnalyzerCard .street-panel select,
+#handAnalyzerCard .street-panel input{
+  min-height:42px !important;
+  height:42px !important;
 }
 
-/* 2. 已加入的行動順序膠囊縮小 */
-#handAnalyzerCard .action-chip,
-#handAnalyzerCard .action-tag,
-#handAnalyzerCard .action-item,
-#handAnalyzerCard [class*="action-chip"],
-#handAnalyzerCard [class*="action-tag"]{
-  min-height: 30px !important;
-  padding: 4px 8px !important;
-  margin: 2px !important;
-  border-radius: 999px !important;
-  font-size: 12px !important;
-  line-height: 1.15 !important;
-  gap: 3px !important;
-}
-#handAnalyzerCard .action-chip button,
-#handAnalyzerCard .action-tag button,
-#handAnalyzerCard [class*="action-chip"] button,
-#handAnalyzerCard [class*="action-tag"] button{
-  min-height: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  padding: 0 2px !important;
-  font-size: 12px !important;
-}
-#handAnalyzerCard .action-list,
-#handAnalyzerCard .actions-list,
-#handAnalyzerCard [class*="action-list"]{
-  gap: 4px !important;
-  margin-top: 6px !important;
+/* 2. 只縮小真正的行動紀錄膠囊 */
+#handAnalyzerCard .action-chip-v136{
+  min-height:30px !important;
+  height:auto !important;
+  padding:5px 9px !important;
+  margin:2px !important;
+  border-radius:999px !important;
+  font-size:12px !important;
+  line-height:1.1 !important;
+  width:auto !important;
 }
 
-/* 3. 未選完整手牌改成紅色警語，去掉原本大框感 */
-#handAnalyzerCard .hand-summary,
-#handAnalyzerCard [class*="hand-summary"]{
-  min-height: 0 !important;
+/* 3. 手牌標題 + 紅色警語同一排，下面不留大框 */
+#handAnalyzerCard .hand-title-row-v136{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin:4px 0 6px;
 }
-#handAnalyzerCard .hand-summary:has(:not(*)),
-#handAnalyzerCard [class*="hand-summary"]{
-  margin-top: 4px !important;
+#handAnalyzerCard .hand-title-row-v136 > *{
+  margin:0 !important;
 }
-#handAnalyzerCard .card-picker-section-v133 .hint,
-#handAnalyzerCard .card-picker-section-v133 [class*="summary"],
-#handAnalyzerCard .card-picker-section-v133 [class*="status"]{
-  padding: 0 !important;
-  min-height: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-#handAnalyzerCard .card-picker-section-v133 .hint,
-#handAnalyzerCard .card-picker-section-v133 [class*="summary"]{
-  color: #c62828 !important;
-  font-weight: 800 !important;
-  font-size: 13px !important;
-}
-
-/* 4. 手牌與公共牌整區縮短間距 */
-#handAnalyzerCard .card-picker-section-v133{
-  gap: 4px !important;
-  margin-top: 0 !important;
-  margin-bottom: 2px !important;
-}
-#handAnalyzerCard .card-picker-section-v133 h3,
-#handAnalyzerCard .card-picker-section-v133 h4{
-  margin-top: 3px !important;
-  margin-bottom: 3px !important;
+#handAnalyzerCard .hand-warning-v136{
+  color:#c62828 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  min-height:0 !important;
+  width:auto !important;
+  font-size:12px !important;
+  font-weight:800 !important;
+  line-height:1.2 !important;
+  white-space:nowrap;
 }
 
-/* 公共牌縮成接近手牌尺寸 */
-#handAnalyzerCard .board-card-slot,
-#handAnalyzerCard .community-card-slot,
-#handAnalyzerCard [class*="board-card"],
-#handAnalyzerCard [class*="community-card"]{
-  width: 48px !important;
-  min-width: 48px !important;
-  height: 66px !important;
-  min-height: 66px !important;
-  padding: 2px !important;
-  border-radius: 10px !important;
-  font-size: 13px !important;
+/* 4. 公共牌恢復正常比例，只比原版略小 */
+#handAnalyzerCard .public-cards-v136{
+  margin-top:4px !important;
+  padding-top:10px !important;
+  padding-bottom:10px !important;
 }
-#handAnalyzerCard .board-cards,
-#handAnalyzerCard .community-cards,
-#handAnalyzerCard [class*="board-cards"],
-#handAnalyzerCard [class*="community-cards"]{
-  gap: 5px !important;
-  margin-top: 3px !important;
-  margin-bottom: 3px !important;
+#handAnalyzerCard .public-cards-v136 .public-card-slot-v136{
+  width:60px !important;
+  min-width:60px !important;
+  max-width:60px !important;
+  height:82px !important;
+  min-height:82px !important;
+  max-height:82px !important;
+  padding:4px !important;
+  font-size:18px !important;
+  border-radius:12px !important;
+  transform:none !important;
+}
+#handAnalyzerCard .public-cards-v136 > div,
+#handAnalyzerCard .public-cards-v136 [class*="cards"]{
+  gap:6px !important;
 }
 
-/* 手機上再壓縮 */
-@media (max-width: 560px){
-  #handAnalyzerCard .street-panel{
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
+/* 手機保持五張牌清楚分開，不再壓成一坨 */
+@media (max-width:560px){
+  #handAnalyzerCard .public-cards-v136 .public-card-slot-v136{
+    width:54px !important;
+    min-width:54px !important;
+    max-width:54px !important;
+    height:74px !important;
+    min-height:74px !important;
+    max-height:74px !important;
+    font-size:16px !important;
   }
-  #handAnalyzerCard .action-chip,
-  #handAnalyzerCard .action-tag,
-  #handAnalyzerCard .action-item,
-  #handAnalyzerCard [class*="action-chip"],
-  #handAnalyzerCard [class*="action-tag"]{
-    font-size: 11px !important;
-    padding: 3px 7px !important;
-    min-height: 27px !important;
+  #handAnalyzerCard .street-title-row-v136 > :last-child{
+    font-size:12px !important;
+  }
+  #handAnalyzerCard .hand-warning-v136{
+    font-size:11px !important;
   }
 }
