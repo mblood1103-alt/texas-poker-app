@@ -1,0 +1,14 @@
+v109 下注輪完成與快取修正版
+
+這次抓到真正原因：v108 雖然程式碼已修改，但 index.html 仍然載入 hand-analyzer.js?v=106，
+手機與 GitHub Pages / PWA 快取可能一直使用舊的 v106，所以畫面看起來完全沒改。
+
+v109 修正：
+1. hand-analyzer.js 強制更新為 ?v=109。
+2. Service Worker cache 改成全新的 v109 cache。
+3. 保留 v108 的下注輪完成判斷。
+4. 修正完成後「加入這個行動」按鈕的 class selector。
+
+案例：
+UTG 開池 → HJ / Hero / CO / BTN / SB / BB 全部完成回應，
+最後一位完成後會顯示「✅ 本街行動已完成」，不再跳回 UTG。

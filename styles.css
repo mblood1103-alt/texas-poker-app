@@ -1510,15 +1510,77 @@ body.picker-open{overflow:hidden}
   }
 }
 
-/* ===== v138：標題資訊同字級 + 切換街道不跳頁 ===== */
-#handAnalyzerCard .hero-chip-inline-v137,
-#handAnalyzerCard .hero-chip-inline-v137 strong,
-#handAnalyzerCard .hand-title-row-v136 .hand-readable,
-#handAnalyzerCard #saHandReadable.hand-warning-v136{
+
+
+/* ===== v139：修正放大文字造成的右側溢出 ===== */
+
+/* 整個分析區禁止產生橫向捲動 */
+html, body{
+  max-width:100%;
+  overflow-x:hidden;
+}
+#handAnalyzerCard,
+#handAnalyzerCard *{
+  box-sizing:border-box;
+}
+
+/* 「翻牌前行動」+ 剩餘籌碼：保持同一排，但籌碼區可以收縮換行 */
+#handAnalyzerCard .action-heading-row-v137{
+  width:100%;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+#handAnalyzerCard .action-heading-row-v137 > h3{
+  flex:0 0 auto;
+  min-width:0;
+}
+#handAnalyzerCard .hero-chip-inline-v137{
+  flex:1 1 auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:58% !important;
+  overflow:hidden !important;
+  white-space:normal !important;
+  text-align:right !important;
   font-size:16px !important;
-  line-height:1.25 !important;
+  line-height:1.2 !important;
   font-weight:800 !important;
 }
+#handAnalyzerCard .hero-chip-inline-v137 strong{
+  font-size:16px !important;
+  font-weight:800 !important;
+}
+
+/* 「點選你的兩張手牌」+ 手牌資訊：同字級，但不再把畫面撐寬 */
+#handAnalyzerCard .hand-title-row-v136{
+  width:100%;
+  min-width:0;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+}
+#handAnalyzerCard .hand-title-row-v136 > :first-child{
+  flex:0 0 auto;
+  min-width:0;
+}
+#handAnalyzerCard .hand-title-row-v136 .hand-readable,
+#handAnalyzerCard #saHandReadable.hand-warning-v136{
+  flex:1 1 auto;
+  min-width:0 !important;
+  max-width:58%;
+  white-space:normal !important;
+  overflow-wrap:anywhere;
+  text-align:right;
+  font-size:16px !important;
+  line-height:1.2 !important;
+  font-weight:800 !important;
+}
+
+/* iPhone 寬度下仍維持同字級感，但避免超出畫面 */
 @media(max-width:560px){
   #handAnalyzerCard .hero-chip-inline-v137,
   #handAnalyzerCard .hero-chip-inline-v137 strong,
