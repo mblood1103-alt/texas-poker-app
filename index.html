@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=150">
+  <link rel="stylesheet" href="styles.css?v=151">
 
 
 <style id="v61-reference-match">
@@ -184,7 +184,106 @@
 </style>
 <style>
 #gtoModeBtn,.gto-mode-btn,[data-mode="gto"],[data-analysis-mode="gto"]{display:none!important}
-</style></head>
+</style>
+<style id="v151-final-hotfix">
+/* v151：真正壓縮使用者圈出的「點選行動」區塊 */
+#handAnalyzerCard .street-panel.active{
+  padding:0 !important;
+  margin:0 !important;
+}
+#handAnalyzerCard .street-panel.active .action-builder{
+  display:grid !important;
+  gap:7px !important;
+  padding:10px 12px !important;
+  margin:0 !important;
+  border-radius:14px !important;
+}
+#handAnalyzerCard .street-panel.active .action-heading-row-v137{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:8px !important;
+  margin:0 !important;
+}
+#handAnalyzerCard .street-panel.active .action-heading-row-v137 h3{
+  margin:0 !important;
+  font-size:16px !important;
+  line-height:1.1 !important;
+}
+#handAnalyzerCard .street-panel.active .hero-chip-inline-v137{
+  flex:0 1 auto !important;
+  max-width:58% !important;
+  padding:3px 7px !important;
+  font-size:12px !important;
+  line-height:1.15 !important;
+  white-space:normal !important;
+}
+#handAnalyzerCard .street-panel.active .hero-chip-inline-v137 strong{
+  font-size:13px !important;
+}
+#handAnalyzerCard .street-panel.active .action-controls{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:7px !important;
+  margin:0 !important;
+}
+#handAnalyzerCard .street-panel.active .action-controls label{
+  gap:3px !important;
+  margin:0 !important;
+  font-size:12px !important;
+  line-height:1.1 !important;
+}
+#handAnalyzerCard .street-panel.active .action-controls select,
+#handAnalyzerCard .street-panel.active .action-controls input{
+  height:40px !important;
+  min-height:40px !important;
+  padding:4px 9px !important;
+  border-radius:10px !important;
+  font-size:16px !important;
+}
+#handAnalyzerCard .street-panel.active .amount-label{
+  grid-column:1/-1 !important;
+}
+#handAnalyzerCard .street-panel.active .amount-label[style*="display: none"]{
+  display:none !important;
+}
+#handAnalyzerCard .street-panel.active .add-action-btn{
+  height:40px !important;
+  min-height:40px !important;
+  padding:5px 10px !important;
+  margin:0 !important;
+  border-radius:10px !important;
+  font-size:15px !important;
+  line-height:1 !important;
+}
+#handAnalyzerCard .street-panel.active .action-sequence{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:5px !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+#handAnalyzerCard .street-panel.active .action-chip{
+  padding:4px 7px !important;
+  font-size:12px !important;
+  line-height:1 !important;
+}
+#handAnalyzerCard .street-panel.active .action-sequence:empty{
+  display:none !important;
+}
+
+/* iPhone Safari：所有分析區輸入框至少 16px，聚焦時不自動放大 */
+#handAnalyzerCard input,
+#handAnalyzerCard select,
+#handAnalyzerCard textarea,
+#saStack{
+  font-size:16px !important;
+  -webkit-text-size-adjust:100% !important;
+}
+</style>
+
+</head>
 <body>
   <header class="top">
     <div>
@@ -417,7 +516,7 @@
               <input id="saBB" type="number" min="0.01" step="0.5" value="2">
             </label>
             <label>你現在剩多少籌碼
-              <input id="saStack" type="number" min="0" step="1" placeholder="直接輸入剩餘金額">
+              <input id="saStack" type="number" min="0" step="1" placeholder="直接輸入剩餘金額" style="font-size:16px!important;">
             </label>
           </div>
 
@@ -712,7 +811,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=150"></script>
+  <script type="module" src="hand-analyzer.js?v=151"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 
