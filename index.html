@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=154">
+  <link rel="stylesheet" href="styles.css?v=155">
 
 
 <style id="v61-reference-match">
@@ -402,6 +402,24 @@
 #handAnalyzerCard textarea,
 #handAnalyzerCard input::placeholder {
   font-size:16px !important;
+}
+</style>
+
+
+<style id="v155-ios-number-input-no-zoom">
+#handAnalyzerCard input[type="number"],
+#handAnalyzerCard input[type="text"],
+#handAnalyzerCard input[type="tel"],
+#handAnalyzerCard input[type="number"]::placeholder,
+#handAnalyzerCard input[type="text"]::placeholder,
+#handAnalyzerCard input[type="tel"]::placeholder {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: 100% !important;
+}
+@media screen and (max-width: 900px) {
+  #handAnalyzerCard input {
+    font-size: 16px !important;
+  }
 }
 </style>
 
@@ -933,7 +951,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=154"></script>
+  <script type="module" src="hand-analyzer.js?v=155"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 
