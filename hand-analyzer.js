@@ -364,6 +364,17 @@ function renderDeck(){
       closeCardPicker();
     }
 
+    // v141：從下方「公共牌」選完該街最後一張牌後，自動切到對應街道。
+    // flop2 = 第3張公牌、turn = 第4張、river = 第5張。
+    const autoStreetBySlot={flop2:"flop",turn:"turn",river:"river"};
+    const autoStreet=autoStreetBySlot[justSelectedSlot];
+    if(autoStreet){
+      const tab=document.querySelector(`.street-tab[data-street="${autoStreet}"]`);
+      if(tab && !tab.classList.contains("active")){
+        tab.click();
+      }
+    }
+
     // v119：牌面變更後，等 DOM/hidden 欄位同步完成再重新分析。
     // 翻牌必須三張都選完才更新翻牌分析，避免第 1/2 張的暫存結果覆蓋完整三張。
     if(lastAnalysis){
