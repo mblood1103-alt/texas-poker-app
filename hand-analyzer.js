@@ -334,6 +334,28 @@ function closeCardPicker(){
   $("cardPickerOverlay").setAttribute("aria-hidden","true");
   activeCardSlot=null;
 }
+
+function invalidateAnalysisForCardSlotV142(slot){
+  const hadAny=Object.keys(analysisByStreet||{}).length>0 || !!lastAnalysis;
+
+  if(slot==="hero0" || slot==="hero1"){
+    ["翻牌前","翻牌","轉牌","河牌"].forEach(k=>delete analysisByStreet[k]);
+  }else if(slot==="flop0" || slot==="flop1" || slot==="flop2"){
+    ["翻牌","轉牌","河牌"].forEach(k=>delete analysisByStreet[k]);
+  }else if(slot==="turn"){
+    ["轉牌","河牌"].forEach(k=>delete analysisByStreet[k]);
+  }else if(slot==="river"){
+    delete analysisByStreet["河牌"];
+  }
+
+  lastAnalysis=null;
+  const result=$("saResult");
+  if(result){
+    result.classList.add("hidden");
+    result.innerHTML="";
+  }
+  return hadAny;
+}
 function renderDeck(){
   const used=new Set(Object.entries(selectedCards).filter(([k,v])=>v&&k!==activeCardSlot).map(([,v])=>v));
   $("cardDeckGrid").innerHTML=RANKS.flatMap(rank=>SUITS.map(s=>{
@@ -342,6 +364,8 @@ function renderDeck(){
   })).join("");
   document.querySelectorAll(".deck-card:not(.used)").forEach(btn=>btn.addEventListener("click",()=>{
     const justSelectedSlot=activeCardSlot;
+    const shouldReanalyzeV142=invalidateAnalysisForCardSlotV142(justSelectedSlot);
+    clearTimeout(window.__pokerReanalyzeTimer);
     selectedCards[justSelectedSlot]=btn.dataset.card;
     renderSelectedCards();
 
@@ -377,15 +401,14 @@ function renderDeck(){
 
     // v119：牌面變更後，等 DOM/hidden 欄位同步完成再重新分析。
     // 翻牌必須三張都選完才更新翻牌分析，避免第 1/2 張的暫存結果覆蓋完整三張。
-    if(lastAnalysis){
-      clearTimeout(window.__pokerReanalyzeTimer);
+    if(shouldReanalyzeV142){
       window.__pokerReanalyzeTimer=setTimeout(()=>{
         updateHiddenCards();
         const st=activeStreet();
         const board=boardCardsForStreetV118(st);
         const need=st==="翻牌"?3:st==="轉牌"?4:st==="河牌"?5:0;
         if(board.length>=need) analyze();
-      },80);
+      },120);
     }
   }));
 }
@@ -969,6 +992,8 @@ function evaluateFiveCards(cards){
   if(pairRanks.length>=2){
     const hi=pairRanks[0],lo=pairRanks[1];
     const kicker=Math.max(...ranks.filter(r=>r!==hi&&r!==lo));
+    // v142：即使 7 張牌裡出現三組 pair，最佳 5 張仍是「最高兩對 + kicker」，
+    // 不可誤判為葫蘆；葫蘆必須真的存在三條。
     return {score:[2,hi,lo,kicker],category:2,name:`${rankLabel(hi)}、${rankLabel(lo)}兩對`};
   }
 
@@ -1016,6 +1041,46 @@ function evaluateBestHand(cards){
   }
   return best;
 }
+
+
+function runHandEvaluatorRegressionV142(){
+  try{
+    const t=evaluateBestHand(["Ks","Kh","Jh","Jd","10d","Qd","Qh"]);
+    if(!t || t.category!==2 || t.score[1]!==13 || t.score[2]!==12){
+      console.error("v142 hand evaluator regression failed",t);
+    }
+  }catch(e){
+    console.error("v142 hand evaluator regression error",e);
+  }
+}
+function runAllRiskRegressionV143(){
+  try{
+    const hero=["Ks","Kh"];
+    const board=["Jh","Qs","10d","Qd","Qc"];
+    const made=evaluateBestHand([...hero,...board]);
+    if(!made || made.category!==6 || made.score[1]!==12 || made.score[2]!==13){
+      console.error("v143 current-hand regression failed",made);
+      return;
+    }
+
+    // AA 應該是 Q帶A葫蘆，不是 A 鐵支。
+    const aa=evaluateBestHand([...board,"As","Ah"]);
+    if(!aa || aa.category!==6 || aa.score[1]!==12 || aa.score[2]!==14){
+      console.error("v143 AA risk regression failed",aa);
+    }
+
+    // 剩餘 Q 才會形成 Q 四條。
+    const qx=evaluateBestHand([...board,"Qh","2s"]);
+    if(!qx || qx.category!==7 || qx.score[1]!==12){
+      console.error("v143 quads risk regression failed",qx);
+    }
+  }catch(e){
+    console.error("v143 all-risk regression error",e);
+  }
+}
+runAllRiskRegressionV143();
+
+runHandEvaluatorRegressionV142();
 
 function fullDeck(){
   const deck=[];
@@ -1286,53 +1351,108 @@ function evaluateMadeHand(street=activeStreet()){
 
 function getAllHandRiskV123(heroCards, boardCards, madeHand){
   if(!madeHand || !boardCards || boardCards.length<3) return null;
-  const names=["高牌","一對","兩對","三條","順子","同花","葫蘆","四條","同花順"];
-  const ranks=["A","K","Q","J","10","9","8","7","6","5","4","3","2"], suits=["s","h","d","c"];
-  const sym={s:"♠",h:"♥",d:"♦",c:"♣"};
-  const used=new Set([...heroCards,...boardCards]), deck=[];
-  for(const r of ranks) for(const s of suits){const c=r+s;if(!used.has(c))deck.push(c);}
-  const beating=[];
-  for(let i=0;i<deck.length;i++) for(let j=i+1;j<deck.length;j++){
-    const hand=evaluateBestHand([...boardCards,deck[i],deck[j]]);
-    if(hand&&compareScores(hand.score,madeHand.score)>0) beating.push({cards:[deck[i],deck[j]],hand});
-  }
-  if(!beating.length) return {text:`🛡️ 目前依已知牌面，沒有偵測到可擊敗你「${madeHand.name}」的對手兩張手牌組合。`};
-  const by={}; for(const x of beating)(by[x.hand.category]??=[]).push(x);
-  const parts=[];
-  const stronger=Object.keys(by).map(Number).filter(c=>c>madeHand.category).sort((a,b)=>b-a).map(c=>names[c]);
-  if(stronger.length) parts.push(`要注意更高牌型：${[...new Set(stronger)].join("、")}`);
-  const same=by[madeHand.category]||[];
-  if(same.length) parts.push(`同牌型更大組合例如：${same.slice(0,5).map(x=>x.cards.map(prettyCard).join("＋")).join("、")}`);
 
-  const tips=[
-    "高牌風險：注意對手配成一對、兩對、三條、順子或同花",
-    "一對風險：注意更大一對、兩對、三條，以及順子或同花",
-    "兩對風險：注意更大兩對、三條與葫蘆，牌面成對時尤其危險",
-    "三條風險：注意更大三條、順子、同花與葫蘆",
-    "順子風險：注意更高順子，以及同花、葫蘆或四條",
-    "同花風險：注意更高同花，牌面成對時也要防葫蘆或四條",
-    "葫蘆風險：注意更大葫蘆與四條",
-    "四條風險：注意更大四條；若四條在公共牌上還要比較踢腳",
-    "同花順風險：只有更大的同花順能擊敗你；皇家同花順沒有更大牌型"
+  // 標準德州牌型：皇家同花順另外從 A 高同花順拆出顯示。
+  const riskTypes=[
+    {key:"high",label:"高牌"},
+    {key:"pair",label:"一對"},
+    {key:"twoPair",label:"兩對"},
+    {key:"trips",label:"三條"},
+    {key:"straight",label:"順子"},
+    {key:"flush",label:"同花"},
+    {key:"fullHouse",label:"葫蘆"},
+    {key:"quads",label:"四條"},
+    {key:"straightFlush",label:"同花順"},
+    {key:"royalFlush",label:"皇家同花順"}
   ];
-  parts.push(tips[madeHand.category]);
 
-  if(madeHand.category===5){
-    const cnt={};[...heroCards,...boardCards].forEach(c=>cnt[c.slice(-1)]=(cnt[c.slice(-1)]||0)+1);
-    const fs=Object.entries(cnt).find(([,n])=>n>=5)?.[0];
-    if(fs){
-      const danger=[];
-      for(const r of ranks){
-        const c=r+fs;if(used.has(c))continue;
-        if(same.some(x=>x.cards.includes(c)))danger.push(`${r}${sym[fs]}`);
-      }
-      if(danger.length)parts.push(`比你大的同花關鍵牌：${danger.join("、")}`);
+  function riskKeyFromHandV143(hand){
+    if(!hand) return "high";
+    if(hand.category===8) return hand.score?.[1]===14 ? "royalFlush" : "straightFlush";
+    return ({
+      0:"high",
+      1:"pair",
+      2:"twoPair",
+      3:"trips",
+      4:"straight",
+      5:"flush",
+      6:"fullHouse",
+      7:"quads"
+    })[hand.category] || "high";
+  }
+
+  const ranks=["A","K","Q","J","10","9","8","7","6","5","4","3","2"];
+  const suits=["s","h","d","c"];
+  const used=new Set([...heroCards,...boardCards]);
+  const deck=[];
+  for(const r of ranks){
+    for(const s of suits){
+      const c=r+s;
+      if(!used.has(c)) deck.push(c);
     }
   }
-  parts.push(`實際危險手牌例如：${beating.slice(0,5).map(x=>`${x.cards.map(prettyCard).join("＋")}（${x.hand.name}）`).join("、")}`);
-  return {count:beating.length,text:`⚠️ 全牌型風險：你目前是「${madeHand.name}」。${parts.join("；")}。目前共有 ${beating.length} 種對手兩張手牌組合可以擊敗你。`};
-}
 
+  const beating=[];
+  for(let i=0;i<deck.length;i++){
+    for(let j=i+1;j<deck.length;j++){
+      const opp=[deck[i],deck[j]];
+      const hand=evaluateBestHand([...boardCards,...opp]);
+      if(hand && compareScores(hand.score,madeHand.score)>0){
+        beating.push({
+          cards:opp,
+          hand,
+          riskKey:riskKeyFromHandV143(hand)
+        });
+      }
+    }
+  }
+
+  if(!beating.length){
+    const checklist=riskTypes.map(x=>`${x.label}：無`).join("、");
+    return {
+      count:0,
+      text:`🛡️ 全牌型風險：你目前是「${madeHand.name}」。逐項檢查：${checklist}。目前依已知牌面沒有合法的對手兩張手牌可以擊敗你。`
+    };
+  }
+
+  const byType={};
+  for(const x of beating){
+    (byType[x.riskKey] ||= []).push(x);
+  }
+
+  // 只列「真的存在」的風險，不使用固定模板亂報不可能的牌型。
+  const activeRiskParts=[];
+  for(const type of riskTypes){
+    const arr=byType[type.key] || [];
+    if(!arr.length) continue;
+
+    // 去除重複範例，最多 4 個，且每個範例都帶上實際成牌名稱。
+    const seen=new Set();
+    const examples=[];
+    for(const x of arr){
+      const cardText=x.cards.map(prettyCard).join("＋");
+      const text=`${cardText}（${x.hand.name}）`;
+      if(!seen.has(text)){
+        seen.add(text);
+        examples.push(text);
+      }
+      if(examples.length>=4) break;
+    }
+
+    activeRiskParts.push(`${type.label}：${arr.length} 種，例如 ${examples.join("、")}`);
+  }
+
+  // 所有牌型都逐項檢查，讓使用者清楚知道哪些有風險、哪些沒有。
+  const checklist=riskTypes.map(type=>{
+    const n=(byType[type.key]||[]).length;
+    return `${type.label}${n?`⚠️${n}種`:"✓無"}`;
+  }).join("、");
+
+  return {
+    count:beating.length,
+    text:`⚠️ 全牌型風險：你目前是「${madeHand.name}」。真正能擊敗你的牌型只有：${activeRiskParts.join("；")}。逐項檢查：${checklist}。總共有 ${beating.length} 種合法的對手兩張手牌組合可以擊敗你。`
+  };
+}
 function analyze(){
   const hand=normalizeHand($("saHand").value);
   if(!hand){alert("請先點選你的兩張手牌。");return;}
