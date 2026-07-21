@@ -1589,3 +1589,17 @@ html, body{
     font-size:15px !important;
   }
 }
+
+
+/* v144：移除「點選行動」區塊內重複的轉牌/河牌牌面選擇器。
+   下方翻牌前/翻牌/轉牌/河牌切換與五張公共牌維持不變。 */
+#actionSection .street-card-picker,
+#actionSection .action-street-card,
+#actionSection .street-card-select,
+#actionSection [data-action-street-card],
+.action-section .street-card-picker,
+.action-section .action-street-card,
+.action-section .street-card-select,
+.action-section [data-action-street-card] {
+  display: none !important;
+}

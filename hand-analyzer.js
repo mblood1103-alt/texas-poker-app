@@ -2026,3 +2026,45 @@ function getImprovementDraws(holeCards, boardCards){
     text:`💡 改善提醒：下一張約有 ${improved.length} 張牌可讓目前牌型提升（約 ${pct}%）：${details}。`
   };
 }
+
+
+// v144：選牌視窗內點擊不得冒泡到頁面上的分析/驗證事件，避免選第一張牌就跳「請先點選兩張手牌」。
+(function installCardPickerClickGuardV144(){
+  function isPicker(el){
+    if(!el) return false;
+    return !!el.closest('.card-modal, .card-picker-modal, .picker-modal, #cardModal, #cardPickerModal, #pickerModal, [data-card-picker]');
+  }
+  document.addEventListener('click', function(e){
+    if(isPicker(e.target)){
+      e.stopPropagation();
+    }
+  }, true);
+})();
+
+// v144：依畫面結構移除點選行動內的重複「轉牌／河牌」單張牌面選擇器。
+(function removeDuplicateActionStreetPickersV144(){
+  function clean(){
+    const roots=[...document.querySelectorAll('#actionSection, .action-section')];
+    if(!roots.length){
+      const heading=[...document.querySelectorAll('h1,h2,h3,h4,div')].find(x=>x.textContent.trim()==='點選行動');
+      if(heading){
+        const root=heading.parentElement;
+        if(root) roots.push(root);
+      }
+    }
+    roots.forEach(root=>{
+      [...root.querySelectorAll('*')].forEach(el=>{
+        const t=(el.textContent||'').trim();
+        if((t==='轉牌' || t==='河牌') && el.children.length===0){
+          const box=el.parentElement;
+          if(box && box.querySelector('button, .card-slot, [data-card], [class*="card"]')){
+            box.style.display='none';
+          }
+        }
+      });
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', clean);
+  else clean();
+  setTimeout(clean,300);
+})();
