@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=152">
+  <link rel="stylesheet" href="styles.css?v=153">
 
 
 <style id="v61-reference-match">
@@ -339,6 +339,61 @@
 }
 </style>
 
+
+<style id="v153-real-action-compact">
+#handAnalyzerCard .action-builder{
+  padding:8px 10px!important;
+  gap:5px!important;
+  min-height:0!important;
+}
+#handAnalyzerCard .action-builder>h3{
+  margin:0 0 2px!important;
+  font-size:16px!important;
+  line-height:1.1!important;
+}
+#handAnalyzerCard .action-builder .action-controls{
+  gap:6px!important;
+  margin:0!important;
+}
+#handAnalyzerCard .action-builder .action-controls label{
+  margin:0!important;
+  gap:2px!important;
+  font-size:12px!important;
+  line-height:1.1!important;
+}
+#handAnalyzerCard .action-builder .action-controls select,
+#handAnalyzerCard .action-builder .action-controls input{
+  height:38px!important;
+  min-height:38px!important;
+  padding:2px 8px!important;
+  font-size:16px!important;
+}
+#handAnalyzerCard .action-builder .add-action-btn{
+  height:38px!important;
+  min-height:38px!important;
+  padding:3px 8px!important;
+  margin:0!important;
+  font-size:15px!important;
+}
+#handAnalyzerCard .action-builder .action-sequence{
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  gap:4px!important;
+  line-height:1.1!important;
+}
+#handAnalyzerCard .action-builder .action-sequence .position-help{
+  margin:0!important;
+  padding:0!important;
+  font-size:12px!important;
+  line-height:1.1!important;
+}
+#handAnalyzerCard .street-panel.active{
+  padding:0!important;
+  margin:0!important;
+}
+</style>
+
 </head>
 <body>
   <header class="top">
@@ -589,14 +644,14 @@
           <div class="action-step-title-v134">點選行動</div>
 
           <section class="street-panel active" data-panel="preflop">
-            <div class="action-builder" data-builder="preflop">
-              <h3>翻牌前行動</h3>
-              <div class="action-controls">
+            <div class="action-builder" data-builder="preflop" style="padding:8px 10px!important;display:grid!important;gap:5px!important;min-height:0!important;">
+              <h3 style="margin:0!important;font-size:16px!important;line-height:1.1!important;">翻牌前行動</h3>
+              <div class="action-controls" style="display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;margin:0!important;">
                 <label>誰行動
-                  <select class="action-actor"></select>
+                  <select class="action-actor" style="height:38px!important;min-height:38px!important;padding:2px 8px!important;font-size:16px!important;"></select>
                 </label>
                 <label>動作
-                  <select class="action-type">
+                  <select class="action-type" style="height:38px!important;min-height:38px!important;padding:2px 8px!important;font-size:16px!important;">
                     <option value="開池">開池</option>
                     <option value="跟注">跟注</option>
                     <option value="加注">加注</option>
@@ -608,8 +663,8 @@
                   <input class="action-amount" type="number" min="0" step="0.5" placeholder="例如 8">
                 </label>
               </div>
-              <button type="button" class="add-action-btn">＋ 加入這個行動</button>
-              <div class="action-sequence" data-sequence="preflop"></div>
+              <button type="button" class="add-action-btn" style="height:38px!important;min-height:38px!important;padding:3px 8px!important;margin:0!important;font-size:15px!important;">＋ 加入這個行動</button>
+              <div class="action-sequence" data-sequence="preflop" style="margin:0!important;padding:0!important;min-height:0!important;line-height:1.1!important;"></div>
               <input id="saAction" type="hidden" value="">
             </div>
           </section>
@@ -867,7 +922,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=152"></script>
+  <script type="module" src="hand-analyzer.js?v=153"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 
