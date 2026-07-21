@@ -1688,12 +1688,16 @@ function refreshUsageLogVisibility(){
 
 function initStreetTabs(){
   document.querySelectorAll(".street-tab").forEach(btn=>btn.addEventListener("click",()=>{
-    // v138：切換街道時固定目前畫面位置，避免分析結果高度不同造成頁面亂跳
-    const keepScrollY=window.scrollY;
+    // v140：固定「街道按鈕列」在螢幕上的位置。
+    // 翻牌前面板高度和翻牌後不同，單純記 scrollY 仍可能被瀏覽器捲動錨點拉動，
+    // 因此改成記住被點按鈕的畫面座標，再於版面完成後把差值補回。
+    const anchorTop=btn.getBoundingClientRect().top;
     const street=btn.dataset.street;
+
     document.querySelectorAll(".street-tab").forEach(b=>b.classList.toggle("active",b===btn));
     document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel===street));
     populateActors();
+
     // v120：每一街分析獨立保存。切換街道只顯示該街既有分析，不改寫其他街。
     const streetZh=activeStreet();
     const saved=analysisByStreet[streetZh];
@@ -1705,8 +1709,27 @@ function initStreetTabs(){
       $("saResult").innerHTML="";
       lastAnalysis=null;
     }
+
     renderStillInHandReminderV94();
-    requestAnimationFrame(()=>window.scrollTo({top:keepScrollY,left:0,behavior:"auto"}));
+
+    // 避免 iPhone/Safari 因按鈕仍有 focus 而自行把它捲到可視區。
+    try{ btn.blur(); }catch(e){}
+
+    const restoreAnchor=()=>{
+      const nowTop=btn.getBoundingClientRect().top;
+      const delta=nowTop-anchorTop;
+      if(Math.abs(delta)>0.5){
+        window.scrollBy({top:delta,left:0,behavior:"auto"});
+      }
+    };
+
+    // 等同步版面、下一幀與 Safari 延遲捲動都結束後各補一次。
+    requestAnimationFrame(()=>{
+      restoreAnchor();
+      requestAnimationFrame(restoreAnchor);
+    });
+    setTimeout(restoreAnchor,60);
+    setTimeout(restoreAnchor,180);
   }));
 }
 function init(){
