@@ -1509,3 +1509,21 @@ body.picker-open{overflow:hidden}
     font-size:13px !important;
   }
 }
+
+/* ===== v138：標題資訊同字級 + 切換街道不跳頁 ===== */
+#handAnalyzerCard .hero-chip-inline-v137,
+#handAnalyzerCard .hero-chip-inline-v137 strong,
+#handAnalyzerCard .hand-title-row-v136 .hand-readable,
+#handAnalyzerCard #saHandReadable.hand-warning-v136{
+  font-size:16px !important;
+  line-height:1.25 !important;
+  font-weight:800 !important;
+}
+@media(max-width:560px){
+  #handAnalyzerCard .hero-chip-inline-v137,
+  #handAnalyzerCard .hero-chip-inline-v137 strong,
+  #handAnalyzerCard .hand-title-row-v136 .hand-readable,
+  #handAnalyzerCard #saHandReadable.hand-warning-v136{
+    font-size:15px !important;
+  }
+}

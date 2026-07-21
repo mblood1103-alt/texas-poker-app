@@ -1688,6 +1688,8 @@ function refreshUsageLogVisibility(){
 
 function initStreetTabs(){
   document.querySelectorAll(".street-tab").forEach(btn=>btn.addEventListener("click",()=>{
+    // v138：切換街道時固定目前畫面位置，避免分析結果高度不同造成頁面亂跳
+    const keepScrollY=window.scrollY;
     const street=btn.dataset.street;
     document.querySelectorAll(".street-tab").forEach(b=>b.classList.toggle("active",b===btn));
     document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel===street));
@@ -1704,6 +1706,7 @@ function initStreetTabs(){
       lastAnalysis=null;
     }
     renderStillInHandReminderV94();
+    requestAnimationFrame(()=>window.scrollTo({top:keepScrollY,left:0,behavior:"auto"}));
   }));
 }
 function init(){
