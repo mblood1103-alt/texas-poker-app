@@ -719,7 +719,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=128"></script>
+  <script type="module" src="hand-analyzer.js?v=129"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 
@@ -729,102 +729,100 @@
 
 
 
+
+
+
+
 <style>
-#originalSeatToggleV128{
-  cursor:pointer;
-  user-select:none;
-}
-#originalSeatToggleV128 .seatArrowV128{
-  display:inline-block;
-  margin-right:6px;
-  transition:transform .18s ease;
-}
-#originalSeatToggleV128.closed .seatArrowV128{
-  transform:rotate(-90deg);
-}
+.seat-row-v129{cursor:pointer;user-select:none}
+.seat-row-v129 .seat-arrow-v129{display:inline-block;margin-right:6px;transition:transform .18s}
+.seat-row-v129.closed .seat-arrow-v129{transform:rotate(-90deg)}
 </style>
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
-  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT);
-  let titleEl=null;
-  while(walker.nextNode()){
-    const el=walker.currentNode;
-    const txt=(el.textContent||"").trim();
-    if(txt.includes("① 點牌桌選擇你的位置") && txt.length < 80){
-      titleEl=el;
+  const els=[...document.querySelectorAll("*")];
+
+  // 精準找原本標題文字元素
+  let title=els.find(el=>{
+    const own=[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(" ").trim();
+    return own.includes("點牌桌選擇你的位置");
+  });
+  if(!title) title=els.find(el=>(el.textContent||"").trim()==="① 點牌桌選擇你的位置");
+  if(!title) return;
+
+  // 找標題所在橫列：通常同列含目前位置 HJ | 劫持位（我）
+  let row=title.parentElement;
+  for(let i=0;i<4 && row;i++,row=row.parentElement){
+    const txt=(row.innerText||"");
+    if(txt.includes("點牌桌選擇你的位置") && /(UTG|HJ|CO|BTN|SB|BB)/.test(txt)) break;
+  }
+  if(!row) row=title.parentElement;
+  row.classList.add("seat-row-v129");
+
+  if(!title.querySelector(".seat-arrow-v129")){
+    title.insertAdjacentHTML("afterbegin",'<span class="seat-arrow-v129">▼</span>');
+  }
+
+  // 從橫列後方兄弟節點中找真正的綠色牌桌容器
+  let tableBlock=null;
+  let n=row.nextElementSibling;
+  while(n){
+    const txt=n.innerText||"";
+    if(txt.includes("TEXAS HOLD") && txt.includes("UTG") && txt.includes("BTN")){
+      tableBlock=n;
       break;
     }
-  }
-  if(!titleEl) return;
-
-  // 找到包含標題與右側目前座位的那一列
-  let row=titleEl;
-  while(row.parentElement && row.parentElement!==document.body){
-    const t=(row.textContent||"").trim();
-    if(t.includes("點牌桌選擇你的位置") &&
-       /(UTG|HJ|CO|BTN|SB|BB)/.test(t) &&
-       (t.includes("（我）") || t.includes("(我)"))){
-      break;
-    }
-    row=row.parentElement;
+    if(txt.includes("點選你的兩張手牌")) break;
+    n=n.nextElementSibling;
   }
 
-  // 找到牌桌本體
-  const candidates=[...document.querySelectorAll("div,section")];
-  let table=null;
-  for(const el of candidates){
-    const t=el.innerText||"";
-    if(t.includes("TEXAS HOLD") &&
-       t.includes("UTG") && t.includes("HJ") && t.includes("CO") &&
-       t.includes("BTN") && t.includes("SB") && t.includes("BB")){
-      table=el;
-      break;
-    }
+  // 若牌桌不是直接兄弟，從 row 的共同父層往下找
+  if(!tableBlock){
+    const scope=row.parentElement || document.body;
+    const possible=[...scope.querySelectorAll("*")].filter(el=>{
+      const txt=el.innerText||"";
+      return txt.includes("TEXAS HOLD") && txt.includes("UTG") && txt.includes("HJ") &&
+             txt.includes("CO") && txt.includes("BTN") && txt.includes("SB") && txt.includes("BB");
+    });
+    // 選最小的符合容器
+    possible.sort((a,b)=>a.querySelectorAll("*").length-b.querySelectorAll("*").length);
+    tableBlock=possible[0];
   }
-  if(!table) return;
+  if(!tableBlock) return;
 
-  // 找到牌桌後面的「你的位置信息」文字，與牌桌一起收合
-  let tableBlock=table;
-  while(tableBlock.parentElement && tableBlock.parentElement!==document.body){
-    const t=tableBlock.innerText||"";
-    if(t.includes("TEXAS HOLD") && t.includes("你的位置是") && !t.includes("點選你的兩張手牌")){
-      break;
-    }
-    tableBlock=tableBlock.parentElement;
-  }
+  // 找牌桌下方「你的位置是...」說明，單獨一起隱藏
+  let seatNote=null;
+  const all=[...document.querySelectorAll("*")];
+  seatNote=all.find(el=>{
+    const txt=(el.innerText||"").trim();
+    return txt.startsWith("你的位置是") && txt.includes("牌桌上會直接標示") && el.children.length<4;
+  });
 
-  // 若共同容器抓太大，就只收牌桌本體
-  if((tableBlock.innerText||"").includes("點選你的兩張手牌")) tableBlock=table;
-
-  row.id="originalSeatToggleV128";
-  const originalTitle=titleEl.innerHTML;
-  if(!titleEl.querySelector(".seatArrowV128")){
-    titleEl.innerHTML='<span class="seatArrowV128">▼</span>'+originalTitle;
-  }
-
-  const setOpen=(open)=>{
-    tableBlock.style.display=open ? "" : "none";
+  const setOpen=open=>{
+    tableBlock.style.display=open?"":"none";
+    if(seatNote) seatNote.style.display=open?"":"none";
     row.classList.toggle("closed",!open);
   };
 
-  row.addEventListener("click",(e)=>{
-    // 點這一列切換，不影響其他控制
+  row.addEventListener("click",e=>{
     setOpen(tableBlock.style.display==="none");
   });
 
-  // 點座位後自動收起
-  table.addEventListener("click",(e)=>{
-    const b=e.target.closest("button");
-    if(!b) return;
-    const txt=(b.innerText||"").toUpperCase();
-    if(["UTG","HJ","CO","BTN","SB","BB"].some(x=>txt.includes(x))){
-      setTimeout(()=>setOpen(false),180);
+  // 直接監聽整個文件，只要點到六個位置之一，選位完成後自動收起
+  document.addEventListener("click",e=>{
+    const btn=e.target.closest("button");
+    if(!btn || !tableBlock.contains(btn)) return;
+    const t=(btn.innerText||"").toUpperCase();
+    if(/^(UTG|HJ|CO|BTN|SB|BB)/.test(t.trim())){
+      setTimeout(()=>setOpen(false),300);
     }
   });
 
-  // 已經有座位就預設收起；尚未選位才展開
-  const rowText=row.innerText||"";
-  setOpen(!(rowText.includes("（我）") || rowText.includes("(我)")));
+  // 有已選座位時預設收起
+  setTimeout(()=>{
+    const txt=row.innerText||"";
+    if(txt.includes("（我）") || txt.includes("(我)")) setOpen(false);
+  },400);
 });
 </script>
 
