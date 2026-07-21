@@ -392,7 +392,7 @@
       <details class="card collapsible-card" id="handAnalyzerCard">
         <summary class="section-summary">🧠 牌局策略分析</summary>
         <div class="collapsible-body hand-analyzer">
-          <p class="hint">不用再打 AJo、KQs，也不用手打整段行動。手牌、公共牌、玩家位置與動作都可以直接按選擇。</p>
+          <p class="hint"></p>
 
           
           
@@ -719,7 +719,45 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=125"></script>
+  <script type="module" src="hand-analyzer.js?v=126"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+  const findTable=()=>{
+    const candidates=[...document.querySelectorAll("div,section")];
+    return candidates.find(el=>{
+      const t=el.innerText||"";
+      return t.includes("UTG")&&t.includes("HJ")&&t.includes("CO")&&t.includes("BTN")&&t.includes("SB")&&t.includes("BB")&&
+             el.querySelectorAll("button").length>=6;
+    });
+  };
+  const table=findTable();
+  if(!table)return;
+  table.id=table.id||"pokerTableCollapsibleV126";
+  const wrap=document.createElement("div");
+  wrap.style.margin="12px 0 20px";
+  const toggle=document.createElement("button");
+  toggle.type="button";
+  toggle.textContent="收起牌桌";
+  toggle.style.cssText="width:100%;padding:14px 18px;border:1px solid #cbd5e1;border-radius:18px;background:#eef2f7;color:#172033;font-size:18px;font-weight:700;";
+  table.parentNode.insertBefore(wrap,table);
+  wrap.appendChild(toggle);
+  const setOpen=open=>{
+    table.style.display=open?"":"none";
+    toggle.textContent=open?"收起牌桌":"展開牌桌／更改位置";
+  };
+  toggle.addEventListener("click",()=>setOpen(table.style.display==="none"));
+  table.addEventListener("click",e=>{
+    const b=e.target.closest("button");
+    if(!b)return;
+    const txt=(b.innerText||"").toUpperCase();
+    if(["UTG","HJ","CO","BTN","SB","BB"].some(p=>txt.includes(p))){
+      setTimeout(()=>setOpen(false),150);
+    }
+  });
+});
+</script>
+
 </body>
 </html>
