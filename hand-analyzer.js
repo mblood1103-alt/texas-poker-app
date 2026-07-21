@@ -1,3 +1,16 @@
+
+// v145：只有真正執行分析時才能顯示「請先點選兩張手牌」。
+// 正在開啟選牌視窗、選第一張或第二張牌時絕對不顯示。
+function shouldWarnMissingHoleCardsV145(){
+  const openPicker = [...document.querySelectorAll(
+    '.card-modal, .card-picker-modal, .picker-modal, #cardModal, #cardPickerModal, #pickerModal, [data-card-picker]'
+  )].some(el => {
+    const s = getComputedStyle(el);
+    return s.display !== 'none' && s.visibility !== 'hidden' && !el.hidden;
+  });
+  return !openPicker;
+}
+
 try{localStorage.setItem("analysisMode","general");}catch(e){}
 
 const $ = id => document.getElementById(id);
@@ -1455,7 +1468,7 @@ function getAllHandRiskV123(heroCards, boardCards, madeHand){
 }
 function analyze(){
   const hand=normalizeHand($("saHand").value);
-  if(!hand){alert("請先點選你的兩張手牌。");return;}
+  if(!hand){shouldWarnMissingHoleCardsV145() && alert("請先點選你的兩張手牌。");return;}
   const pos=$("saHeroPos").value;
   if(!pos){alert("請先直接點牌桌上的座位，選擇你的位置。");return;}
 
@@ -2028,19 +2041,6 @@ function getImprovementDraws(holeCards, boardCards){
 }
 
 
-// v144：選牌視窗內點擊不得冒泡到頁面上的分析/驗證事件，避免選第一張牌就跳「請先點選兩張手牌」。
-(function installCardPickerClickGuardV144(){
-  function isPicker(el){
-    if(!el) return false;
-    return !!el.closest('.card-modal, .card-picker-modal, .picker-modal, #cardModal, #cardPickerModal, #pickerModal, [data-card-picker]');
-  }
-  document.addEventListener('click', function(e){
-    if(isPicker(e.target)){
-      e.stopPropagation();
-    }
-  }, true);
-})();
-
 // v144：依畫面結構移除點選行動內的重複「轉牌／河牌」單張牌面選擇器。
 (function removeDuplicateActionStreetPickersV144(){
   function clean(){
@@ -2067,4 +2067,21 @@ function getImprovementDraws(holeCards, boardCards){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', clean);
   else clean();
   setTimeout(clean,300);
+})();
+
+(function installHoleCardSelectionStateV145(){
+  let selectingUntil = 0;
+
+  document.addEventListener('pointerdown', function(e){
+    const picker = e.target.closest(
+      '.card-modal, .card-picker-modal, .picker-modal, #cardModal, #cardPickerModal, #pickerModal, [data-card-picker]'
+    );
+    if(picker) selectingUntil = Date.now() + 800;
+  }, true);
+
+  const original = window.shouldWarnMissingHoleCardsV145;
+  window.shouldWarnMissingHoleCardsV145 = function(){
+    if(Date.now() < selectingUntil) return false;
+    return original();
+  };
 })();
