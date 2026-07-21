@@ -719,43 +719,124 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=126"></script>
+  <script type="module" src="hand-analyzer.js?v=127"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
+
+
+
+<style>
+#seatTableSectionV127{
+  margin-top:18px;
+}
+#seatTableToggleV127{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:18px 22px;
+  border:0;
+  background:#fff;
+  color:#0f172a;
+  font-size:22px;
+  font-weight:800;
+  text-align:left;
+  cursor:pointer;
+}
+#seatTableToggleV127 .left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+#seatTableToggleV127 .arrow{
+  font-size:22px;
+  transition:transform .2s ease;
+}
+#seatTableToggleV127.closed .arrow{
+  transform:rotate(-90deg);
+}
+#seatTableContentV127{
+  overflow:hidden;
+}
+#seatTableContentV127.closed{
+  display:none;
+}
+</style>
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
-  const findTable=()=>{
-    const candidates=[...document.querySelectorAll("div,section")];
-    return candidates.find(el=>{
-      const t=el.innerText||"";
-      return t.includes("UTG")&&t.includes("HJ")&&t.includes("CO")&&t.includes("BTN")&&t.includes("SB")&&t.includes("BB")&&
-             el.querySelectorAll("button").length>=6;
-    });
-  };
-  const table=findTable();
-  if(!table)return;
-  table.id=table.id||"pokerTableCollapsibleV126";
-  const wrap=document.createElement("div");
-  wrap.style.margin="12px 0 20px";
+  // 找到「桌型/小盲/大盲/剩餘籌碼/牌桌」這整塊內容
+  const all=[...document.querySelectorAll("div,section")];
+  let table=all.find(el=>{
+    const t=el.innerText||"";
+    return t.includes("UTG")&&t.includes("HJ")&&t.includes("CO")&&
+           t.includes("BTN")&&t.includes("SB")&&t.includes("BB")&&
+           el.querySelectorAll("button").length>=6;
+  });
+  if(!table) return;
+
+  // 往上找一個同時包含桌型與牌桌的共同容器
+  let container=table;
+  while(container.parentElement){
+    const t=container.innerText||"";
+    if(t.includes("桌型") && t.includes("小盲") && t.includes("大盲") &&
+       t.includes("你現在剩多少籌碼") && t.includes("點牌桌選擇你的位置")){
+      break;
+    }
+    container=container.parentElement;
+  }
+
+  // 避免把整個 App 包進去
+  if(container===document.body || !container.parentElement) return;
+
+  const section=document.createElement("div");
+  section.id="seatTableSectionV127";
+
   const toggle=document.createElement("button");
   toggle.type="button";
-  toggle.textContent="收起牌桌";
-  toggle.style.cssText="width:100%;padding:14px 18px;border:1px solid #cbd5e1;border-radius:18px;background:#eef2f7;color:#172033;font-size:18px;font-weight:700;";
-  table.parentNode.insertBefore(wrap,table);
-  wrap.appendChild(toggle);
-  const setOpen=open=>{
-    table.style.display=open?"":"none";
-    toggle.textContent=open?"收起牌桌":"展開牌桌／更改位置";
+  toggle.id="seatTableToggleV127";
+  toggle.innerHTML='<span class="left"><span class="arrow">▼</span><span>🎯 座位／牌桌設定</span></span><span id="seatSummaryV127"></span>';
+
+  const content=document.createElement("div");
+  content.id="seatTableContentV127";
+
+  const parent=container.parentElement;
+  parent.insertBefore(section,container);
+  section.appendChild(toggle);
+  section.appendChild(content);
+  content.appendChild(container);
+
+  const getSeatSummary=()=>{
+    const text=container.innerText||"";
+    const m=text.match(/(UTG|HJ|CO|BTN|SB|BB)\s*(?:\|\s*[^（\n]+)?\s*（我）/);
+    return m ? m[1] : "";
   };
-  toggle.addEventListener("click",()=>setOpen(table.style.display==="none"));
+
+  const setOpen=(open)=>{
+    content.classList.toggle("closed",!open);
+    toggle.classList.toggle("closed",!open);
+    const s=getSeatSummary();
+    const sum=document.getElementById("seatSummaryV127");
+    if(sum) sum.textContent=s ? `目前：${s}` : "";
+  };
+
+  toggle.addEventListener("click",()=>setOpen(content.classList.contains("closed")));
+
+  // 點選座位後自動收起
   table.addEventListener("click",e=>{
     const b=e.target.closest("button");
     if(!b)return;
     const txt=(b.innerText||"").toUpperCase();
     if(["UTG","HJ","CO","BTN","SB","BB"].some(p=>txt.includes(p))){
-      setTimeout(()=>setOpen(false),150);
+      setTimeout(()=>setOpen(false),180);
     }
   });
+
+  // 初始：若已選位置則收起；未選則展開
+  setTimeout(()=>{
+    const selected=getSeatSummary();
+    setOpen(!selected);
+  },200);
 });
 </script>
 
