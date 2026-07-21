@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=123">
+  <link rel="stylesheet" href="styles.css?v=133">
 
 
 <style id="v61-reference-match">
@@ -392,14 +392,13 @@
       <details class="card collapsible-card" id="handAnalyzerCard">
         <summary class="section-summary">🧠 牌局策略分析</summary>
         <div class="collapsible-body hand-analyzer">
-          <p class="hint"></p>
 
           
           
 
           <input id="saAnalysisMode" type="hidden" value="general">
 
-          <div class="strategy-grid">
+          <div class="strategy-grid strategy-grid-v133">
             <label>桌型
               <select id="saTableSize">
                 <option value="4">4 人桌</option>
@@ -432,32 +431,7 @@
             <input id="saHeroPos" type="hidden" value="">
           </section>
 
-          <section class="card-picker-section">
-            <h3>② 點選你的兩張手牌</h3>
-            <div class="selected-cards hero-cards">
-              <button type="button" class="card-slot" data-card-slot="hero0">＋<small>第 1 張</small></button>
-              <button type="button" class="card-slot" data-card-slot="hero1">＋<small>第 2 張</small></button>
-            </div>
-            <div id="saHandReadable" class="hand-readable">尚未選擇手牌</div>
-            <div class="hole-board-combined-v112">
-              <div class="combined-board-title">公共牌</div>
-<div class="persistent-board-wrap" id="persistentBoardSlots">
-          <div class="persistent-board-labels">
-            <span>翻牌</span><span>轉牌</span><span>河牌</span>
-          </div>
-          <div class="persistent-board-cards">
-            <button type="button" class="persistent-board-slot" data-board-slot="0"><span class="slot-placeholder">＋</span></button>
-            <button type="button" class="persistent-board-slot" data-board-slot="1"><span class="slot-placeholder">＋</span></button>
-            <button type="button" class="persistent-board-slot" data-board-slot="2"><span class="slot-placeholder">＋</span></button>
-            <button type="button" class="persistent-board-slot" data-board-slot="3"><span class="slot-placeholder">＋</span></button>
-            <button type="button" class="persistent-board-slot" data-board-slot="4"><span class="slot-placeholder">＋</span></button>
-          </div>
-        </div>
-            </div>
-            <input id="saHand" type="hidden" value="">
-          </section>
-
-          <div class="street-tabs" role="tablist" aria-label="牌局街道">
+          <div class="street-tabs street-tabs-v133" role="tablist" aria-label="牌局街道">
             <button type="button" class="street-tab active" data-street="preflop">翻牌前</button>
             <button type="button" class="street-tab" data-street="flop">翻牌</button>
             <button type="button" class="street-tab" data-street="turn">轉牌</button>
@@ -571,6 +545,31 @@
               <div class="action-sequence" data-sequence="river"></div>
               <input id="saRiverAction" type="hidden" value="">
             </div>
+          </section>
+
+          <section class="card-picker-section card-picker-section-v133">
+            <h3>② 點選你的兩張手牌</h3>
+            <div class="selected-cards hero-cards">
+              <button type="button" class="card-slot" data-card-slot="hero0">＋<small>第 1 張</small></button>
+              <button type="button" class="card-slot" data-card-slot="hero1">＋<small>第 2 張</small></button>
+            </div>
+            <div id="saHandReadable" class="hand-readable">尚未選擇手牌</div>
+            <div class="hole-board-combined-v112">
+              <div class="combined-board-title">公共牌</div>
+<div class="persistent-board-wrap" id="persistentBoardSlots">
+          <div class="persistent-board-labels">
+            <span>翻牌</span><span>轉牌</span><span>河牌</span>
+          </div>
+          <div class="persistent-board-cards">
+            <button type="button" class="persistent-board-slot" data-board-slot="0"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="1"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="2"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="3"><span class="slot-placeholder">＋</span></button>
+            <button type="button" class="persistent-board-slot" data-board-slot="4"><span class="slot-placeholder">＋</span></button>
+          </div>
+        </div>
+            </div>
+            <input id="saHand" type="hidden" value="">
           </section>
 
           <div class="strategy-actions strategy-actions-v88">
@@ -719,7 +718,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=132"></script>
+  <script type="module" src="hand-analyzer.js?v=133"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 
@@ -752,144 +751,64 @@
 }
 </style>
 
-
-
-
-<style>
-/* v132：四項設定更靠近牌局策略分析 */
-.compact-settings-v132{
-  display:grid !important;
-  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
-  gap:6px !important;
-  align-items:end !important;
-  margin:-12px 0 10px !important;
-}
-.compact-setting-item-v132{
-  min-width:0 !important;
-  margin:0 !important;
-}
-.compact-setting-item-v132 label{
-  display:block !important;
-  font-size:13px !important;
-  line-height:1.15 !important;
-  margin:0 0 4px !important;
-  white-space:normal !important;
-  min-height:30px;
-}
-.compact-setting-item-v132 input,
-.compact-setting-item-v132 select{
-  width:100% !important;
-  min-width:0 !important;
-  height:42px !important;
-  padding:4px 6px !important;
-  font-size:15px !important;
-  border-radius:13px !important;
-}
-
-/* 手牌＋公共牌搬到分析按鈕上方後，縮短上下距離 */
-.cards-block-v132{
-  margin-top:10px !important;
-  margin-bottom:10px !important;
-}
-
-/* 四個街別按鈕固定 4 格同一排 */
-.street-tabs-v132{
-  display:grid !important;
-  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
-  gap:6px !important;
-  margin:8px 0 12px !important;
-}
-.street-tabs-v132 > *{
-  min-width:0 !important;
-  width:100% !important;
-  margin:0 !important;
-}
-.street-tabs-v132 button{
-  width:100% !important;
-  min-width:0 !important;
-  padding:12px 4px !important;
-  font-size:15px !important;
-  white-space:nowrap !important;
-}
-</style>
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const norm = s => (s || "").replace(/\s+/g,"").trim();
+  const section = document.querySelector(".seat-picker-section");
+  const head = document.querySelector(".seat-picker-head");
+  const title = document.getElementById("seatPickerTitle");
+  const badge = document.getElementById("saHeroPosBadge");
+  const table = document.getElementById("saPokerTable");
+  const help = document.getElementById("saPositionHelp");
+  const hiddenPos = document.getElementById("saHeroPos");
 
-  /* 1) 四項設定同排，並往上 */
-  const labels = [...document.querySelectorAll("label")];
-  const names = ["桌型","小盲","大盲","你現在剩多少籌碼"];
-  const found = names.map(name => labels.find(l => norm(l.textContent).includes(norm(name))));
-  if (found.every(Boolean)) {
-    let common = found[0].parentElement;
-    while (common && !found.every(l => common.contains(l))) common = common.parentElement;
-    if (common) {
-      common.classList.add("compact-settings-v132");
-      const items = [...common.children].filter(c => found.some(l => c.contains(l)));
-      if (items.length >= 4) items.slice(0,4).forEach(i => i.classList.add("compact-setting-item-v132"));
-    }
+  if (!section || !head || !title || !badge || !table || !help || !hiddenPos) return;
+
+  head.id = "seatPickerTitleRowV130";
+  if (!title.querySelector(".seat-collapse-arrow-v130")) {
+    title.insertAdjacentHTML("afterbegin", '<span class="seat-collapse-arrow-v130">▼</span>');
   }
 
-  /* 找手牌區標題 */
-  const all = [...document.querySelectorAll("div,section")];
-  const holeTitle = [...document.querySelectorAll("*")].find(el =>
-    norm(el.textContent).includes("②點選你的兩張手牌") && norm(el.textContent).length < 40
-  );
+  const setCollapsed = (collapsed) => {
+    table.style.display = collapsed ? "none" : "";
+    help.style.display = collapsed ? "none" : "";
+    head.classList.toggle("is-collapsed", collapsed);
+  };
 
-  /* 找公共牌區 */
-  const publicTitle = [...document.querySelectorAll("*")].find(el =>
-    norm(el.textContent) === "公共牌"
-  );
+  // 點標題列：自己決定要不要展開／收起
+  head.addEventListener("click", (e) => {
+    // 如果點到牌桌以外的標題列才切換
+    if (e.target.closest(".seat-btn")) return;
+    setCollapsed(table.style.display !== "none");
+  });
 
-  /* 找分析這一手按鈕 */
-  const analyzeBtn = [...document.querySelectorAll("button")].find(b =>
-    norm(b.textContent) === "分析這一手"
-  );
+  // 點任何座位後，等原本程式完成換位，再自動收起
+  table.addEventListener("click", (e) => {
+    const seatBtn = e.target.closest(".seat-btn");
+    if (!seatBtn) return;
 
-  if (holeTitle && publicTitle && analyzeBtn) {
-    // 找手牌區塊：從標題往上找，直到同時包含「尚未選擇完整兩張手牌」
-    let holeBlock = holeTitle.parentElement;
-    while (holeBlock.parentElement && !norm(holeBlock.textContent).includes("尚未選擇完整兩張手牌")) {
-      holeBlock = holeBlock.parentElement;
-    }
+    setTimeout(() => {
+      setCollapsed(true);
+    }, 120);
+  });
 
-    // 找公共牌區塊：找最小包含「公共牌」且有至少 5 個牌格按鈕的容器
-    let publicBlock = publicTitle.parentElement;
-    while (publicBlock.parentElement) {
-      const plusCount = [...publicBlock.querySelectorAll("button")].filter(b => norm(b.textContent)==="+").length;
-      if (norm(publicBlock.textContent).includes("公共牌") && plusCount >= 5) break;
-      publicBlock = publicBlock.parentElement;
-    }
+  // 若其他程式重新渲染或改變位置，也同步保持「有選位就收起」
+  const syncFromPosition = () => {
+    const pos = (hiddenPos.value || "").trim();
+    if (pos) setCollapsed(true);
+  };
 
-    if (holeBlock && publicBlock && holeBlock !== publicBlock) {
-      const wrapper = document.createElement("div");
-      wrapper.className = "cards-block-v132";
+  hiddenPos.addEventListener("change", syncFromPosition);
+  window.addEventListener("focus", syncFromPosition);
 
-      // 把手牌與公共牌整塊搬到分析按鈕前面
-      const parent = analyzeBtn.parentElement;
-      parent.insertBefore(wrapper, analyzeBtn);
-      wrapper.appendChild(holeBlock);
-      wrapper.appendChild(publicBlock);
-    }
-  }
-
-  /* 3) 四個街別按鈕改成同一排 */
-  const streetNames = ["翻牌前","翻牌","轉牌","河牌"];
-  const streetButtons = [...document.querySelectorAll("button")].filter(b =>
-    streetNames.includes(norm(b.textContent))
-  );
-
-  if (streetButtons.length >= 4) {
-    // 找共同父層，優先找直接包含這四顆按鈕的容器
-    let parent = streetButtons[0].parentElement;
-    while (parent && !streetButtons.slice(0,4).every(b => parent.contains(b))) {
-      parent = parent.parentElement;
-    }
-    if (parent) parent.classList.add("street-tabs-v132");
-  }
+  // 初始：已有選位就自動收起；沒有選位才展開
+  setTimeout(() => {
+    const pos = (hiddenPos.value || "").trim();
+    setCollapsed(!!pos);
+  }, 250);
 });
 </script>
+
+
 
 </body>
 </html>

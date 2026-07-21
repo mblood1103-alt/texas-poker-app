@@ -1213,3 +1213,77 @@ body.picker-open{overflow:hidden}
   font-weight:800;
   line-height:1.55;
 }
+
+
+/* ===== v133 直接版面修改 ===== */
+
+/* 四項設定再往上，固定四格同一排 */
+#handAnalyzerCard .collapsible-body.hand-analyzer{
+  padding-top: 4px;
+  gap: 10px;
+}
+#handAnalyzerCard .strategy-grid-v133{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  align-items: end;
+  margin: 0 0 8px;
+}
+#handAnalyzerCard .strategy-grid-v133 label{
+  min-width: 0;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.15;
+}
+#handAnalyzerCard .strategy-grid-v133 input,
+#handAnalyzerCard .strategy-grid-v133 select{
+  height: 44px;
+  min-width: 0;
+  padding: 5px 6px;
+  font-size: 15px;
+  border-radius: 13px;
+}
+
+/* 手牌＋公共牌搬到分析按鈕正上方後，縮短空白 */
+#handAnalyzerCard .card-picker-section-v133{
+  margin-top: 4px;
+  margin-bottom: 4px;
+  gap: 8px;
+}
+
+/* 四個街別按鈕固定同一排，不再手機變成 2x2 */
+#handAnalyzerCard .street-tabs-v133{
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+#handAnalyzerCard .street-tabs-v133 .street-tab{
+  width: 100%;
+  min-width: 0;
+  padding: 10px 2px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px){
+  #handAnalyzerCard .strategy-grid-v133{
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 5px;
+  }
+  #handAnalyzerCard .strategy-grid-v133 label{
+    font-size: 12px;
+  }
+  #handAnalyzerCard .strategy-grid-v133 input,
+  #handAnalyzerCard .strategy-grid-v133 select{
+    height: 42px;
+    font-size: 14px;
+    padding: 4px 5px;
+  }
+  #handAnalyzerCard .street-tabs-v133{
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+  #handAnalyzerCard .street-tabs-v133 .street-tab{
+    font-size: 13px;
+    padding: 10px 1px;
+  }
+}
