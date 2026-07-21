@@ -1627,3 +1627,13 @@ html, body{
   border:0 !important;
   background:transparent !important;
 }
+
+/* v149: compact action area + prevent iOS input auto zoom */
+#strategyPanel input, #strategyPanel select, #strategyPanel textarea { font-size: 16px !important; }
+.action-builder { padding: 14px 16px !important; }
+.action-builder .street-head { margin-bottom: 10px !important; }
+.action-controls { gap: 10px !important; margin: 8px 0 !important; }
+.action-controls label { margin: 0 !important; }
+.action-controls select, .action-controls input { min-height: 44px !important; height: 44px !important; padding-top: 6px !important; padding-bottom: 6px !important; }
+.add-action-btn { min-height: 44px !important; height: 44px !important; margin: 10px 0 6px !important; padding: 6px 12px !important; }
+.action-sequence { margin-top: 6px !important; min-height: 24px !important; }
