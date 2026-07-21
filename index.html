@@ -719,7 +719,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=129"></script>
+  <script type="module" src="hand-analyzer.js?v=130"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 
@@ -733,96 +733,79 @@
 
 
 
+
+
+
+
 <style>
-.seat-row-v129{cursor:pointer;user-select:none}
-.seat-row-v129 .seat-arrow-v129{display:inline-block;margin-right:6px;transition:transform .18s}
-.seat-row-v129.closed .seat-arrow-v129{transform:rotate(-90deg)}
+#seatPickerTitleRowV130{
+  cursor:pointer;
+  user-select:none;
+}
+#seatPickerTitleRowV130 .seat-collapse-arrow-v130{
+  display:inline-block;
+  margin-right:6px;
+  transition:transform .18s ease;
+}
+#seatPickerTitleRowV130.is-collapsed .seat-collapse-arrow-v130{
+  transform:rotate(-90deg);
+}
 </style>
+
 <script>
-document.addEventListener("DOMContentLoaded",()=>{
-  const els=[...document.querySelectorAll("*")];
+document.addEventListener("DOMContentLoaded", () => {
+  const section = document.querySelector(".seat-picker-section");
+  const head = document.querySelector(".seat-picker-head");
+  const title = document.getElementById("seatPickerTitle");
+  const badge = document.getElementById("saHeroPosBadge");
+  const table = document.getElementById("saPokerTable");
+  const help = document.getElementById("saPositionHelp");
+  const hiddenPos = document.getElementById("saHeroPos");
 
-  // 精準找原本標題文字元素
-  let title=els.find(el=>{
-    const own=[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(" ").trim();
-    return own.includes("點牌桌選擇你的位置");
-  });
-  if(!title) title=els.find(el=>(el.textContent||"").trim()==="① 點牌桌選擇你的位置");
-  if(!title) return;
+  if (!section || !head || !title || !badge || !table || !help || !hiddenPos) return;
 
-  // 找標題所在橫列：通常同列含目前位置 HJ | 劫持位（我）
-  let row=title.parentElement;
-  for(let i=0;i<4 && row;i++,row=row.parentElement){
-    const txt=(row.innerText||"");
-    if(txt.includes("點牌桌選擇你的位置") && /(UTG|HJ|CO|BTN|SB|BB)/.test(txt)) break;
-  }
-  if(!row) row=title.parentElement;
-  row.classList.add("seat-row-v129");
-
-  if(!title.querySelector(".seat-arrow-v129")){
-    title.insertAdjacentHTML("afterbegin",'<span class="seat-arrow-v129">▼</span>');
+  head.id = "seatPickerTitleRowV130";
+  if (!title.querySelector(".seat-collapse-arrow-v130")) {
+    title.insertAdjacentHTML("afterbegin", '<span class="seat-collapse-arrow-v130">▼</span>');
   }
 
-  // 從橫列後方兄弟節點中找真正的綠色牌桌容器
-  let tableBlock=null;
-  let n=row.nextElementSibling;
-  while(n){
-    const txt=n.innerText||"";
-    if(txt.includes("TEXAS HOLD") && txt.includes("UTG") && txt.includes("BTN")){
-      tableBlock=n;
-      break;
-    }
-    if(txt.includes("點選你的兩張手牌")) break;
-    n=n.nextElementSibling;
-  }
-
-  // 若牌桌不是直接兄弟，從 row 的共同父層往下找
-  if(!tableBlock){
-    const scope=row.parentElement || document.body;
-    const possible=[...scope.querySelectorAll("*")].filter(el=>{
-      const txt=el.innerText||"";
-      return txt.includes("TEXAS HOLD") && txt.includes("UTG") && txt.includes("HJ") &&
-             txt.includes("CO") && txt.includes("BTN") && txt.includes("SB") && txt.includes("BB");
-    });
-    // 選最小的符合容器
-    possible.sort((a,b)=>a.querySelectorAll("*").length-b.querySelectorAll("*").length);
-    tableBlock=possible[0];
-  }
-  if(!tableBlock) return;
-
-  // 找牌桌下方「你的位置是...」說明，單獨一起隱藏
-  let seatNote=null;
-  const all=[...document.querySelectorAll("*")];
-  seatNote=all.find(el=>{
-    const txt=(el.innerText||"").trim();
-    return txt.startsWith("你的位置是") && txt.includes("牌桌上會直接標示") && el.children.length<4;
-  });
-
-  const setOpen=open=>{
-    tableBlock.style.display=open?"":"none";
-    if(seatNote) seatNote.style.display=open?"":"none";
-    row.classList.toggle("closed",!open);
+  const setCollapsed = (collapsed) => {
+    table.style.display = collapsed ? "none" : "";
+    help.style.display = collapsed ? "none" : "";
+    head.classList.toggle("is-collapsed", collapsed);
   };
 
-  row.addEventListener("click",e=>{
-    setOpen(tableBlock.style.display==="none");
+  // 點標題列：自己決定要不要展開／收起
+  head.addEventListener("click", (e) => {
+    // 如果點到牌桌以外的標題列才切換
+    if (e.target.closest(".seat-btn")) return;
+    setCollapsed(table.style.display !== "none");
   });
 
-  // 直接監聽整個文件，只要點到六個位置之一，選位完成後自動收起
-  document.addEventListener("click",e=>{
-    const btn=e.target.closest("button");
-    if(!btn || !tableBlock.contains(btn)) return;
-    const t=(btn.innerText||"").toUpperCase();
-    if(/^(UTG|HJ|CO|BTN|SB|BB)/.test(t.trim())){
-      setTimeout(()=>setOpen(false),300);
-    }
+  // 點任何座位後，等原本程式完成換位，再自動收起
+  table.addEventListener("click", (e) => {
+    const seatBtn = e.target.closest(".seat-btn");
+    if (!seatBtn) return;
+
+    setTimeout(() => {
+      setCollapsed(true);
+    }, 120);
   });
 
-  // 有已選座位時預設收起
-  setTimeout(()=>{
-    const txt=row.innerText||"";
-    if(txt.includes("（我）") || txt.includes("(我)")) setOpen(false);
-  },400);
+  // 若其他程式重新渲染或改變位置，也同步保持「有選位就收起」
+  const syncFromPosition = () => {
+    const pos = (hiddenPos.value || "").trim();
+    if (pos) setCollapsed(true);
+  };
+
+  hiddenPos.addEventListener("change", syncFromPosition);
+  window.addEventListener("focus", syncFromPosition);
+
+  // 初始：已有選位就自動收起；沒有選位才展開
+  setTimeout(() => {
+    const pos = (hiddenPos.value || "").trim();
+    setCollapsed(!!pos);
+  }, 250);
 });
 </script>
 
