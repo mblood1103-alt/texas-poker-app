@@ -1519,6 +1519,9 @@ function analyze(silentMissingHand=false){
     analysisByStreet[street]=result;
     lastAnalysis=result;
     renderResult(result);
+    if(window.recordPokerAnalysisUse){
+      window.recordPokerAnalysisUse({hand,heroNames,position:pos,street}).catch(e=>console.warn("分析使用紀錄寫入失敗",e));
+    }
     return;
   }
 
@@ -1640,6 +1643,9 @@ function analyze(silentMissingHand=false){
   analysisByStreet[street]=result;
   lastAnalysis=result;
   renderResult(result);
+  if(window.recordPokerAnalysisUse){
+    window.recordPokerAnalysisUse({hand,heroNames,position:pos,street}).catch(e=>console.warn("分析使用紀錄寫入失敗",e));
+  }
 }
 
 function analyzeOpponentRiskForStreetV120(hero,board){
