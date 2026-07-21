@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=133">
+  <link rel="stylesheet" href="styles.css?v=134">
 
 
 <style id="v61-reference-match">
@@ -423,13 +423,15 @@
 
           <section class="seat-picker-section" aria-labelledby="seatPickerTitle">
             <div class="seat-picker-head">
-              <h3 id="seatPickerTitle">① 點牌桌選擇你的位置</h3>
+              <h3 id="seatPickerTitle">點牌桌選擇你的位置</h3>
               <span class="viz-badge" id="saHeroPosBadge">尚未選位</span>
             </div>
             <div id="saPokerTable" class="poker-table" role="group" aria-label="德州撲克牌桌座位選擇"></div>
             <p id="saPositionHelp" class="position-help">位置會依桌型自動排列；BTN 是莊家位，接著依順時針為 SB、BB。</p>
             <input id="saHeroPos" type="hidden" value="">
           </section>
+
+          <div class="action-step-title-v134">點選行動</div>
 
           <div class="street-tabs street-tabs-v133" role="tablist" aria-label="牌局街道">
             <button type="button" class="street-tab active" data-street="preflop">翻牌前</button>
@@ -548,7 +550,7 @@
           </section>
 
           <section class="card-picker-section card-picker-section-v133">
-            <h3>② 點選你的兩張手牌</h3>
+            <h3>點選你的兩張手牌</h3>
             <div class="selected-cards hero-cards">
               <button type="button" class="card-slot" data-card-slot="hero0">＋<small>第 1 張</small></button>
               <button type="button" class="card-slot" data-card-slot="hero1">＋<small>第 2 張</small></button>
@@ -718,7 +720,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=133"></script>
+  <script type="module" src="hand-analyzer.js?v=134"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 

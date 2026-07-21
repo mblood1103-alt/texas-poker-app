@@ -1287,3 +1287,55 @@ body.picker-open{overflow:hidden}
     padding: 10px 1px;
   }
 }
+
+
+/* ===== v134 行動區緊湊化 ===== */
+#handAnalyzerCard .action-step-title-v134{
+  font-weight: 800;
+  font-size: 18px;
+  margin: 6px 0 4px;
+}
+
+/* 街別按鈕更矮 */
+#handAnalyzerCard .street-tabs-v133 .street-tab{
+  padding-top: 7px !important;
+  padding-bottom: 7px !important;
+  min-height: 42px !important;
+}
+
+/* 各街行動面板整體壓縮 */
+#handAnalyzerCard .street-panel{
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+#handAnalyzerCard .street-panel h3,
+#handAnalyzerCard .street-panel h4{
+  margin-top: 6px !important;
+  margin-bottom: 6px !important;
+}
+#handAnalyzerCard .street-panel .stack-status,
+#handAnalyzerCard .street-panel .remaining-players,
+#handAnalyzerCard .street-panel .action-status{
+  margin-top: 6px !important;
+  margin-bottom: 6px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+#handAnalyzerCard .street-panel label{
+  gap: 4px !important;
+}
+#handAnalyzerCard .street-panel select,
+#handAnalyzerCard .street-panel input{
+  min-height: 42px !important;
+  height: 42px !important;
+}
+#handAnalyzerCard .street-panel button{
+  min-height: 42px !important;
+}
+
+/* 直接縮短常見行動容器的上下留白 */
+#handAnalyzerCard [id$="ActionPanel"],
+#handAnalyzerCard [data-street-panel]{
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
