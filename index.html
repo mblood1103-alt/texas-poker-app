@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>德州帳本</title>
   <link rel="manifest" href="manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="styles.css?v=136">
+  <link rel="stylesheet" href="styles.css?v=137">
 
 
 <style id="v61-reference-match">
@@ -433,13 +433,6 @@
 
           <div class="action-step-title-v134">點選行動</div>
 
-          <div class="street-tabs street-tabs-v133" role="tablist" aria-label="牌局街道">
-            <button type="button" class="street-tab active" data-street="preflop">翻牌前</button>
-            <button type="button" class="street-tab" data-street="flop">翻牌</button>
-            <button type="button" class="street-tab" data-street="turn">轉牌</button>
-            <button type="button" class="street-tab" data-street="river">河牌</button>
-          </div>
-
           <section class="street-panel active" data-panel="preflop">
             <div class="action-builder" data-builder="preflop">
               <h3>翻牌前行動</h3>
@@ -548,6 +541,13 @@
               <input id="saRiverAction" type="hidden" value="">
             </div>
           </section>
+
+          <div class="street-tabs street-tabs-v133" role="tablist" aria-label="牌局街道">
+            <button type="button" class="street-tab active" data-street="preflop">翻牌前</button>
+            <button type="button" class="street-tab" data-street="flop">翻牌</button>
+            <button type="button" class="street-tab" data-street="turn">轉牌</button>
+            <button type="button" class="street-tab" data-street="river">河牌</button>
+          </div>
 
           <section class="card-picker-section card-picker-section-v133">
             <h3>點選你的兩張手牌</h3>
@@ -720,7 +720,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=136"></script>
+  <script type="module" src="hand-analyzer.js?v=137"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 
@@ -816,28 +816,6 @@ document.addEventListener("DOMContentLoaded", () => {
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const norm = s => (s || "").replace(/\s+/g, "").trim();
-
-  // ===== 1. 剩餘籌碼移到「翻牌前行動」標題右側 =====
-  document.querySelectorAll(".street-panel").forEach(panel => {
-    const heading = [...panel.querySelectorAll("h2,h3,h4,strong")].find(el =>
-      /翻牌前行動|翻牌行動|轉牌行動|河牌行動/.test(norm(el.textContent))
-    );
-    const stack = [...panel.querySelectorAll("div,p,span")].find(el =>
-      norm(el.textContent).startsWith("💰你目前剩餘籌碼：") &&
-      ![...el.children].some(c => norm(c.textContent).startsWith("💰你目前剩餘籌碼："))
-    );
-
-    if (heading && stack) {
-      let row = heading.parentElement;
-      if (!row.classList.contains("street-title-row-v136")) {
-        const wrap = document.createElement("div");
-        wrap.className = "street-title-row-v136";
-        heading.parentNode.insertBefore(wrap, heading);
-        wrap.appendChild(heading);
-        wrap.appendChild(stack);
-      }
-    }
-  });
 
   // ===== 2. 行動膠囊只縮小實際按鈕，不亂套其他元素 =====
   document.querySelectorAll(".street-panel button").forEach(btn => {

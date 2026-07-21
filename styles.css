@@ -1458,3 +1458,54 @@ body.picker-open{overflow:hidden}
     font-size:11px !important;
   }
 }
+
+
+/* ===== v137：籌碼移到行動標題右側 + 街道按鈕移到手牌上方 ===== */
+#handAnalyzerCard .action-heading-row-v137{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 8px;
+}
+#handAnalyzerCard .action-heading-row-v137 > h3{
+  margin:0 !important;
+  flex:0 0 auto;
+}
+#handAnalyzerCard .hero-chip-inline-v137{
+  width:auto !important;
+  min-width:0 !important;
+  max-width:58% !important;
+  margin:0 !important;
+  padding:4px 8px !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:#ecfdf3 !important;
+  box-shadow:none !important;
+  font-size:13px !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+  text-align:right !important;
+}
+#handAnalyzerCard .hero-chip-inline-v137 strong{
+  font-size:15px !important;
+}
+#handAnalyzerCard .action-builder .action-controls{
+  margin-top:0 !important;
+}
+#handAnalyzerCard .street-tabs-v133{
+  margin:10px 0 8px !important;
+}
+#handAnalyzerCard .card-picker-section-v133{
+  margin-top:0 !important;
+}
+@media(max-width:560px){
+  #handAnalyzerCard .hero-chip-inline-v137{
+    max-width:62% !important;
+    font-size:11px !important;
+    padding:3px 6px !important;
+  }
+  #handAnalyzerCard .hero-chip-inline-v137 strong{
+    font-size:13px !important;
+  }
+}

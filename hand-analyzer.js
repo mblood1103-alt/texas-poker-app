@@ -533,10 +533,33 @@ function updateHeroChipDisplays(){
     let box=builder.querySelector(".hero-chip-status-v100");
     if(!box){
       box=document.createElement("div");
-      box.className="hero-chip-status-v100";
+      box.className="hero-chip-status-v100 hero-chip-inline-v137";
       const heading=builder.querySelector("h3");
-      if(heading) heading.insertAdjacentElement("afterend",box);
-      else builder.prepend(box);
+      if(heading){
+        let row=builder.querySelector(":scope > .action-heading-row-v137");
+        if(!row){
+          row=document.createElement("div");
+          row.className="action-heading-row-v137";
+          heading.parentNode.insertBefore(row,heading);
+          row.appendChild(heading);
+        }
+        row.appendChild(box);
+      }else{
+        builder.prepend(box);
+      }
+    }else{
+      box.classList.add("hero-chip-inline-v137");
+      const heading=builder.querySelector("h3");
+      if(heading){
+        let row=builder.querySelector(":scope > .action-heading-row-v137");
+        if(!row){
+          row=document.createElement("div");
+          row.className="action-heading-row-v137";
+          heading.parentNode.insertBefore(row,heading);
+          row.appendChild(heading);
+        }
+        if(box.parentElement!==row) row.appendChild(box);
+      }
     }
 
     const sim=simulateHeroChips(street,true);
