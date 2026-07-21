@@ -1,16 +1,3 @@
-
-// v145：只有真正執行分析時才能顯示「請先點選兩張手牌」。
-// 正在開啟選牌視窗、選第一張或第二張牌時絕對不顯示。
-function shouldWarnMissingHoleCardsV145(){
-  const openPicker = [...document.querySelectorAll(
-    '.card-modal, .card-picker-modal, .picker-modal, #cardModal, #cardPickerModal, #pickerModal, [data-card-picker]'
-  )].some(el => {
-    const s = getComputedStyle(el);
-    return s.display !== 'none' && s.visibility !== 'hidden' && !el.hidden;
-  });
-  return !openPicker;
-}
-
 try{localStorage.setItem("analysisMode","general");}catch(e){}
 
 const $ = id => document.getElementById(id);
@@ -414,13 +401,17 @@ function renderDeck(){
 
     // v119：牌面變更後，等 DOM/hidden 欄位同步完成再重新分析。
     // 翻牌必須三張都選完才更新翻牌分析，避免第 1/2 張的暫存結果覆蓋完整三張。
-    if(shouldReanalyzeV142){
+    const heroCardsCompleteV146 = !!selectedCards.hero0 && !!selectedCards.hero1;
+    const isHeroSlotV146 = justSelectedSlot==="hero0" || justSelectedSlot==="hero1";
+    const canAutoAnalyzeV146 = shouldReanalyzeV142 && (!isHeroSlotV146 || heroCardsCompleteV146);
+
+    if(canAutoAnalyzeV146){
       window.__pokerReanalyzeTimer=setTimeout(()=>{
         updateHiddenCards();
         const st=activeStreet();
         const board=boardCardsForStreetV118(st);
         const need=st==="翻牌"?3:st==="轉牌"?4:st==="河牌"?5:0;
-        if(board.length>=need) analyze();
+        if(board.length>=need) analyze(true);
       },120);
     }
   }));
@@ -1466,9 +1457,12 @@ function getAllHandRiskV123(heroCards, boardCards, madeHand){
     text:`⚠️ 全牌型風險：你目前是「${madeHand.name}」。真正能擊敗你的牌型只有：${activeRiskParts.join("；")}。逐項檢查：${checklist}。總共有 ${beating.length} 種合法的對手兩張手牌組合可以擊敗你。`
   };
 }
-function analyze(){
+function analyze(silentMissingHand=false){
   const hand=normalizeHand($("saHand").value);
-  if(!hand){shouldWarnMissingHoleCardsV145() && alert("請先點選你的兩張手牌。");return;}
+  if(!hand){
+    if(!silentMissingHand) alert("請先點選你的兩張手牌。");
+    return;
+  }
   const pos=$("saHeroPos").value;
   if(!pos){alert("請先直接點牌桌上的座位，選擇你的位置。");return;}
 
@@ -2039,49 +2033,3 @@ function getImprovementDraws(holeCards, boardCards){
     text:`💡 改善提醒：下一張約有 ${improved.length} 張牌可讓目前牌型提升（約 ${pct}%）：${details}。`
   };
 }
-
-
-// v144：依畫面結構移除點選行動內的重複「轉牌／河牌」單張牌面選擇器。
-(function removeDuplicateActionStreetPickersV144(){
-  function clean(){
-    const roots=[...document.querySelectorAll('#actionSection, .action-section')];
-    if(!roots.length){
-      const heading=[...document.querySelectorAll('h1,h2,h3,h4,div')].find(x=>x.textContent.trim()==='點選行動');
-      if(heading){
-        const root=heading.parentElement;
-        if(root) roots.push(root);
-      }
-    }
-    roots.forEach(root=>{
-      [...root.querySelectorAll('*')].forEach(el=>{
-        const t=(el.textContent||'').trim();
-        if((t==='轉牌' || t==='河牌') && el.children.length===0){
-          const box=el.parentElement;
-          if(box && box.querySelector('button, .card-slot, [data-card], [class*="card"]')){
-            box.style.display='none';
-          }
-        }
-      });
-    });
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', clean);
-  else clean();
-  setTimeout(clean,300);
-})();
-
-(function installHoleCardSelectionStateV145(){
-  let selectingUntil = 0;
-
-  document.addEventListener('pointerdown', function(e){
-    const picker = e.target.closest(
-      '.card-modal, .card-picker-modal, .picker-modal, #cardModal, #cardPickerModal, #pickerModal, [data-card-picker]'
-    );
-    if(picker) selectingUntil = Date.now() + 800;
-  }, true);
-
-  const original = window.shouldWarnMissingHoleCardsV145;
-  window.shouldWarnMissingHoleCardsV145 = function(){
-    if(Date.now() < selectingUntil) return false;
-    return original();
-  };
-})();

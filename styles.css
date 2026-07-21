@@ -1591,15 +1591,39 @@ html, body{
 }
 
 
-/* v144：移除「點選行動」區塊內重複的轉牌/河牌牌面選擇器。
-   下方翻牌前/翻牌/轉牌/河牌切換與五張公共牌維持不變。 */
-#actionSection .street-card-picker,
-#actionSection .action-street-card,
-#actionSection .street-card-select,
-#actionSection [data-action-street-card],
-.action-section .street-card-picker,
-.action-section .action-street-card,
-.action-section .street-card-select,
-.action-section [data-action-street-card] {
-  display: none !important;
+/* v146：行動順序固定使用小膠囊，不可被全域按鈕樣式撐大 */
+#handAnalyzerCard .action-sequence{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  align-items:center !important;
+  gap:5px !important;
+  min-height:24px !important;
+}
+#handAnalyzerCard .action-sequence .action-chip{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:4px !important;
+  width:auto !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  height:auto !important;
+  padding:4px 7px !important;
+  margin:0 !important;
+  border-radius:999px !important;
+  font-size:12px !important;
+  line-height:1.15 !important;
+  white-space:nowrap !important;
+}
+#handAnalyzerCard .action-sequence .action-chip button{
+  display:inline !important;
+  width:auto !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  height:auto !important;
+  padding:0 !important;
+  margin:0 !important;
+  font-size:14px !important;
+  line-height:1 !important;
+  border:0 !important;
+  background:transparent !important;
 }
