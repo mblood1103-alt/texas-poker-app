@@ -719,7 +719,7 @@
   </template>
 
   <script type="module" src="app.js?v=40"></script>
-  <script type="module" src="hand-analyzer.js?v=130"></script>
+  <script type="module" src="hand-analyzer.js?v=131"></script>
   <script type="module" src="poker-judge.js?v=35"></script>
 
 
@@ -806,6 +806,97 @@ document.addEventListener("DOMContentLoaded", () => {
     const pos = (hiddenPos.value || "").trim();
     setCollapsed(!!pos);
   }, 250);
+});
+</script>
+
+
+<style>
+/* v131：桌型／小盲／大盲／剩餘籌碼固定同一橫排，縮小高度與間距 */
+.compact-settings-v131{
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:10px !important;
+  align-items:end !important;
+  margin-top:8px !important;
+  margin-bottom:14px !important;
+}
+.compact-setting-item-v131{
+  min-width:0 !important;
+  width:auto !important;
+  margin:0 !important;
+}
+.compact-setting-item-v131 label{
+  display:block !important;
+  font-size:15px !important;
+  line-height:1.25 !important;
+  margin:0 0 6px !important;
+  white-space:nowrap !important;
+}
+.compact-setting-item-v131 input,
+.compact-setting-item-v131 select{
+  width:100% !important;
+  min-width:0 !important;
+  height:48px !important;
+  padding:6px 8px !important;
+  font-size:17px !important;
+  border-radius:14px !important;
+}
+
+/* 收緊牌局策略分析標題下方原本因刪除說明文字留下的空白 */
+details:has(.compact-settings-v131) > div,
+details:has(.compact-settings-v131) > section{
+  padding-top:10px !important;
+}
+.compact-settings-v131{
+  transform:translateY(-8px);
+}
+
+/* iPhone 窄螢幕仍維持四格同排 */
+@media (max-width:520px){
+  .compact-settings-v131{
+    gap:6px !important;
+  }
+  .compact-setting-item-v131 label{
+    font-size:13px !important;
+  }
+  .compact-setting-item-v131 input,
+  .compact-setting-item-v131 select{
+    height:44px !important;
+    font-size:15px !important;
+    padding:4px 5px !important;
+  }
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const wanted = ["桌型", "小盲", "大盲", "你現在剩多少籌碼"];
+
+  function textOf(el){ return (el.textContent || "").replace(/\s+/g,"").trim(); }
+
+  const labels = [...document.querySelectorAll("label")];
+  const found = wanted.map(t => labels.find(l => textOf(l).includes(t)));
+
+  if (found.every(Boolean)) {
+    // 找到能同時包含四個 label 的最小共同祖先
+    let common = found[0].parentElement;
+    while (common && !found.every(l => common.contains(l))) common = common.parentElement;
+
+    if (common) {
+      common.classList.add("compact-settings-v131");
+
+      // 四個欄位各自的直接容器
+      found.forEach(l => {
+        let box = l.parentElement;
+        while (box && box.parentElement !== common) box = box.parentElement;
+        if (box) box.classList.add("compact-setting-item-v131");
+      });
+
+      // 若共同祖先包太大，改找四個欄位最接近的容器並標記
+      const items = [...common.children].filter(c => found.some(l => c.contains(l)));
+      if (items.length === 4) items.forEach(i => i.classList.add("compact-setting-item-v131"));
+    }
+  }
 });
 </script>
 
