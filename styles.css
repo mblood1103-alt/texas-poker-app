@@ -1738,3 +1738,21 @@ html, body{
 .sa-seat-stacks-v160 label{display:grid;gap:4px;background:#fff;border:1px solid #d7e0ec;border-radius:11px;padding:7px;font-size:11px}
 .sa-seat-stacks-v160 input{width:100%;height:34px;min-width:0;border:1px solid #cbd6e5;border-radius:8px;padding:4px 6px;font-size:14px}
 .sa-seat-stacks-v160 span{color:#66758c}.sa-seat-stacks-v160 span strong{color:#08783f}
+
+/* v162：後手輸入框與上方剩餘籌碼欄位統一 */
+.sa-seat-stacks-v160 input{
+  width:100%;
+  height:36px;
+  min-height:36px;
+  padding:3px 6px;
+  font-size:15px;
+  border-radius:11px;
+}
+@media(max-width:480px){
+  .sa-seat-stacks-v160 input{
+    height:34px;
+    min-height:34px;
+    padding:2px 5px;
+    font-size:14px;
+  }
+}

@@ -2112,7 +2112,7 @@ function getImprovementDraws(holeCards, boardCards){
     if(!pot||!pg||!sg)return;
     const c=calc(); pot.textContent=c.totalPot;
     pg.innerHTML=streets.map(s=>`<div><span>${names[s]}</span><b>${c.cumulative[s]}</b><small>本街 +${c.streetPots[s]}</small></div>`).join("");
-    sg.innerHTML=seats().map(p=>`<label><b>${p}｜${seatZh[p]||p}${p===(document.getElementById("saHeroPos")?.value||"")?"（我）":""}</b><input type="number" min="0" step="0.5" inputmode="decimal" data-seat-start-v160="${p}" value="${seatStarts[p]??0}"><span>剩餘 <strong>${c.remain[p]??0}</strong></span></label>`).join("");
+    sg.innerHTML=seats().map(p=>`<label><b>${p}｜${seatZh[p]||p}${p===(document.getElementById("saHeroPos")?.value||"")?"（我）":""}</b><input type="number" min="0" step="0.5" inputmode="decimal" placeholder="直接輸入" data-seat-start-v160="${p}" value="${seatStarts[p]===undefined||seatStarts[p]===0?'':seatStarts[p]}"><span>剩餘 <strong>${seatStarts[p]>0?(c.remain[p]??0):"—"}</strong></span></label>`).join("");
     sg.querySelectorAll("[data-seat-start-v160]").forEach(inp=>{
       inp.addEventListener("change",()=>{seatStarts[inp.dataset.seatStartV160]=n(inp.value);render()},{once:true});
     });
@@ -2134,7 +2134,7 @@ function getImprovementDraws(holeCards, boardCards){
       seatStarts[e.target.dataset.seatStartV160]=n(e.target.value);
       const card=e.target.closest("label");
       const strong=card?.querySelector("span strong");
-      if(strong) strong.textContent=n(e.target.value);
+      if(strong) strong.textContent=e.target.value===""?"—":n(e.target.value);
       return;
     }
     if(["saSB","saBB","saStack"].includes(e.target.id)) setTimeout(render,30);
