@@ -844,17 +844,33 @@ function initActionBuilders(){
       const responded = new Set(responseActions.map(normalizedActor));
 
       let roundComplete = false;
+
+      // v173：
+      // 1. 已棄牌玩家已由 livePositions 排除。
+      // 2. 已 All-in 玩家沒有籌碼可再行動，也不應再次被要求回應。
+      // 3. 本輪只檢查「仍在牌局、尚未 All-in」的玩家。
+      const allInNow = getAllInPositionsV165();
+      const actionableLivePositions = livePositions.filter(p => !allInNow.has(p));
+
       if (lastAggressive >= 0) {
         const aggressor = normalizedActor(streetActions[lastAggressive]);
-        const needResponse = livePositions.filter(p => p !== aggressor);
+
+        // 最後進攻者若已 All-in，本身當然不需要再行動；
+        // 其他已 All-in 玩家也不需要再回應。
+        const needResponse = actionableLivePositions.filter(p => p !== aggressor);
+
         roundComplete =
           needResponse.length === 0 ||
           needResponse.every(p => responded.has(p));
       } else {
-        // 沒有開池／加註時，所有仍在局玩家各完成一次行動即結束。
+        // 沒有下注／加註時，只要求仍有籌碼可行動的人各完成一次。
+        // 若所有仍在牌局的人都已 All-in，也直接完成本輪。
         roundComplete =
           livePositions.length > 0 &&
-          livePositions.every(p => responded.has(p));
+          (
+            actionableLivePositions.length === 0 ||
+            actionableLivePositions.every(p => responded.has(p))
+          );
       }
 
       if (roundComplete) {
@@ -889,6 +905,7 @@ function initActionBuilders(){
         for(let step=1;step<=positions.length;step++){
           const nextPos=positions[(actedIndex+step)%positions.length];
           if(foldedNow.has(nextPos)) continue;
+          if(getAllInPositionsV165().has(nextPos)) continue;
           const nextValue=nextPos===$("saHeroPos").value?"我":nextPos;
           const nextOpt=[...actor.options].find(o=>o.value===nextValue&&!o.disabled);
           if(nextOpt){ actor.value=nextValue; break; }
@@ -2802,88 +2819,5 @@ document.addEventListener("input",e=>{
 document.addEventListener("change",e=>{
   if(e.target.matches("#saStack,[data-seat-start-v160],.action-actor")){
     updateHeroChipDisplays();
-  }
-});
-
-
-/* v172：棄牌玩家不再被要求行動；剩餘可行動玩家皆 All-in 時自動完成本輪 */
-function v172AutoCompleteStreet(builder){
-  if(!builder) return false;
-
-  const street=builder.dataset.builder;
-  let active=[];
-  try{
-    active=(typeof activePlayersAtStreet==="function" ? activePlayersAtStreet(street) : []) || [];
-  }catch(e){ active=[]; }
-
-  // fallback：從目前仍在牌局標籤取得，已棄牌者不會出現在這裡
-  if(!active.length){
-    active=[...document.querySelectorAll(".alive-pill:not(.folded), .player-alive:not(.folded)")].map(el=>{
-      const t=(el.textContent||"").trim();
-      return t.split(/\s|\|/)[0].replace("（我）","").replace("(我)","");
-    }).filter(Boolean);
-  }
-
-  // 只看「仍在牌局」的人；已棄牌永久排除。
-  const actionable=active.filter(pos=>{
-    try{
-      if(typeof v166Remaining==="function"){
-        const r=v166Remaining(pos);
-        return r===null || r===undefined || Number(r)>0;
-      }
-    }catch(e){}
-    return true;
-  });
-
-  // 沒有人還能繼續下注，代表其餘玩家全 All-in，直接完成本輪。
-  if(active.length>0 && actionable.length===0){
-    const btn=builder.querySelector(".complete-round-btn, .finish-round-btn, button[data-complete-round]");
-    if(btn && !btn.disabled){
-      btn.click();
-      return true;
-    }
-
-    // 若既有版本的完成按鈕沒有固定 class，直接找文字。
-    const textBtn=[...builder.querySelectorAll("button")].find(b=>
-      /完成本輪/.test(b.textContent||"") && !b.disabled
-    );
-    if(textBtn){
-      textBtn.click();
-      return true;
-    }
-  }
-
-  // 若目前下拉選到的人已棄牌或已 All-in，自動刷新下一位，
-  // 不讓已棄牌者再次被要求行動。
-  const actor=builder.querySelector(".action-actor");
-  if(actor && actor.value){
-    let current="";
-    try{ current=actualActorPosition(actor.value)||actor.value; }
-    catch(e){ current=actor.value; }
-
-    if(active.length && !actionable.includes(current)){
-      try{
-        if(typeof refreshActionActorOptions==="function") refreshActionActorOptions(builder);
-        else if(typeof refreshActionTypeOptions==="function") refreshActionTypeOptions(builder);
-      }catch(e){}
-    }
-  }
-  return false;
-}
-
-document.addEventListener("click",e=>{
-  if(e.target.closest(".action-builder button, .action-chip, .action-log-chip")){
-    setTimeout(()=>{
-      document.querySelectorAll(".action-builder").forEach(v172AutoCompleteStreet);
-    },0);
-  }
-});
-
-document.addEventListener("change",e=>{
-  if(e.target.closest(".action-builder")){
-    setTimeout(()=>{
-      const b=e.target.closest(".action-builder");
-      v172AutoCompleteStreet(b);
-    },0);
   }
 });
