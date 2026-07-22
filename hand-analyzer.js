@@ -2721,7 +2721,7 @@ function getImprovementDraws(holeCards, boardCards){
     head.className = "sa-side-pot-head-v174";
     head.innerHTML = `
       <strong>主池／邊池</strong>
-      <button id="saClearSidePotsV174" class="sa-mini-clear-v163" type="button">清除主池邊池資料</button>
+      <button id="saClearSidePotsV174" class="sa-mini-clear-v163" type="button">清除主池邊池</button>
     `;
 
     const box = document.createElement("div");
@@ -2888,9 +2888,7 @@ document.addEventListener("change",e=>{
     if(!btn) return;
     e.preventDefault();
     e.stopPropagation();
-    if(confirm("確定要清除這一手的主池／邊池資料嗎？")){
-      clearPotDataV176();
-    }
+    clearPotDataV176();
   });
 
   // 一鍵清除本手後，額外強制清空主池/邊池相關快取並重繪。
