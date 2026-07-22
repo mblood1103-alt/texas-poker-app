@@ -2804,3 +2804,86 @@ document.addEventListener("change",e=>{
     updateHeroChipDisplays();
   }
 });
+
+
+/* v172：棄牌玩家不再被要求行動；剩餘可行動玩家皆 All-in 時自動完成本輪 */
+function v172AutoCompleteStreet(builder){
+  if(!builder) return false;
+
+  const street=builder.dataset.builder;
+  let active=[];
+  try{
+    active=(typeof activePlayersAtStreet==="function" ? activePlayersAtStreet(street) : []) || [];
+  }catch(e){ active=[]; }
+
+  // fallback：從目前仍在牌局標籤取得，已棄牌者不會出現在這裡
+  if(!active.length){
+    active=[...document.querySelectorAll(".alive-pill:not(.folded), .player-alive:not(.folded)")].map(el=>{
+      const t=(el.textContent||"").trim();
+      return t.split(/\s|\|/)[0].replace("（我）","").replace("(我)","");
+    }).filter(Boolean);
+  }
+
+  // 只看「仍在牌局」的人；已棄牌永久排除。
+  const actionable=active.filter(pos=>{
+    try{
+      if(typeof v166Remaining==="function"){
+        const r=v166Remaining(pos);
+        return r===null || r===undefined || Number(r)>0;
+      }
+    }catch(e){}
+    return true;
+  });
+
+  // 沒有人還能繼續下注，代表其餘玩家全 All-in，直接完成本輪。
+  if(active.length>0 && actionable.length===0){
+    const btn=builder.querySelector(".complete-round-btn, .finish-round-btn, button[data-complete-round]");
+    if(btn && !btn.disabled){
+      btn.click();
+      return true;
+    }
+
+    // 若既有版本的完成按鈕沒有固定 class，直接找文字。
+    const textBtn=[...builder.querySelectorAll("button")].find(b=>
+      /完成本輪/.test(b.textContent||"") && !b.disabled
+    );
+    if(textBtn){
+      textBtn.click();
+      return true;
+    }
+  }
+
+  // 若目前下拉選到的人已棄牌或已 All-in，自動刷新下一位，
+  // 不讓已棄牌者再次被要求行動。
+  const actor=builder.querySelector(".action-actor");
+  if(actor && actor.value){
+    let current="";
+    try{ current=actualActorPosition(actor.value)||actor.value; }
+    catch(e){ current=actor.value; }
+
+    if(active.length && !actionable.includes(current)){
+      try{
+        if(typeof refreshActionActorOptions==="function") refreshActionActorOptions(builder);
+        else if(typeof refreshActionTypeOptions==="function") refreshActionTypeOptions(builder);
+      }catch(e){}
+    }
+  }
+  return false;
+}
+
+document.addEventListener("click",e=>{
+  if(e.target.closest(".action-builder button, .action-chip, .action-log-chip")){
+    setTimeout(()=>{
+      document.querySelectorAll(".action-builder").forEach(v172AutoCompleteStreet);
+    },0);
+  }
+});
+
+document.addEventListener("change",e=>{
+  if(e.target.closest(".action-builder")){
+    setTimeout(()=>{
+      const b=e.target.closest(".action-builder");
+      v172AutoCompleteStreet(b);
+    },0);
+  }
+});
