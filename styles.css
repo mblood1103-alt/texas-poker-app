@@ -1862,3 +1862,13 @@ html, body{
   color:#6b7a90;
   font-size:11px;
 }
+
+/* v167：行動者後手提示保持單行易讀 */
+[data-v167-actor-stack="1"]{
+  white-space:normal;
+  text-align:right;
+  line-height:1.2;
+}
+[data-v167-actor-stack="1"] b{
+  color:#08783f;
+}

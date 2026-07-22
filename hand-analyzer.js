@@ -2656,3 +2656,183 @@ function getImprovementDraws(holeCards, boardCards){
     v166RenderSidePots();
   },400);
 })();
+
+
+/* v167：行動者後手即時顯示 */
+(function(){
+  function n(v){
+    if(v===null || v===undefined || String(v).trim()==="") return null;
+    const x=Number(String(v).replace(/,/g,""));
+    return Number.isFinite(x)?Math.max(0,x):null;
+  }
+
+  function heroPos(){
+    return document.getElementById("saHeroPos")?.value||"";
+  }
+
+  function actorPos(actor){
+    try{return actualActorPosition(actor)}
+    catch(e){return actor==="我"?heroPos():actor}
+  }
+
+  function seatStart(pos){
+    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
+    if(inp && inp.value.trim()!=="") return n(inp.value);
+    if(pos===heroPos()){
+      const top=document.getElementById("saStack");
+      if(top && top.value.trim()!=="") return n(top.value);
+    }
+    return null;
+  }
+
+  function seatRemaining(pos){
+    // 優先沿用 v166 的完整計算結果
+    try{
+      if(typeof v166Remaining==="function"){
+        const r=v166Remaining(pos);
+        if(r!==null && r!==undefined) return r;
+      }
+    }catch(e){}
+
+    // fallback：從畫面上的「剩餘」讀值
+    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
+    const strong=inp?.closest("label")?.querySelector("span strong");
+    const txt=strong?.textContent?.trim();
+    if(txt && txt!=="—") return n(txt);
+
+    return seatStart(pos);
+  }
+
+  function seatLabel(pos){
+    const map={
+      BTN:"莊家位",SB:"小盲",BB:"大盲",UTG:"槍口",
+      "UTG+1":"槍口+1","UTG+2":"槍口+2",
+      LJ:"劫持前位",HJ:"劫持位",CO:"關煞位"
+    };
+    return `${pos}｜${map[pos]||pos}${pos===heroPos()?"（我）":""}`;
+  }
+
+  function updateBuilder(builder){
+    if(!builder)return;
+    const actorSel=builder.querySelector(".action-actor");
+    if(!actorSel)return;
+
+    const pos=actorPos(actorSel.value);
+    const badge=builder.querySelector(".hero-chip-status-v133, .hero-chip-status, [data-chip-status]");
+    if(!badge || !pos)return;
+
+    const remain=seatRemaining(pos);
+    badge.innerHTML=`💰 ${seatLabel(pos)}目前剩餘籌碼：<b>${remain===null?"—":Number(remain).toLocaleString()}</b>`;
+    badge.dataset.v167ActorStack="1";
+  }
+
+  function updateAll(){
+    document.querySelectorAll(".action-builder").forEach(updateBuilder);
+  }
+
+  document.addEventListener("change",e=>{
+    if(e.target.matches(".action-actor,.action-type,[data-seat-start-v160],#saStack")){
+      setTimeout(updateAll,0);
+    }
+  });
+
+  document.addEventListener("input",e=>{
+    if(e.target.matches("[data-seat-start-v160],#saStack")){
+      setTimeout(updateAll,0);
+    }
+  });
+
+  document.addEventListener("click",e=>{
+    if(e.target.closest(".action-chip,.add-action-btn,.street-tab,#saClearActionsBtnV163,#saClearStacksBtnV163")){
+      setTimeout(updateAll,50);
+    }
+  });
+
+  new MutationObserver(()=>setTimeout(updateAll,0))
+    .observe(document.body,{childList:true,subtree:true});
+
+  setTimeout(updateAll,400);
+})();
+
+
+/* v168：所有仍在牌局玩家都已 All-in 時，自動視為本輪完成 */
+(function(){
+  function num(v){
+    const x = Number(String(v ?? "").replace(/,/g,""));
+    return Number.isFinite(x) ? x : null;
+  }
+
+  function activePositions(){
+    const chips = [...document.querySelectorAll(".alive-chip, .player-alive-chip, [data-alive-pos]")];
+    const fromData = chips.map(el => el.dataset.alivePos).filter(Boolean);
+    if(fromData.length) return [...new Set(fromData)];
+
+    // 依目前畫面「目前還在牌局」綠色籌碼文字取得位置
+    const box = [...document.querySelectorAll("div,section")].find(el =>
+      el.textContent?.includes("目前還在牌局") && el.querySelectorAll("span").length
+    );
+    if(box){
+      const known=["BTN","SB","BB","UTG","UTG+1","UTG+2","LJ","HJ","CO"];
+      const txt=[...box.querySelectorAll("span")].map(x=>x.textContent||"").join(" ");
+      return known.filter(p=>txt.includes(p));
+    }
+    return [];
+  }
+
+  function remaining(pos){
+    try{
+      if(typeof v166Remaining==="function"){
+        const r=v166Remaining(pos);
+        if(r!==null && r!==undefined) return Number(r);
+      }
+    }catch(e){}
+    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
+    const strong=inp?.closest("label")?.querySelector("span strong");
+    const t=strong?.textContent?.trim();
+    if(t && t!=="—") return num(t);
+    return null;
+  }
+
+  function allActiveAllIn(){
+    const ps=activePositions();
+    if(!ps.length) return false;
+    return ps.every(p => remaining(p) === 0);
+  }
+
+  function patchBuilders(){
+    if(!allActiveAllIn()) return;
+    document.querySelectorAll(".action-builder").forEach(builder=>{
+      // 若原本已經有完成本輪，不重複處理
+      if(builder.textContent.includes("完成本輪")) return;
+
+      // 隱藏/停用已無必要的行動輸入
+      const actor=builder.querySelector(".action-actor");
+      const type=builder.querySelector(".action-type");
+      const amount=builder.querySelector(".action-amount");
+      if(actor) actor.disabled=true;
+      if(type) type.disabled=true;
+      if(amount) amount.disabled=true;
+
+      const addBtn=[...builder.querySelectorAll("button")].find(b=>b.textContent.includes("加入這個行動"));
+      if(addBtn){
+        addBtn.disabled=true;
+        addBtn.innerHTML="✅ 完成本輪";
+      }
+
+      // 清掉「尚未加入行動」提示，避免看起來像還需要操作
+      [...builder.querySelectorAll("*")].forEach(el=>{
+        if(el.children.length===0 && el.textContent.trim()==="尚未加入行動"){
+          el.textContent="所有仍在牌局玩家皆已全下，本輪完成";
+        }
+      });
+    });
+  }
+
+  function run(){ setTimeout(patchBuilders,0); }
+
+  document.addEventListener("click",run);
+  document.addEventListener("change",run);
+  document.addEventListener("input",run);
+  new MutationObserver(run).observe(document.body,{subtree:true,childList:true,characterData:true});
+  setTimeout(patchBuilders,500);
+})();
