@@ -1,1 +1,0 @@
-翻牌前 UTG→HJ→CO→BTN→SB→BB；翻牌後 SB→BB→UTG→HJ→CO→BTN；棄牌自動跳過；保留 v102 功能。
