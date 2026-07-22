@@ -2045,6 +2045,17 @@ function getImprovementDraws(holeCards, boardCards){
 (function(){
   const streets=["preflop","flop","turn","river"];
   const names={preflop:"翻牌前",flop:"翻牌",turn:"轉牌",river:"河牌"};
+  const seatZh={
+    BTN:"莊家位",
+    SB:"小盲",
+    BB:"大盲",
+    UTG:"槍口",
+    "UTG+1":"槍口+1",
+    "UTG+2":"槍口+2",
+    LJ:"劫持前位",
+    HJ:"劫持位",
+    CO:"關煞位"
+  };
   let seatStarts={};
 
   function n(v){const x=Number(v);return Number.isFinite(x)?Math.max(0,x):0}
@@ -2101,13 +2112,32 @@ function getImprovementDraws(holeCards, boardCards){
     if(!pot||!pg||!sg)return;
     const c=calc(); pot.textContent=c.totalPot;
     pg.innerHTML=streets.map(s=>`<div><span>${names[s]}</span><b>${c.cumulative[s]}</b><small>本街 +${c.streetPots[s]}</small></div>`).join("");
-    sg.innerHTML=seats().map(p=>`<label><b>${p}${p===(document.getElementById("saHeroPos")?.value||"")?"（我）":""}</b><input type="number" min="0" step="0.5" data-seat-start-v160="${p}" value="${seatStarts[p]??0}"><span>剩餘 <strong>${c.remain[p]??0}</strong></span></label>`).join("");
+    sg.innerHTML=seats().map(p=>`<label><b>${p}｜${seatZh[p]||p}${p===(document.getElementById("saHeroPos")?.value||"")?"（我）":""}</b><input type="number" min="0" step="0.5" inputmode="decimal" data-seat-start-v160="${p}" value="${seatStarts[p]??0}"><span>剩餘 <strong>${c.remain[p]??0}</strong></span></label>`).join("");
     sg.querySelectorAll("[data-seat-start-v160]").forEach(inp=>{
       inp.addEventListener("change",()=>{seatStarts[inp.dataset.seatStartV160]=n(inp.value);render()},{once:true});
     });
   }
-  document.addEventListener("click",()=>setTimeout(render,30));
-  document.addEventListener("change",e=>{if(!e.target.matches("[data-seat-start-v160]"))setTimeout(render,30)});
-  document.addEventListener("input",e=>{if(["saSB","saBB","saStack"].includes(e.target.id))setTimeout(render,30)});
+  document.addEventListener("click",e=>{
+    if(e.target.closest("[data-seat-start-v160]")) return;
+    setTimeout(render,30);
+  });
+  document.addEventListener("change",e=>{
+    if(e.target.matches("[data-seat-start-v160]")){
+      seatStarts[e.target.dataset.seatStartV160]=n(e.target.value);
+      setTimeout(render,0);
+      return;
+    }
+    setTimeout(render,30);
+  });
+  document.addEventListener("input",e=>{
+    if(e.target.matches("[data-seat-start-v160]")){
+      seatStarts[e.target.dataset.seatStartV160]=n(e.target.value);
+      const card=e.target.closest("label");
+      const strong=card?.querySelector("span strong");
+      if(strong) strong.textContent=n(e.target.value);
+      return;
+    }
+    if(["saSB","saBB","saStack"].includes(e.target.id)) setTimeout(render,30);
+  });
   setTimeout(render,250);
 })();
