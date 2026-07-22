@@ -1918,3 +1918,37 @@ html, body{
     font-size:11px;
   }
 }
+
+/* v170：左行動者、右自己 */
+.sa-stack-row-v170{
+  display:flex !important;
+  width:100%;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:6px;
+}
+.sa-stack-row-v170 > .sa-actor-stack-v170{
+  margin-right:auto;
+}
+.sa-actor-stack-v170{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 9px;
+  border-radius:999px;
+  background:#effdf4;
+  color:#08783f;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.15;
+  white-space:nowrap;
+}
+.sa-actor-stack-v170 b{font-weight:900;}
+.sa-stack-row-v170 > .sa-hero-stack-v169,
+.sa-stack-row-v170 > [class*="hero-chip-status"]{
+  margin-left:auto !important;
+}
+@media(max-width:480px){
+  .sa-stack-row-v170{gap:5px;}
+  .sa-actor-stack-v170{padding:4px 6px;font-size:10.5px;}
+}

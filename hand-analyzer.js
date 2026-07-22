@@ -2867,3 +2867,100 @@ function getImprovementDraws(holeCards, boardCards){
 
   setTimeout(updateAll,400);
 })();
+
+
+/* v170：不取代原本我的籌碼，直接在其左側插入行動者後手 */
+(function(){
+  function num(v){
+    if(v===null || v===undefined || String(v).trim()==="") return null;
+    const x=Number(String(v).replace(/,/g,""));
+    return Number.isFinite(x)?Math.max(0,x):null;
+  }
+  function heroPos(){ return document.getElementById("saHeroPos")?.value||""; }
+  function actualPos(v){
+    try{return actualActorPosition(v)}
+    catch(e){return v==="我"?heroPos():v}
+  }
+  function remaining(pos){
+    try{
+      if(typeof v166Remaining==="function"){
+        const r=v166Remaining(pos);
+        if(r!==null && r!==undefined) return Number(r);
+      }
+    }catch(e){}
+    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
+    if(inp){
+      const card=inp.closest("label");
+      const strong=card?.querySelector("span strong");
+      const t=strong?.textContent?.trim();
+      if(t && t!=="—") return num(t);
+      if(inp.value.trim()!=="") return num(inp.value);
+    }
+    if(pos===heroPos()){
+      const top=document.getElementById("saStack");
+      if(top?.value.trim()) return num(top.value);
+    }
+    return null;
+  }
+  function label(pos){
+    const m={BTN:"莊家位",SB:"小盲",BB:"大盲",UTG:"槍口","UTG+1":"槍口+1","UTG+2":"槍口+2",LJ:"劫持前位",HJ:"劫持位",CO:"關煞位"};
+    return `${pos}｜${m[pos]||pos}`;
+  }
+
+  function update(builder){
+    const actor=builder.querySelector(".action-actor");
+    if(!actor)return;
+
+    // 找原本真正顯示「你目前剩餘籌碼」的綠色標籤
+    let heroBadge=[...builder.querySelectorAll("div,span")].find(el =>
+      el.children.length <= 2 && (el.textContent||"").includes("你目前剩餘籌碼")
+    );
+    if(!heroBadge)return;
+
+    // 若 v169 包裝存在，還原成右側原始我的籌碼顯示概念
+    const dual=builder.querySelector(".sa-dual-stack-status-v169");
+    if(dual){
+      const hero=dual.querySelector(".sa-hero-stack-v169");
+      if(hero){
+        dual.replaceWith(hero);
+        heroBadge=hero;
+      }
+    }
+
+    let row=heroBadge.parentElement;
+    if(!row.classList.contains("sa-stack-row-v170")){
+      const wrap=document.createElement("div");
+      wrap.className="sa-stack-row-v170";
+      heroBadge.parentNode.insertBefore(wrap,heroBadge);
+      wrap.appendChild(heroBadge);
+      row=wrap;
+    }
+
+    let actorBadge=row.querySelector(".sa-actor-stack-v170");
+    if(!actorBadge){
+      actorBadge=document.createElement("div");
+      actorBadge.className="sa-actor-stack-v170";
+      row.insertBefore(actorBadge,row.firstChild);
+    }
+
+    const pos=actualPos(actor.value);
+    const r=pos?remaining(pos):null;
+    actorBadge.innerHTML=pos
+      ? `💰 ${label(pos)}剩餘：<b>${r===null?"—":Number(r).toLocaleString()}</b>`
+      : `💰 行動者剩餘：<b>—</b>`;
+  }
+
+  function run(){
+    document.querySelectorAll(".action-builder").forEach(update);
+  }
+
+  document.addEventListener("change",e=>{
+    if(e.target.matches(".action-actor,.action-type,[data-seat-start-v160],#saStack")) setTimeout(run,0);
+  });
+  document.addEventListener("input",e=>{
+    if(e.target.matches("[data-seat-start-v160],#saStack")) setTimeout(run,0);
+  });
+  document.addEventListener("click",()=>setTimeout(run,30));
+  new MutationObserver(()=>setTimeout(run,0)).observe(document.body,{childList:true,subtree:true});
+  setTimeout(run,500);
+})();
