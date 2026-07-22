@@ -1906,3 +1906,24 @@ html, body{
   text-align:right!important;
   margin-left:auto!important;
 }
+
+/* v174：主池邊池清除按鈕 */
+.sa-side-pot-head-v174{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:10px;
+  margin-bottom:6px;
+}
+.sa-side-pot-head-v174 strong{
+  font-size:14px;
+}
+#saClearSidePotsV174{
+  width:auto!important;
+  min-width:auto!important;
+  height:30px!important;
+  min-height:30px!important;
+  padding:3px 9px!important;
+  font-size:12px!important;
+}

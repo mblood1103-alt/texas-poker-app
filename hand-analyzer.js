@@ -668,10 +668,37 @@ function updateHeroChipDisplays(){
       ? `💰 ${actionActorLabelV171(actorInfo.pos)}剩餘：${actorInfo.remaining===null?"—":actorInfo.remaining.toLocaleString("zh-TW")}`
       : `💰 行動者剩餘：—`;
 
-    const sim=simulateHeroChips(street,true);
     const hero=$("saHeroPos").value;
+    let heroRemaining=null;
+
+    // v175：右側「我的剩餘籌碼」跟左側行動者使用同一套後手計算，
+    // 避免同一個人出現 920 / 720 兩個不同數字。
+    if(hero){
+      try{
+        if(typeof v166Remaining==="function"){
+          const r=v166Remaining(hero);
+          if(r!==null && r!==undefined) heroRemaining=Number(r);
+        }
+      }catch(e){}
+
+      if(heroRemaining===null){
+        const heroInput=document.querySelector(`[data-seat-start-v160="${hero}"]`);
+        const strong=heroInput?.closest("label")?.querySelector("span strong");
+        const txt=strong?.textContent?.trim();
+        if(txt && txt!=="—"){
+          const n=Number(txt.replace(/,/g,""));
+          if(Number.isFinite(n)) heroRemaining=n;
+        }
+      }
+
+      if(heroRemaining===null){
+        const sim=simulateHeroChips(street,true);
+        heroRemaining=sim.remaining;
+      }
+    }
+
     heroBox.innerHTML=hero
-      ? `💰 你目前剩餘籌碼：<strong>${sim.remaining.toLocaleString("zh-TW")}</strong>`
+      ? `💰 你目前剩餘籌碼：<strong>${Number(heroRemaining ?? 0).toLocaleString("zh-TW")}</strong>`
       : `💰 尚未選擇你的座位`;
   });
 }
@@ -845,32 +872,29 @@ function initActionBuilders(){
 
       let roundComplete = false;
 
-      // v173：
-      // 1. 已棄牌玩家已由 livePositions 排除。
-      // 2. 已 All-in 玩家沒有籌碼可再行動，也不應再次被要求回應。
-      // 3. 本輪只檢查「仍在牌局、尚未 All-in」的玩家。
+      // v174：真正依「還能不能再行動」判斷本輪是否結束
       const allInNow = getAllInPositionsV165();
+
+      // livePositions 本身已排除棄牌者；
+      // 再排除已 All-in 者，剩下的才是真正還能行動的人。
       const actionableLivePositions = livePositions.filter(p => !allInNow.has(p));
 
-      if (lastAggressive >= 0) {
+      // 已經沒有人可以再行動：直接完成本輪。
+      if (actionableLivePositions.length === 0) {
+        roundComplete = livePositions.length > 0;
+      } else if (lastAggressive >= 0) {
         const aggressor = normalizedActor(streetActions[lastAggressive]);
 
-        // 最後進攻者若已 All-in，本身當然不需要再行動；
-        // 其他已 All-in 玩家也不需要再回應。
+        // 只要求「仍可行動」而且不是最後進攻者的人回應。
         const needResponse = actionableLivePositions.filter(p => p !== aggressor);
 
         roundComplete =
           needResponse.length === 0 ||
           needResponse.every(p => responded.has(p));
       } else {
-        // 沒有下注／加註時，只要求仍有籌碼可行動的人各完成一次。
-        // 若所有仍在牌局的人都已 All-in，也直接完成本輪。
+        // 沒有下注／加註時，仍可行動的人各完成一次即可。
         roundComplete =
-          livePositions.length > 0 &&
-          (
-            actionableLivePositions.length === 0 ||
-            actionableLivePositions.every(p => responded.has(p))
-          );
+          actionableLivePositions.every(p => responded.has(p));
       }
 
       if (roundComplete) {
@@ -2692,9 +2716,19 @@ function getImprovementDraws(holeCards, boardCards){
   function v166EnsurePotUI(){
     const panel = document.getElementById("saPotStackPanel");
     if(!panel || document.getElementById("saSidePotsV166")) return;
+
+    const head = document.createElement("div");
+    head.className = "sa-side-pot-head-v174";
+    head.innerHTML = `
+      <strong>主池／邊池</strong>
+      <button id="saClearSidePotsV174" class="sa-mini-clear-v163" type="button">清除主池邊池</button>
+    `;
+
     const box = document.createElement("div");
     box.id = "saSidePotsV166";
     box.className = "sa-side-pots-v166";
+
+    panel.appendChild(head);
     panel.appendChild(box);
   }
 
@@ -2821,3 +2855,36 @@ document.addEventListener("change",e=>{
     updateHeroChipDisplays();
   }
 });
+
+
+/* v174：單獨清除主池／邊池顯示 */
+(function(){
+  let sidePotsHiddenV174 = false;
+
+  document.addEventListener("click", e=>{
+    const btn = e.target.closest("#saClearSidePotsV174");
+    if(!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    sidePotsHiddenV174 = true;
+    const box = document.getElementById("saSidePotsV166");
+    if(box) box.innerHTML = "";
+
+    const head = btn.closest(".sa-side-pot-head-v174");
+    if(head) head.style.display = "none";
+  });
+
+  // 有新行動 / 刪除行動後重新顯示主池邊池
+  document.addEventListener("click", e=>{
+    if(e.target.closest(".add-action-btn,.action-chip,.action-log-chip")){
+      if(sidePotsHiddenV174){
+        sidePotsHiddenV174 = false;
+        const head = document.querySelector(".sa-side-pot-head-v174");
+        if(head) head.style.display = "";
+        setTimeout(()=>window.v166RenderSidePots?.(),30);
+      }
+    }
+  });
+})();
