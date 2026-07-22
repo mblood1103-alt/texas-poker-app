@@ -1714,3 +1714,14 @@ html, body{
     font-size:16px !important;
   }
 }
+
+/* v159 pot/stack review */
+.sa-pot-stack-panel{margin:10px 0 14px;padding:10px 12px;border:1px solid #dbe3ee;border-radius:14px;background:#f8fafc}
+.sa-pot-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px}
+.sa-pot-summary strong{font-size:15px;color:#08783f}
+#saStreetPots{color:#65758d}
+.sa-stack-details{margin-top:7px}
+.sa-stack-details summary{font-weight:700;cursor:pointer}
+.sa-stack-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+.sa-stack-grid div{display:flex;justify-content:space-between;gap:4px;padding:6px 7px;background:#fff;border:1px solid #dbe3ee;border-radius:9px;font-size:12px}
+@media(max-width:480px){.sa-stack-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}

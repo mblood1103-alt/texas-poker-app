@@ -656,3 +656,52 @@ getRedirectResult(auth).then(r=>{if(r?.user){user=r.user;const c=prompt("請輸�
 if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js?v=28",{updateViaCache:"none"});
 window.addEventListener("error",e=>{const el=document.getElementById("status");if(el)el.textContent="程式載入失敗";console.error(e.error||e.message)});
 window.addEventListener("unhandledrejection",e=>console.error(e.reason));
+
+
+/* v159: live pot + remaining stacks for hand review */
+(function(){
+  const $=id=>document.getElementById(id);
+  const num=v=>{const n=Number(String(v??'').replace(/[^\d.-]/g,''));return Number.isFinite(n)?n:0};
+  const streets=['preflop','flop','turn','river'];
+  const streetNames={preflop:'翻牌前',flop:'翻牌',turn:'轉牌',river:'河牌'};
+
+  function seatNames(){
+    return [...document.querySelectorAll('#saPokerTable [data-position],#saPokerTable [data-pos]')]
+      .map(x=>x.dataset.position||x.dataset.pos).filter(Boolean);
+  }
+  function initialStack(){
+    const el=$('saRemainingStack');
+    return num(el?.value);
+  }
+  function actionData(){
+    const rows=[...document.querySelectorAll('[data-action-row],.action-row,.sa-action-item')];
+    return rows.map(r=>{
+      const text=r.innerText||'';
+      const seat=(r.dataset.position||r.dataset.actor||
+        text.match(/\b(UTG(?:\+\d)?|HJ|LJ|CO|BTN|SB|BB)\b/)?.[1]||'');
+      const street=r.dataset.street||r.closest('[data-street]')?.dataset.street||'preflop';
+      const amount=num(r.dataset.amount||text.match(/(?:到|加注|跟注|開池|下注|全下)[^\d]*(\d+(?:\.\d+)?)/)?.[1]);
+      return {seat,street:streets.includes(street)?street:'preflop',amount};
+    }).filter(x=>x.seat&&x.amount>0);
+  }
+  function render(){
+    const potEl=$('saCurrentPot'), streetEl=$('saStreetPots'), grid=$('saStackGrid');
+    if(!potEl||!streetEl||!grid)return;
+    const actions=actionData(), totals={preflop:0,flop:0,turn:0,river:0}, paid={};
+    actions.forEach(a=>{totals[a.street]+=a.amount;paid[a.seat]=(paid[a.seat]||0)+a.amount});
+    const blinds=[...document.querySelectorAll('input,select')];
+    const sb=num(blinds.find(e=>/小盲/.test(e.closest('label')?.innerText||''))?.value);
+    const bb=num(blinds.find(e=>/大盲/.test(e.closest('label')?.innerText||''))?.value);
+    if(!actions.length){ totals.preflop=sb+bb; paid.SB=sb; paid.BB=bb; }
+    const pot=Object.values(totals).reduce((a,b)=>a+b,0);
+    potEl.textContent=pot;
+    streetEl.textContent=streets.map(s=>`${streetNames[s]} ${totals[s]}`).join('｜');
+    const start=initialStack();
+    grid.innerHTML=seatNames().map(s=>`<div><b>${s}</b><span>${start?Math.max(0,start-(paid[s]||0)):'—'}</span></div>`).join('');
+  }
+  document.addEventListener('click',()=>setTimeout(render,50));
+  document.addEventListener('change',()=>setTimeout(render,50));
+  document.addEventListener('input',()=>setTimeout(render,50));
+  new MutationObserver(render).observe(document.body,{subtree:true,childList:true});
+  setTimeout(render,300);
+})();
