@@ -1231,17 +1231,22 @@ body.picker-open{overflow:hidden}
 }
 #handAnalyzerCard .strategy-grid-v133 label{
   min-width: 0;
+  width: 100%;
   gap: 4px;
   font-size: 13px;
   line-height: 1.15;
+  grid-template-rows: 30px 36px;
+  align-items: end;
 }
 #handAnalyzerCard .strategy-grid-v133 input,
 #handAnalyzerCard .strategy-grid-v133 select{
-  height: 44px;
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
   min-width: 0;
-  padding: 5px 6px;
+  padding: 3px 6px;
   font-size: 15px;
-  border-radius: 13px;
+  border-radius: 11px;
 }
 
 /* 手牌＋公共牌搬到分析按鈕正上方後，縮短空白 */
@@ -1272,12 +1277,14 @@ body.picker-open{overflow:hidden}
   }
   #handAnalyzerCard .strategy-grid-v133 label{
     font-size: 12px;
+    grid-template-rows: 28px 34px;
   }
   #handAnalyzerCard .strategy-grid-v133 input,
   #handAnalyzerCard .strategy-grid-v133 select{
-    height: 42px;
+    height: 34px;
+    min-height: 34px;
     font-size: 14px;
-    padding: 4px 5px;
+    padding: 2px 5px;
   }
   #handAnalyzerCard .street-tabs-v133{
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
