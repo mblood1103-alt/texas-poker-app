@@ -1709,14 +1709,21 @@ html, body{
 }
 
 
-/* ===== v157 使用者指定微調 ===== */
-/* 移除位置說明後，讓下方行動區更靠近牌桌 */
-#handAnalyzerCard .seat-picker-section{margin-bottom:0!important;}
-#handAnalyzerCard .action-step-title-v134{margin-top:2px!important;}
-/* 桌型、小盲、大盲、籌碼四格統一且再縮矮 */
-#handAnalyzerCard .strategy-grid-v133 input,
-#handAnalyzerCard .strategy-grid-v133 select{height:36px!important;min-height:36px!important;padding:2px 6px!important;border-radius:11px!important;box-sizing:border-box!important;}
-@media (max-width:560px){
- #handAnalyzerCard .strategy-grid-v133 input,
- #handAnalyzerCard .strategy-grid-v133 select{height:36px!important;min-height:36px!important;padding:2px 5px!important;}
+/* v159：牌局策略分析四格等高縮小 */
+.strategy-row select,
+.strategy-row input,
+.strategy-settings-row select,
+.strategy-settings-row input,
+.analysis-settings-row select,
+.analysis-settings-row input {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  box-sizing: border-box !important;
+}
+
+/* 隱藏牌桌下方說明並把後方內容往上收 */
+.table-hint {
+  display: none !important;
 }
