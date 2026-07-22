@@ -1796,3 +1796,21 @@ html, body{
 .sa-stack-details-v160[open] .sa-stack-clear-v163{
   top:0;
 }
+
+/* v164：點選行動右側小型清除鍵 */
+.sa-action-title-row-v164{
+  margin:0 0 8px 0;
+}
+.sa-action-title-row-v164 .action-step-title-v134{
+  margin:0!important;
+  flex:1 1 auto;
+}
+#saClearActionsBtnV163{
+  width:auto!important;
+  min-width:auto!important;
+  max-width:max-content!important;
+  height:30px!important;
+  min-height:30px!important;
+  padding:3px 10px!important;
+  flex:0 0 auto!important;
+}

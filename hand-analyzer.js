@@ -1883,7 +1883,13 @@ function clearCardsOnlyV163(){
   Object.keys(analysisByStreet).forEach(k=>analysisByStreet[k]=null);
 }
 
-document.getElementById("saClearActionsBtnV163")?.addEventListener("click",clearActionsOnlyV163);
+document.addEventListener("click",e=>{
+  const btn=e.target.closest("#saClearActionsBtnV163");
+  if(!btn)return;
+  e.preventDefault();
+  e.stopPropagation();
+  clearActionsOnlyV163();
+});
 document.getElementById("saClearCardsBtnV163")?.addEventListener("click",clearCardsOnlyV163);
 
 function initStreetTabs(){
@@ -2144,7 +2150,9 @@ function getImprovementDraws(holeCards, boardCards){
     if(!top)return;
     syncingHeroStack=true;
     top.value=rawValue;
-    top.dispatchEvent(new Event("input",{bubbles:true}));
+    // 只同步值，不觸發 input，避免每打一個數字就重畫整個後手區
+    const chipDisplay=document.getElementById("saHeroChipsDisplay");
+    if(chipDisplay) chipDisplay.textContent=rawValue===""?"0":rawValue;
     syncingHeroStack=false;
   }
 
@@ -2251,7 +2259,11 @@ function getImprovementDraws(holeCards, boardCards){
   document.addEventListener("input",e=>{
     if(e.target.id==="saStack"){
       syncTopToHero();
-      render();
+      const hero=heroPos();
+      const heroInput=document.querySelector(`[data-seat-start-v160="${hero}"]`);
+      if(heroInput && heroInput!==document.activeElement) heroInput.value=e.target.value;
+      const heroStrong=heroInput?.closest("label")?.querySelector("span strong");
+      if(heroStrong) heroStrong.textContent=e.target.value.trim()===""?"—":n(e.target.value);
       return;
     }
 
@@ -2267,8 +2279,6 @@ function getImprovementDraws(holeCards, boardCards){
       const card=e.target.closest("label");
       const strong=card?.querySelector("span strong");
       if(strong) strong.textContent=raw===""?"—":n(raw);
-
-      // 其他位置的剩餘後手也可能受行動影響，完成輸入後再完整更新
       return;
     }
 
@@ -2312,3 +2322,25 @@ function getImprovementDraws(holeCards, boardCards){
   },250);
 })();
 
+
+
+/* v164：iPhone 數字鍵盤 */
+(function ensureNumericKeyboardsV164(){
+  function apply(){
+    ["saSB","saBB","saStack"].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){
+        el.setAttribute("inputmode","decimal");
+        el.setAttribute("pattern","[0-9.]*");
+      }
+    });
+    document.querySelectorAll(
+      ".action-amount, input[data-seat-start-v160], .action-builder input[type='number']"
+    ).forEach(el=>{
+      el.setAttribute("inputmode","decimal");
+      el.setAttribute("pattern","[0-9.]*");
+    });
+  }
+  apply();
+  new MutationObserver(apply).observe(document.body,{childList:true,subtree:true});
+})();
