@@ -1760,6 +1760,14 @@ function clearCurrentHand(){
   Object.keys(actionState).forEach(k=>actionState[k]=[]);
   renderSelectedCards();
   Object.keys(actionState).forEach(renderActionSequence);
+
+  // v163：一鍵清除本手同時清除所有起始／剩餘後手與右上角籌碼
+  if(typeof window.saClearStacksV163==="function"){
+    window.saClearStacksV163();
+  }else{
+    const stackInput=$("saStack");
+    if(stackInput) stackInput.value="";
+  }
   updateHeroChipDisplays();
   $("saResult").classList.add("hidden");
   $("saResult").innerHTML="";
@@ -1829,6 +1837,54 @@ function refreshUsageLogVisibility(){
     });
   }
 }
+
+
+/* v163 分區清除 */
+function clearActionsOnlyV163(){
+  clearReentryPendingV114();
+  Object.keys(actionState).forEach(k=>actionState[k]=[]);
+  Object.keys(actionState).forEach(renderActionSequence);
+
+  document.querySelectorAll(".action-builder").forEach(builder=>{
+    const actorSel=builder.querySelector(".action-actor");
+    const typeSel=builder.querySelector(".action-type");
+    const addBtn=builder.querySelector(".add-action-btn");
+    if(actorSel){
+      actorSel.disabled=false;
+      actorSel.classList.remove("needs-reentry-v113","needs-reentry-v114");
+    }
+    if(typeSel) typeSel.disabled=false;
+    if(addBtn){
+      addBtn.disabled=false;
+      addBtn.textContent="＋加入這個行動";
+      delete addBtn.dataset.roundComplete;
+    }
+    Object.keys(builder.dataset).forEach(key=>{
+      if(key.startsWith("roundCompleteCount")) delete builder.dataset[key];
+    });
+    builder.querySelectorAll(".reentry-hint-v113,.reentry-hint-v114").forEach(el=>el.remove());
+  });
+
+  populateActors();
+  document.querySelectorAll(".action-builder").forEach(builder=>{
+    if(typeof refreshActionTypeOptions==="function") refreshActionTypeOptions(builder);
+    if(typeof refreshActionAmountUI==="function") refreshActionAmountUI(builder);
+  });
+
+  window.saRenderPotStacksV163?.();
+}
+
+function clearCardsOnlyV163(){
+  Object.keys(selectedCards).forEach(k=>selectedCards[k]="");
+  renderSelectedCards();
+  $("saResult")?.classList.add("hidden");
+  if($("saResult")) $("saResult").innerHTML="";
+  lastAnalysis=null;
+  Object.keys(analysisByStreet).forEach(k=>analysisByStreet[k]=null);
+}
+
+document.getElementById("saClearActionsBtnV163")?.addEventListener("click",clearActionsOnlyV163);
+document.getElementById("saClearCardsBtnV163")?.addEventListener("click",clearCardsOnlyV163);
 
 function initStreetTabs(){
   document.querySelectorAll(".street-tab").forEach(btn=>btn.addEventListener("click",()=>{
@@ -2041,40 +2097,58 @@ function getImprovementDraws(holeCards, boardCards){
 }
 
 
-/* v160 底池與所有座位後手：直接使用本檔 actionState */
+/* v163 底池、後手雙向連動與分區清除 */
 (function(){
   const streets=["preflop","flop","turn","river"];
   const names={preflop:"翻牌前",flop:"翻牌",turn:"轉牌",river:"河牌"};
   const seatZh={
-    BTN:"莊家位",
-    SB:"小盲",
-    BB:"大盲",
-    UTG:"槍口",
-    "UTG+1":"槍口+1",
-    "UTG+2":"槍口+2",
-    LJ:"劫持前位",
-    HJ:"劫持位",
-    CO:"關煞位"
+    BTN:"莊家位", SB:"小盲", BB:"大盲", UTG:"槍口",
+    "UTG+1":"槍口+1", "UTG+2":"槍口+2",
+    LJ:"劫持前位", HJ:"劫持位", CO:"關煞位"
   };
   let seatStarts={};
+  let syncingHeroStack=false;
 
-  function n(v){const x=Number(v);return Number.isFinite(x)?Math.max(0,x):0}
+  function n(v){
+    if(v===null || v===undefined || String(v).trim()==="") return 0;
+    const x=Number(v);
+    return Number.isFinite(x)?Math.max(0,x):0;
+  }
   function seats(){
     try{return canonicalSeatOrder()}catch(e){return []}
   }
+  function heroPos(){
+    return document.getElementById("saHeroPos")?.value||"";
+  }
   function actorPos(a){
-    try{return actualActorPosition(a.actor)}catch(e){return a.actor==="我"?document.getElementById("saHeroPos")?.value:a.actor}
+    try{return actualActorPosition(a.actor)}
+    catch(e){return a.actor==="我"?heroPos():a.actor}
   }
-  function ensureStarts(){
-    const hero=document.getElementById("saHeroPos")?.value||"";
-    const heroStack=n(document.getElementById("saStack")?.value);
-    seats().forEach(p=>{
-      if(seatStarts[p]===undefined) seatStarts[p]=(p===hero?heroStack:heroStack);
-    });
-    if(hero && heroStack>0) seatStarts[hero]=heroStack;
+
+  function syncTopToHero(){
+    if(syncingHeroStack)return;
+    const hero=heroPos();
+    if(!hero)return;
+    const top=document.getElementById("saStack");
+    if(!top)return;
+    syncingHeroStack=true;
+    const raw=top.value.trim();
+    if(raw==="") delete seatStarts[hero];
+    else seatStarts[hero]=n(raw);
+    syncingHeroStack=false;
   }
+
+  function syncHeroToTop(rawValue){
+    if(syncingHeroStack)return;
+    const top=document.getElementById("saStack");
+    if(!top)return;
+    syncingHeroStack=true;
+    top.value=rawValue;
+    top.dispatchEvent(new Event("input",{bubbles:true}));
+    syncingHeroStack=false;
+  }
+
   function calc(){
-    ensureStarts();
     const ss=seats(), remain={};
     ss.forEach(p=>remain[p]=n(seatStarts[p]));
     const streetPots={}, cumulative={};
@@ -2083,61 +2157,158 @@ function getImprovementDraws(holeCards, boardCards){
     for(const street of streets){
       const commits={}; ss.forEach(p=>commits[p]=0);
       let streetAdded=0;
+
       if(street==="preflop"){
-        const sb=n(document.getElementById("saSB")?.value), bb=n(document.getElementById("saBB")?.value);
-        if("SB" in commits){commits.SB=sb;remain.SB=Math.max(0,remain.SB-sb);streetAdded+=sb}
-        if("BB" in commits){commits.BB=bb;remain.BB=Math.max(0,remain.BB-bb);streetAdded+=bb}
+        const sb=n(document.getElementById("saSB")?.value);
+        const bb=n(document.getElementById("saBB")?.value);
+
+        // 盲注永遠算進底池；有輸入起始後手才扣除剩餘後手
+        if("SB" in commits){
+          commits.SB=sb;
+          if(seatStarts.SB!==undefined) remain.SB=Math.max(0,remain.SB-sb);
+          streetAdded+=sb;
+        }
+        if("BB" in commits){
+          commits.BB=bb;
+          if(seatStarts.BB!==undefined) remain.BB=Math.max(0,remain.BB-bb);
+          streetAdded+=bb;
+        }
       }
+
       for(const a of (actionState[street]||[])){
-        const p=actorPos(a); if(!p || !(p in commits)) continue;
-        const current=n(commits[p]), high=Math.max(0,...Object.values(commits).map(n));
+        const p=actorPos(a);
+        if(!p || !(p in commits))continue;
+
+        const current=n(commits[p]);
+        const high=Math.max(0,...Object.values(commits).map(n));
         let target=current;
+
         if(a.action==="跟注") target=Math.max(current,high);
         else if(["開池","下注","加注"].includes(a.action)) target=Math.max(current,n(a.amount));
         else if(a.action==="全下"){
           const amt=n(a.amount);
-          target=amt>0?Math.max(current,amt):current+remain[p];
+          target=amt>0?Math.max(current,amt):current+n(remain[p]);
         }
-        const add=Math.min(remain[p],Math.max(0,target-current));
-        commits[p]=current+add; remain[p]=Math.max(0,remain[p]-add); streetAdded+=add;
+
+        let add=Math.max(0,target-current);
+        if(seatStarts[p]!==undefined) add=Math.min(n(remain[p]),add);
+
+        commits[p]=current+add;
+        if(seatStarts[p]!==undefined) remain[p]=Math.max(0,n(remain[p])-add);
+        streetAdded+=add;
       }
-      totalPot+=streetAdded; streetPots[street]=streetAdded; cumulative[street]=totalPot;
+
+      totalPot+=streetAdded;
+      streetPots[street]=streetAdded;
+      cumulative[street]=totalPot;
     }
     return {remain,streetPots,cumulative,totalPot};
   }
+
   function render(){
     const pot=document.getElementById("saCurrentPotV160");
     const pg=document.getElementById("saStreetPotGridV160");
     const sg=document.getElementById("saSeatStacksV160");
     if(!pot||!pg||!sg)return;
-    const c=calc(); pot.textContent=c.totalPot;
-    pg.innerHTML=streets.map(s=>`<div><span>${names[s]}</span><b>${c.cumulative[s]}</b><small>本街 +${c.streetPots[s]}</small></div>`).join("");
-    sg.innerHTML=seats().map(p=>`<label><b>${p}｜${seatZh[p]||p}${p===(document.getElementById("saHeroPos")?.value||"")?"（我）":""}</b><input type="number" min="0" step="0.5" inputmode="decimal" placeholder="直接輸入" data-seat-start-v160="${p}" value="${seatStarts[p]===undefined||seatStarts[p]===0?'':seatStarts[p]}"><span>剩餘 <strong>${seatStarts[p]>0?(c.remain[p]??0):"—"}</strong></span></label>`).join("");
-    sg.querySelectorAll("[data-seat-start-v160]").forEach(inp=>{
-      inp.addEventListener("change",()=>{seatStarts[inp.dataset.seatStartV160]=n(inp.value);render()},{once:true});
-    });
+
+    const c=calc();
+    pot.textContent=c.totalPot;
+    pg.innerHTML=streets.map(s=>`
+      <div>
+        <span>${names[s]}</span>
+        <b>${c.cumulative[s]}</b>
+        <small>本街 +${c.streetPots[s]}</small>
+      </div>`).join("");
+
+    sg.innerHTML=seats().map(p=>{
+      const hasValue=seatStarts[p]!==undefined && seatStarts[p]!=="";
+      const value=hasValue?seatStarts[p]:"";
+      const remainText=hasValue?(c.remain[p]??0):"—";
+      return `<label>
+        <b>${p}｜${seatZh[p]||p}${p===heroPos()?"（我）":""}</b>
+        <input type="number" min="0" step="0.5" inputmode="decimal"
+          placeholder="直接輸入" data-seat-start-v160="${p}" value="${value}">
+        <span>剩餘 <strong>${remainText}</strong></span>
+      </label>`;
+    }).join("");
   }
-  document.addEventListener("click",e=>{
-    if(e.target.closest("[data-seat-start-v160]")) return;
-    setTimeout(render,30);
-  });
-  document.addEventListener("change",e=>{
-    if(e.target.matches("[data-seat-start-v160]")){
-      seatStarts[e.target.dataset.seatStartV160]=n(e.target.value);
-      setTimeout(render,0);
+
+  function clearStacks(){
+    seatStarts={};
+    const top=document.getElementById("saStack");
+    if(top){
+      top.value="";
+      top.dispatchEvent(new Event("input",{bubbles:true}));
+      top.dispatchEvent(new Event("change",{bubbles:true}));
+    }
+    render();
+  }
+
+  // 提供給「一鍵清除本手」使用
+  window.saClearStacksV163=clearStacks;
+  window.saRenderPotStacksV163=render;
+
+  document.addEventListener("input",e=>{
+    if(e.target.id==="saStack"){
+      syncTopToHero();
+      render();
       return;
     }
-    setTimeout(render,30);
-  });
-  document.addEventListener("input",e=>{
+
     if(e.target.matches("[data-seat-start-v160]")){
-      seatStarts[e.target.dataset.seatStartV160]=n(e.target.value);
+      const pos=e.target.dataset.seatStartV160;
+      const raw=e.target.value.trim();
+
+      if(raw==="") delete seatStarts[pos];
+      else seatStarts[pos]=n(raw);
+
+      if(pos===heroPos()) syncHeroToTop(raw);
+
       const card=e.target.closest("label");
       const strong=card?.querySelector("span strong");
-      if(strong) strong.textContent=e.target.value===""?"—":n(e.target.value);
+      if(strong) strong.textContent=raw===""?"—":n(raw);
+
+      // 其他位置的剩餘後手也可能受行動影響，完成輸入後再完整更新
       return;
     }
-    if(["saSB","saBB","saStack"].includes(e.target.id)) setTimeout(render,30);
+
+    if(["saSB","saBB"].includes(e.target.id)) render();
   });
-  setTimeout(render,250);
+
+  document.addEventListener("change",e=>{
+    if(e.target.matches("[data-seat-start-v160]")){
+      const pos=e.target.dataset.seatStartV160;
+      const raw=e.target.value.trim();
+      if(raw==="") delete seatStarts[pos];
+      else seatStarts[pos]=n(raw);
+      if(pos===heroPos()) syncHeroToTop(raw);
+      render();
+      return;
+    }
+
+    if(e.target.id==="saStack"){
+      syncTopToHero();
+      render();
+      return;
+    }
+
+    setTimeout(render,20);
+  });
+
+  document.addEventListener("click",e=>{
+    if(e.target.closest("[data-seat-start-v160]"))return;
+    setTimeout(render,20);
+  });
+
+  document.getElementById("saClearStacksBtnV163")?.addEventListener("click",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    clearStacks();
+  });
+
+  setTimeout(()=>{
+    syncTopToHero();
+    render();
+  },250);
 })();
+
