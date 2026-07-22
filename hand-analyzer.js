@@ -2658,103 +2658,6 @@ function getImprovementDraws(holeCards, boardCards){
 })();
 
 
-/* v167：行動者後手即時顯示 */
-(function(){
-  function n(v){
-    if(v===null || v===undefined || String(v).trim()==="") return null;
-    const x=Number(String(v).replace(/,/g,""));
-    return Number.isFinite(x)?Math.max(0,x):null;
-  }
-
-  function heroPos(){
-    return document.getElementById("saHeroPos")?.value||"";
-  }
-
-  function actorPos(actor){
-    try{return actualActorPosition(actor)}
-    catch(e){return actor==="我"?heroPos():actor}
-  }
-
-  function seatStart(pos){
-    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
-    if(inp && inp.value.trim()!=="") return n(inp.value);
-    if(pos===heroPos()){
-      const top=document.getElementById("saStack");
-      if(top && top.value.trim()!=="") return n(top.value);
-    }
-    return null;
-  }
-
-  function seatRemaining(pos){
-    // 優先沿用 v166 的完整計算結果
-    try{
-      if(typeof v166Remaining==="function"){
-        const r=v166Remaining(pos);
-        if(r!==null && r!==undefined) return r;
-      }
-    }catch(e){}
-
-    // fallback：從畫面上的「剩餘」讀值
-    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
-    const strong=inp?.closest("label")?.querySelector("span strong");
-    const txt=strong?.textContent?.trim();
-    if(txt && txt!=="—") return n(txt);
-
-    return seatStart(pos);
-  }
-
-  function seatLabel(pos){
-    const map={
-      BTN:"莊家位",SB:"小盲",BB:"大盲",UTG:"槍口",
-      "UTG+1":"槍口+1","UTG+2":"槍口+2",
-      LJ:"劫持前位",HJ:"劫持位",CO:"關煞位"
-    };
-    return `${pos}｜${map[pos]||pos}${pos===heroPos()?"（我）":""}`;
-  }
-
-  function updateBuilder(builder){
-    if(!builder)return;
-    const actorSel=builder.querySelector(".action-actor");
-    if(!actorSel)return;
-
-    const pos=actorPos(actorSel.value);
-    const badge=builder.querySelector(".hero-chip-status-v133, .hero-chip-status, [data-chip-status]");
-    if(!badge || !pos)return;
-
-    const remain=seatRemaining(pos);
-    badge.innerHTML=`💰 ${seatLabel(pos)}目前剩餘籌碼：<b>${remain===null?"—":Number(remain).toLocaleString()}</b>`;
-    badge.dataset.v167ActorStack="1";
-  }
-
-  function updateAll(){
-    document.querySelectorAll(".action-builder").forEach(updateBuilder);
-  }
-
-  document.addEventListener("change",e=>{
-    if(e.target.matches(".action-actor,.action-type,[data-seat-start-v160],#saStack")){
-      setTimeout(updateAll,0);
-    }
-  });
-
-  document.addEventListener("input",e=>{
-    if(e.target.matches("[data-seat-start-v160],#saStack")){
-      setTimeout(updateAll,0);
-    }
-  });
-
-  document.addEventListener("click",e=>{
-    if(e.target.closest(".action-chip,.add-action-btn,.street-tab,#saClearActionsBtnV163,#saClearStacksBtnV163")){
-      setTimeout(updateAll,50);
-    }
-  });
-
-  new MutationObserver(()=>setTimeout(updateAll,0))
-    .observe(document.body,{childList:true,subtree:true});
-
-  setTimeout(updateAll,400);
-})();
-
-
 /* v168：所有仍在牌局玩家都已 All-in 時，自動視為本輪完成 */
 (function(){
   function num(v){
@@ -2835,4 +2738,132 @@ function getImprovementDraws(holeCards, boardCards){
   document.addEventListener("input",run);
   new MutationObserver(run).observe(document.body,{subtree:true,childList:true,characterData:true});
   setTimeout(patchBuilders,500);
+})();
+
+
+/* v169：左邊顯示目前行動者後手，右邊固定顯示我的後手 */
+(function(){
+  function n(v){
+    if(v===null || v===undefined || String(v).trim()==="") return null;
+    const x=Number(String(v).replace(/,/g,""));
+    return Number.isFinite(x)?Math.max(0,x):null;
+  }
+
+  function heroPos(){
+    return document.getElementById("saHeroPos")?.value||"";
+  }
+
+  function actorPos(actor){
+    try{return actualActorPosition(actor)}
+    catch(e){return actor==="我"?heroPos():actor}
+  }
+
+  function seatRemaining(pos){
+    try{
+      if(typeof v166Remaining==="function"){
+        const r=v166Remaining(pos);
+        if(r!==null && r!==undefined) return Number(r);
+      }
+    }catch(e){}
+
+    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
+    const strong=inp?.closest("label")?.querySelector("span strong");
+    const txt=strong?.textContent?.trim();
+    if(txt && txt!=="—") return n(txt);
+
+    if(pos===heroPos()){
+      const top=document.getElementById("saStack");
+      if(top && top.value.trim()!=="") return n(top.value);
+    }
+    return null;
+  }
+
+  function shortSeatLabel(pos){
+    const map={
+      BTN:"莊家位", SB:"小盲", BB:"大盲", UTG:"槍口",
+      "UTG+1":"槍口+1", "UTG+2":"槍口+2",
+      LJ:"劫持前位", HJ:"劫持位", CO:"關煞位"
+    };
+    return `${pos}｜${map[pos]||pos}`;
+  }
+
+  function ensureDualStatus(builder){
+    if(!builder)return null;
+
+    const oldBadge=builder.querySelector(
+      ".hero-chip-status-v133, .hero-chip-status, [data-chip-status]"
+    );
+    if(!oldBadge)return null;
+
+    let wrap=builder.querySelector(".sa-dual-stack-status-v169");
+    if(!wrap){
+      wrap=document.createElement("div");
+      wrap.className="sa-dual-stack-status-v169";
+
+      const actorBox=document.createElement("div");
+      actorBox.className="sa-actor-stack-v169";
+      actorBox.innerHTML='<span>💰 行動者剩餘：<b>—</b></span>';
+
+      const heroBox=document.createElement("div");
+      heroBox.className="sa-hero-stack-v169";
+      heroBox.innerHTML='<span>💰 你目前剩餘籌碼：<b>0</b></span>';
+
+      wrap.append(actorBox,heroBox);
+      oldBadge.replaceWith(wrap);
+    }
+    return wrap;
+  }
+
+  function updateBuilder(builder){
+    const actorSel=builder?.querySelector(".action-actor");
+    if(!actorSel)return;
+
+    const wrap=ensureDualStatus(builder);
+    if(!wrap)return;
+
+    const pos=actorPos(actorSel.value);
+    const actorRemain=pos ? seatRemaining(pos) : null;
+    const heroRemain=heroPos() ? seatRemaining(heroPos()) : null;
+
+    const actorBox=wrap.querySelector(".sa-actor-stack-v169");
+    const heroBox=wrap.querySelector(".sa-hero-stack-v169");
+
+    if(actorBox){
+      actorBox.innerHTML = pos
+        ? `<span>💰 ${shortSeatLabel(pos)}剩餘：<b>${actorRemain===null?"—":Number(actorRemain).toLocaleString()}</b></span>`
+        : `<span>💰 行動者剩餘：<b>—</b></span>`;
+    }
+
+    if(heroBox){
+      heroBox.innerHTML =
+        `<span>💰 你目前剩餘籌碼：<b>${heroRemain===null?"0":Number(heroRemain).toLocaleString()}</b></span>`;
+    }
+  }
+
+  function updateAll(){
+    document.querySelectorAll(".action-builder").forEach(updateBuilder);
+  }
+
+  document.addEventListener("change",e=>{
+    if(e.target.matches(".action-actor,.action-type,[data-seat-start-v160],#saStack")){
+      setTimeout(updateAll,0);
+    }
+  });
+
+  document.addEventListener("input",e=>{
+    if(e.target.matches("[data-seat-start-v160],#saStack")){
+      setTimeout(updateAll,0);
+    }
+  });
+
+  document.addEventListener("click",e=>{
+    if(e.target.closest(".action-chip,.add-action-btn,.street-tab,#saClearActionsBtnV163,#saClearStacksBtnV163")){
+      setTimeout(updateAll,50);
+    }
+  });
+
+  new MutationObserver(()=>setTimeout(updateAll,0))
+    .observe(document.body,{childList:true,subtree:true});
+
+  setTimeout(updateAll,400);
 })();

@@ -1872,3 +1872,49 @@ html, body{
 [data-v167-actor-stack="1"] b{
   color:#08783f;
 }
+
+/* v169：行動者後手在左，我的後手固定在右 */
+.sa-dual-stack-status-v169{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  width:100%;
+  margin-bottom:6px;
+}
+.sa-actor-stack-v169,
+.sa-hero-stack-v169{
+  display:inline-flex;
+  align-items:center;
+  min-width:0;
+  padding:4px 9px;
+  border-radius:999px;
+  background:#effdf4;
+  color:#08783f;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.15;
+}
+.sa-actor-stack-v169{
+  justify-content:flex-start;
+  text-align:left;
+}
+.sa-hero-stack-v169{
+  justify-content:flex-end;
+  text-align:right;
+  margin-left:auto;
+}
+.sa-actor-stack-v169 b,
+.sa-hero-stack-v169 b{
+  font-weight:900;
+}
+@media(max-width:480px){
+  .sa-dual-stack-status-v169{
+    gap:5px;
+  }
+  .sa-actor-stack-v169,
+  .sa-hero-stack-v169{
+    padding:4px 7px;
+    font-size:11px;
+  }
+}
