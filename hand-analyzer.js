@@ -582,46 +582,97 @@ function heroSnapshotBeforeNextAction(street){
   };
 }
 
+function actionActorRemainingV171(builder){
+  const actorSel=builder?.querySelector(".action-actor");
+  if(!actorSel||!actorSel.value) return {pos:"",remaining:null};
+
+  let pos="";
+  try{ pos=actualActorPosition(actorSel.value)||""; }
+  catch(e){ pos=actorSel.value==="我"?($("saHeroPos")?.value||""):actorSel.value; }
+
+  let remaining=null;
+
+  // 優先使用 v166 已有的完整後手計算
+  try{
+    if(typeof v166Remaining==="function"){
+      const r=v166Remaining(pos);
+      if(r!==null && r!==undefined) remaining=Number(r);
+    }
+  }catch(e){}
+
+  // fallback：讀取各位置後手面板上的「剩餘」
+  if(remaining===null){
+    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
+    const strong=inp?.closest("label")?.querySelector("span strong");
+    const txt=strong?.textContent?.trim();
+    if(txt && txt!=="—"){
+      const n=Number(txt.replace(/,/g,""));
+      if(Number.isFinite(n)) remaining=n;
+    }
+  }
+
+  return {pos,remaining};
+}
+
+function actionActorLabelV171(pos){
+  const map={
+    BTN:"莊家位",SB:"小盲",BB:"大盲",UTG:"槍口",
+    "UTG+1":"槍口+1","UTG+2":"槍口+2",
+    LJ:"劫持前位",HJ:"劫持位",CO:"關煞位"
+  };
+  return pos ? `${pos}｜${map[pos]||pos}` : "行動者";
+}
+
 function updateHeroChipDisplays(){
   document.querySelectorAll(".action-builder").forEach(builder=>{
     const street=builder.dataset.builder;
-    let box=builder.querySelector(".hero-chip-status-v100");
-    if(!box){
-      box=document.createElement("div");
-      box.className="hero-chip-status-v100 hero-chip-inline-v137";
-      const heading=builder.querySelector("h3");
-      if(heading){
-        let row=builder.querySelector(":scope > .action-heading-row-v137");
-        if(!row){
-          row=document.createElement("div");
-          row.className="action-heading-row-v137";
-          heading.parentNode.insertBefore(row,heading);
-          row.appendChild(heading);
-        }
-        row.appendChild(box);
-      }else{
-        builder.prepend(box);
-      }
-    }else{
-      box.classList.add("hero-chip-inline-v137");
-      const heading=builder.querySelector("h3");
-      if(heading){
-        let row=builder.querySelector(":scope > .action-heading-row-v137");
-        if(!row){
-          row=document.createElement("div");
-          row.className="action-heading-row-v137";
-          heading.parentNode.insertBefore(row,heading);
-          row.appendChild(heading);
-        }
-        if(box.parentElement!==row) row.appendChild(box);
-      }
+    const heading=builder.querySelector("h3");
+
+    let headingRow=builder.querySelector(":scope > .action-heading-row-v137");
+    if(!headingRow && heading){
+      headingRow=document.createElement("div");
+      headingRow.className="action-heading-row-v137";
+      heading.parentNode.insertBefore(headingRow,heading);
+      headingRow.appendChild(heading);
     }
+
+    // 雙後手顯示列：左邊行動者、右邊自己
+    let statusRow=builder.querySelector(":scope > .chip-status-row-v171");
+    if(!statusRow){
+      statusRow=document.createElement("div");
+      statusRow.className="chip-status-row-v171";
+      if(headingRow) headingRow.insertAdjacentElement("afterend",statusRow);
+      else builder.prepend(statusRow);
+    }
+
+    let actorBox=statusRow.querySelector(".actor-chip-status-v171");
+    if(!actorBox){
+      actorBox=document.createElement("div");
+      actorBox.className="actor-chip-status-v171";
+      statusRow.appendChild(actorBox);
+    }
+
+    let heroBox=statusRow.querySelector(".hero-chip-status-v100");
+    if(!heroBox){
+      // 若舊版 hero badge 在其他位置，移進新的 status row
+      heroBox=builder.querySelector(".hero-chip-status-v100");
+      if(!heroBox){
+        heroBox=document.createElement("div");
+        heroBox.className="hero-chip-status-v100 hero-chip-inline-v137";
+      }
+      statusRow.appendChild(heroBox);
+    }
+
+    const actorInfo=actionActorRemainingV171(builder);
+    actorBox.textContent=actorInfo.pos
+      ? `💰 ${actionActorLabelV171(actorInfo.pos)}剩餘：${actorInfo.remaining===null?"—":actorInfo.remaining.toLocaleString("zh-TW")}`
+      : `💰 行動者剩餘：—`;
 
     const sim=simulateHeroChips(street,true);
     const hero=$("saHeroPos").value;
-    box.innerHTML=hero
+    heroBox.innerHTML=hero
       ? `💰 你目前剩餘籌碼：<strong>${sim.remaining.toLocaleString("zh-TW")}</strong>`
-      : `💰 選擇你的座位後，系統會自動計算剩餘籌碼`;
+      : `💰 尚未選擇你的座位`;
   });
 }
 
@@ -727,6 +778,7 @@ function initActionBuilders(){
     actor.addEventListener("change",()=>{
       actor.classList.remove("needs-reentry-v113");
       refreshActionTypeOptions(builder);
+      updateHeroChipDisplays();
     });
     refreshActionTypeOptions(builder);
 
@@ -2741,226 +2793,14 @@ function getImprovementDraws(holeCards, boardCards){
 })();
 
 
-/* v169：左邊顯示目前行動者後手，右邊固定顯示我的後手 */
-(function(){
-  function n(v){
-    if(v===null || v===undefined || String(v).trim()==="") return null;
-    const x=Number(String(v).replace(/,/g,""));
-    return Number.isFinite(x)?Math.max(0,x):null;
+/* v171：只監聽真正的輸入事件更新後手，不使用 MutationObserver */
+document.addEventListener("input",e=>{
+  if(e.target.matches("#saStack,[data-seat-start-v160]")){
+    updateHeroChipDisplays();
   }
-
-  function heroPos(){
-    return document.getElementById("saHeroPos")?.value||"";
+});
+document.addEventListener("change",e=>{
+  if(e.target.matches("#saStack,[data-seat-start-v160],.action-actor")){
+    updateHeroChipDisplays();
   }
-
-  function actorPos(actor){
-    try{return actualActorPosition(actor)}
-    catch(e){return actor==="我"?heroPos():actor}
-  }
-
-  function seatRemaining(pos){
-    try{
-      if(typeof v166Remaining==="function"){
-        const r=v166Remaining(pos);
-        if(r!==null && r!==undefined) return Number(r);
-      }
-    }catch(e){}
-
-    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
-    const strong=inp?.closest("label")?.querySelector("span strong");
-    const txt=strong?.textContent?.trim();
-    if(txt && txt!=="—") return n(txt);
-
-    if(pos===heroPos()){
-      const top=document.getElementById("saStack");
-      if(top && top.value.trim()!=="") return n(top.value);
-    }
-    return null;
-  }
-
-  function shortSeatLabel(pos){
-    const map={
-      BTN:"莊家位", SB:"小盲", BB:"大盲", UTG:"槍口",
-      "UTG+1":"槍口+1", "UTG+2":"槍口+2",
-      LJ:"劫持前位", HJ:"劫持位", CO:"關煞位"
-    };
-    return `${pos}｜${map[pos]||pos}`;
-  }
-
-  function ensureDualStatus(builder){
-    if(!builder)return null;
-
-    const oldBadge=builder.querySelector(
-      ".hero-chip-status-v133, .hero-chip-status, [data-chip-status]"
-    );
-    if(!oldBadge)return null;
-
-    let wrap=builder.querySelector(".sa-dual-stack-status-v169");
-    if(!wrap){
-      wrap=document.createElement("div");
-      wrap.className="sa-dual-stack-status-v169";
-
-      const actorBox=document.createElement("div");
-      actorBox.className="sa-actor-stack-v169";
-      actorBox.innerHTML='<span>💰 行動者剩餘：<b>—</b></span>';
-
-      const heroBox=document.createElement("div");
-      heroBox.className="sa-hero-stack-v169";
-      heroBox.innerHTML='<span>💰 你目前剩餘籌碼：<b>0</b></span>';
-
-      wrap.append(actorBox,heroBox);
-      oldBadge.replaceWith(wrap);
-    }
-    return wrap;
-  }
-
-  function updateBuilder(builder){
-    const actorSel=builder?.querySelector(".action-actor");
-    if(!actorSel)return;
-
-    const wrap=ensureDualStatus(builder);
-    if(!wrap)return;
-
-    const pos=actorPos(actorSel.value);
-    const actorRemain=pos ? seatRemaining(pos) : null;
-    const heroRemain=heroPos() ? seatRemaining(heroPos()) : null;
-
-    const actorBox=wrap.querySelector(".sa-actor-stack-v169");
-    const heroBox=wrap.querySelector(".sa-hero-stack-v169");
-
-    if(actorBox){
-      actorBox.innerHTML = pos
-        ? `<span>💰 ${shortSeatLabel(pos)}剩餘：<b>${actorRemain===null?"—":Number(actorRemain).toLocaleString()}</b></span>`
-        : `<span>💰 行動者剩餘：<b>—</b></span>`;
-    }
-
-    if(heroBox){
-      heroBox.innerHTML =
-        `<span>💰 你目前剩餘籌碼：<b>${heroRemain===null?"0":Number(heroRemain).toLocaleString()}</b></span>`;
-    }
-  }
-
-  function updateAll(){
-    document.querySelectorAll(".action-builder").forEach(updateBuilder);
-  }
-
-  document.addEventListener("change",e=>{
-    if(e.target.matches(".action-actor,.action-type,[data-seat-start-v160],#saStack")){
-      setTimeout(updateAll,0);
-    }
-  });
-
-  document.addEventListener("input",e=>{
-    if(e.target.matches("[data-seat-start-v160],#saStack")){
-      setTimeout(updateAll,0);
-    }
-  });
-
-  document.addEventListener("click",e=>{
-    if(e.target.closest(".action-chip,.add-action-btn,.street-tab,#saClearActionsBtnV163,#saClearStacksBtnV163")){
-      setTimeout(updateAll,50);
-    }
-  });
-
-  new MutationObserver(()=>setTimeout(updateAll,0))
-    .observe(document.body,{childList:true,subtree:true});
-
-  setTimeout(updateAll,400);
-})();
-
-
-/* v170：不取代原本我的籌碼，直接在其左側插入行動者後手 */
-(function(){
-  function num(v){
-    if(v===null || v===undefined || String(v).trim()==="") return null;
-    const x=Number(String(v).replace(/,/g,""));
-    return Number.isFinite(x)?Math.max(0,x):null;
-  }
-  function heroPos(){ return document.getElementById("saHeroPos")?.value||""; }
-  function actualPos(v){
-    try{return actualActorPosition(v)}
-    catch(e){return v==="我"?heroPos():v}
-  }
-  function remaining(pos){
-    try{
-      if(typeof v166Remaining==="function"){
-        const r=v166Remaining(pos);
-        if(r!==null && r!==undefined) return Number(r);
-      }
-    }catch(e){}
-    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
-    if(inp){
-      const card=inp.closest("label");
-      const strong=card?.querySelector("span strong");
-      const t=strong?.textContent?.trim();
-      if(t && t!=="—") return num(t);
-      if(inp.value.trim()!=="") return num(inp.value);
-    }
-    if(pos===heroPos()){
-      const top=document.getElementById("saStack");
-      if(top?.value.trim()) return num(top.value);
-    }
-    return null;
-  }
-  function label(pos){
-    const m={BTN:"莊家位",SB:"小盲",BB:"大盲",UTG:"槍口","UTG+1":"槍口+1","UTG+2":"槍口+2",LJ:"劫持前位",HJ:"劫持位",CO:"關煞位"};
-    return `${pos}｜${m[pos]||pos}`;
-  }
-
-  function update(builder){
-    const actor=builder.querySelector(".action-actor");
-    if(!actor)return;
-
-    // 找原本真正顯示「你目前剩餘籌碼」的綠色標籤
-    let heroBadge=[...builder.querySelectorAll("div,span")].find(el =>
-      el.children.length <= 2 && (el.textContent||"").includes("你目前剩餘籌碼")
-    );
-    if(!heroBadge)return;
-
-    // 若 v169 包裝存在，還原成右側原始我的籌碼顯示概念
-    const dual=builder.querySelector(".sa-dual-stack-status-v169");
-    if(dual){
-      const hero=dual.querySelector(".sa-hero-stack-v169");
-      if(hero){
-        dual.replaceWith(hero);
-        heroBadge=hero;
-      }
-    }
-
-    let row=heroBadge.parentElement;
-    if(!row.classList.contains("sa-stack-row-v170")){
-      const wrap=document.createElement("div");
-      wrap.className="sa-stack-row-v170";
-      heroBadge.parentNode.insertBefore(wrap,heroBadge);
-      wrap.appendChild(heroBadge);
-      row=wrap;
-    }
-
-    let actorBadge=row.querySelector(".sa-actor-stack-v170");
-    if(!actorBadge){
-      actorBadge=document.createElement("div");
-      actorBadge.className="sa-actor-stack-v170";
-      row.insertBefore(actorBadge,row.firstChild);
-    }
-
-    const pos=actualPos(actor.value);
-    const r=pos?remaining(pos):null;
-    actorBadge.innerHTML=pos
-      ? `💰 ${label(pos)}剩餘：<b>${r===null?"—":Number(r).toLocaleString()}</b>`
-      : `💰 行動者剩餘：<b>—</b>`;
-  }
-
-  function run(){
-    document.querySelectorAll(".action-builder").forEach(update);
-  }
-
-  document.addEventListener("change",e=>{
-    if(e.target.matches(".action-actor,.action-type,[data-seat-start-v160],#saStack")) setTimeout(run,0);
-  });
-  document.addEventListener("input",e=>{
-    if(e.target.matches("[data-seat-start-v160],#saStack")) setTimeout(run,0);
-  });
-  document.addEventListener("click",()=>setTimeout(run,30));
-  new MutationObserver(()=>setTimeout(run,0)).observe(document.body,{childList:true,subtree:true});
-  setTimeout(run,500);
-})();
+});
