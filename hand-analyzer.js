@@ -2721,7 +2721,7 @@ function getImprovementDraws(holeCards, boardCards){
     head.className = "sa-side-pot-head-v174";
     head.innerHTML = `
       <strong>主池／邊池</strong>
-      <button id="saClearSidePotsV174" class="sa-mini-clear-v163" type="button">清除主池邊池</button>
+      <button id="saClearSidePotsV174" class="sa-mini-clear-v163" type="button">清除主池邊池資料</button>
     `;
 
     const box = document.createElement("div");
@@ -2857,34 +2857,54 @@ document.addEventListener("change",e=>{
 });
 
 
-/* v174：單獨清除主池／邊池顯示 */
+
+
+/* v176：真正清除主池／邊池資料 */
 (function(){
-  let sidePotsHiddenV174 = false;
+  function clearPotDataV176(){
+    // 主池/邊池來源就是各街投入底池的行動資料。
+    // 清除所有會形成底池金額的行動，但保留「棄牌」狀態，
+    // 避免只是把畫面藏起來、資料其實仍存在。
+    const actions = getActions();
+    const kept = actions.filter(a => String(a?.action || "").trim() === "棄牌");
+
+    saveActions(kept);
+
+    // 清掉各街底池快照/快取，讓主池邊池回到 0。
+    try{
+      localStorage.removeItem("saStreetPots");
+      localStorage.removeItem("saPotSnapshots");
+      localStorage.removeItem("saSidePots");
+    }catch(e){}
+
+    renderActionLog();
+    updatePotUI();
+    try{ window.v166RenderSidePots?.(); }catch(e){}
+    try{ window.dispatchEvent(new Event("sa-actions-updated")); }catch(e){}
+  }
 
   document.addEventListener("click", e=>{
-    const btn = e.target.closest("#saClearSidePotsV174");
+    const btn=e.target.closest("#saClearSidePotsV174");
     if(!btn) return;
-
     e.preventDefault();
     e.stopPropagation();
-
-    sidePotsHiddenV174 = true;
-    const box = document.getElementById("saSidePotsV166");
-    if(box) box.innerHTML = "";
-
-    const head = btn.closest(".sa-side-pot-head-v174");
-    if(head) head.style.display = "none";
+    if(confirm("確定要清除這一手的主池／邊池資料嗎？")){
+      clearPotDataV176();
+    }
   });
 
-  // 有新行動 / 刪除行動後重新顯示主池邊池
+  // 一鍵清除本手後，額外強制清空主池/邊池相關快取並重繪。
   document.addEventListener("click", e=>{
-    if(e.target.closest(".add-action-btn,.action-chip,.action-log-chip")){
-      if(sidePotsHiddenV174){
-        sidePotsHiddenV174 = false;
-        const head = document.querySelector(".sa-side-pot-head-v174");
-        if(head) head.style.display = "";
-        setTimeout(()=>window.v166RenderSidePots?.(),30);
-      }
-    }
+    const btn=e.target.closest("#saClearHandBtn");
+    if(!btn) return;
+    setTimeout(()=>{
+      try{
+        localStorage.removeItem("saStreetPots");
+        localStorage.removeItem("saPotSnapshots");
+        localStorage.removeItem("saSidePots");
+      }catch(err){}
+      try{ window.v166RenderSidePots?.(); }catch(err){}
+      try{ updatePotUI(); }catch(err){}
+    },50);
   });
 })();
