@@ -843,7 +843,18 @@
             </div>
           </section>
 
-          <div class="street-tabs street-tabs-v133" role="tablist" aria-label="牌局街道">
+          <section id="saPotStackPanel" class="sa-pot-stack-panel-v160">
+      <div class="sa-pot-head-v160">
+        <strong>💰 底池累積</strong>
+        <strong class="sa-current-pot-v160">目前底池：<span id="saCurrentPotV160">0</span></strong>
+      </div>
+      <div id="saStreetPotGridV160" class="sa-street-pot-grid-v160"></div>
+      <details class="sa-stack-details-v160" open>
+        <summary>🪙 各位置起始籌碼／剩餘後手</summary>
+        <div id="saSeatStacksV160" class="sa-seat-stacks-v160"></div>
+      </details>
+    </section>
+    <div class="street-tabs street-tabs-v133" role="tablist" aria-label="牌局街道">
             <button type="button" class="street-tab active" data-street="preflop">翻牌前</button>
             <button type="button" class="street-tab" data-street="flop">翻牌</button>
             <button type="button" class="street-tab" data-street="turn">轉牌</button>

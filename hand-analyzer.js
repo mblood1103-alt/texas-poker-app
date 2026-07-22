@@ -2039,3 +2039,75 @@ function getImprovementDraws(holeCards, boardCards){
     text:`💡 改善提醒：下一張約有 ${improved.length} 張牌可讓目前牌型提升（約 ${pct}%）：${details}。`
   };
 }
+
+
+/* v160 底池與所有座位後手：直接使用本檔 actionState */
+(function(){
+  const streets=["preflop","flop","turn","river"];
+  const names={preflop:"翻牌前",flop:"翻牌",turn:"轉牌",river:"河牌"};
+  let seatStarts={};
+
+  function n(v){const x=Number(v);return Number.isFinite(x)?Math.max(0,x):0}
+  function seats(){
+    try{return canonicalSeatOrder()}catch(e){return []}
+  }
+  function actorPos(a){
+    try{return actualActorPosition(a.actor)}catch(e){return a.actor==="我"?document.getElementById("saHeroPos")?.value:a.actor}
+  }
+  function ensureStarts(){
+    const hero=document.getElementById("saHeroPos")?.value||"";
+    const heroStack=n(document.getElementById("saStack")?.value);
+    seats().forEach(p=>{
+      if(seatStarts[p]===undefined) seatStarts[p]=(p===hero?heroStack:heroStack);
+    });
+    if(hero && heroStack>0) seatStarts[hero]=heroStack;
+  }
+  function calc(){
+    ensureStarts();
+    const ss=seats(), remain={};
+    ss.forEach(p=>remain[p]=n(seatStarts[p]));
+    const streetPots={}, cumulative={};
+    let totalPot=0;
+
+    for(const street of streets){
+      const commits={}; ss.forEach(p=>commits[p]=0);
+      let streetAdded=0;
+      if(street==="preflop"){
+        const sb=n(document.getElementById("saSB")?.value), bb=n(document.getElementById("saBB")?.value);
+        if("SB" in commits){commits.SB=sb;remain.SB=Math.max(0,remain.SB-sb);streetAdded+=sb}
+        if("BB" in commits){commits.BB=bb;remain.BB=Math.max(0,remain.BB-bb);streetAdded+=bb}
+      }
+      for(const a of (actionState[street]||[])){
+        const p=actorPos(a); if(!p || !(p in commits)) continue;
+        const current=n(commits[p]), high=Math.max(0,...Object.values(commits).map(n));
+        let target=current;
+        if(a.action==="跟注") target=Math.max(current,high);
+        else if(["開池","下注","加注"].includes(a.action)) target=Math.max(current,n(a.amount));
+        else if(a.action==="全下"){
+          const amt=n(a.amount);
+          target=amt>0?Math.max(current,amt):current+remain[p];
+        }
+        const add=Math.min(remain[p],Math.max(0,target-current));
+        commits[p]=current+add; remain[p]=Math.max(0,remain[p]-add); streetAdded+=add;
+      }
+      totalPot+=streetAdded; streetPots[street]=streetAdded; cumulative[street]=totalPot;
+    }
+    return {remain,streetPots,cumulative,totalPot};
+  }
+  function render(){
+    const pot=document.getElementById("saCurrentPotV160");
+    const pg=document.getElementById("saStreetPotGridV160");
+    const sg=document.getElementById("saSeatStacksV160");
+    if(!pot||!pg||!sg)return;
+    const c=calc(); pot.textContent=c.totalPot;
+    pg.innerHTML=streets.map(s=>`<div><span>${names[s]}</span><b>${c.cumulative[s]}</b><small>本街 +${c.streetPots[s]}</small></div>`).join("");
+    sg.innerHTML=seats().map(p=>`<label><b>${p}${p===(document.getElementById("saHeroPos")?.value||"")?"（我）":""}</b><input type="number" min="0" step="0.5" data-seat-start-v160="${p}" value="${seatStarts[p]??0}"><span>剩餘 <strong>${c.remain[p]??0}</strong></span></label>`).join("");
+    sg.querySelectorAll("[data-seat-start-v160]").forEach(inp=>{
+      inp.addEventListener("change",()=>{seatStarts[inp.dataset.seatStartV160]=n(inp.value);render()},{once:true});
+    });
+  }
+  document.addEventListener("click",()=>setTimeout(render,30));
+  document.addEventListener("change",e=>{if(!e.target.matches("[data-seat-start-v160]"))setTimeout(render,30)});
+  document.addEventListener("input",e=>{if(["saSB","saBB","saStack"].includes(e.target.id))setTimeout(render,30)});
+  setTimeout(render,250);
+})();
