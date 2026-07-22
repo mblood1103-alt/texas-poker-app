@@ -1834,3 +1834,31 @@ html, body{
 }
 
 .v165-hide-street-mini-card{display:none!important;}
+
+/* v166 主池 / 邊池 */
+.sa-side-pots-v166{
+  margin-top:10px;
+  display:grid;
+  gap:7px;
+}
+.sa-side-pots-v166>div{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:2px 8px;
+  align-items:center;
+  padding:8px 10px;
+  border:1px solid #d8e1ec;
+  border-radius:10px;
+  background:#fff;
+}
+.sa-side-pots-v166 b{font-size:13px}
+.sa-side-pots-v166 span{
+  justify-self:end;
+  font-weight:800;
+  color:#08783f;
+}
+.sa-side-pots-v166 small{
+  grid-column:1/-1;
+  color:#6b7a90;
+  font-size:11px;
+}

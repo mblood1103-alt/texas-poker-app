@@ -2361,3 +2361,298 @@ function getImprovementDraws(holeCards, boardCards){
   apply();
   new MutationObserver(apply).observe(document.body,{childList:true,subtree:true});
 })();
+
+
+/* v166：完整 All-in / 跟注不足 / 主池邊池 邏輯 */
+(function(){
+  const V166_STREETS = ["preflop","flop","turn","river"];
+
+  function v166Num(v){
+    if(v===null || v===undefined || String(v).trim()==="") return 0;
+    const x = Number(String(v).replace(/,/g,""));
+    return Number.isFinite(x) ? Math.max(0,x) : 0;
+  }
+
+  function v166HeroPos(){
+    return document.getElementById("saHeroPos")?.value || "";
+  }
+
+  function v166SeatOrder(){
+    try { return canonicalSeatOrder(); } catch(e) { return []; }
+  }
+
+  function v166ActorPos(actor){
+    try { return actualActorPosition(actor); }
+    catch(e){ return actor==="我" ? v166HeroPos() : actor; }
+  }
+
+  function v166SeatStartMap(){
+    const map = {};
+    document.querySelectorAll("[data-seat-start-v160]").forEach(inp=>{
+      const pos = inp.dataset.seatStartV160;
+      if(inp.value.trim()!=="") map[pos] = v166Num(inp.value);
+    });
+    const hero = v166HeroPos();
+    const heroTop = document.getElementById("saStack");
+    if(hero && heroTop && heroTop.value.trim()!=="") map[hero] = v166Num(heroTop.value);
+    return map;
+  }
+
+  function v166CommittedByStreet(){
+    const starts = v166SeatStartMap();
+    const seats = v166SeatOrder();
+    const totalCommitted = Object.fromEntries(seats.map(p=>[p,0]));
+    const streetCommitted = {};
+    const allIn = new Set();
+
+    for(const street of V166_STREETS){
+      const commits = Object.fromEntries(seats.map(p=>[p,0]));
+
+      if(street==="preflop"){
+        const sb = v166Num(document.getElementById("saSB")?.value);
+        const bb = v166Num(document.getElementById("saBB")?.value);
+        if("SB" in commits){ commits.SB += sb; totalCommitted.SB += sb; }
+        if("BB" in commits){ commits.BB += bb; totalCommitted.BB += bb; }
+      }
+
+      for(const a of (actionState?.[street] || [])){
+        const p = v166ActorPos(a.actor);
+        if(!p || !(p in commits)) continue;
+
+        const high = Math.max(0, ...Object.values(commits));
+        const current = commits[p];
+        let target = current;
+
+        if(a.action==="跟注"){
+          target = high;
+        }else if(["開池","下注","加注"].includes(a.action)){
+          target = Math.max(current, v166Num(a.amount));
+        }else if(a.action==="全下"){
+          const explicit = v166Num(a.amount);
+          const start = starts[p];
+          if(explicit>0) target = Math.max(current, explicit);
+          else if(start!==undefined) target = Math.max(current, Math.max(0, start-totalCommitted[p]) + current);
+          allIn.add(p);
+        }
+
+        let add = Math.max(0, target-current);
+        if(starts[p]!==undefined){
+          add = Math.min(add, Math.max(0, starts[p]-totalCommitted[p]));
+        }
+        commits[p] += add;
+        totalCommitted[p] += add;
+
+        if(starts[p]!==undefined && totalCommitted[p] >= starts[p]){
+          allIn.add(p);
+        }
+      }
+
+      streetCommitted[street] = commits;
+    }
+
+    return {starts,totalCommitted,streetCommitted,allIn};
+  }
+
+  function v166Remaining(pos){
+    const {starts,totalCommitted} = v166CommittedByStreet();
+    if(starts[pos]===undefined) return null;
+    return Math.max(0, starts[pos] - (totalCommitted[pos] || 0));
+  }
+
+  function v166CurrentStreet(builder){
+    return builder?.dataset?.street ||
+           builder?.closest("[data-street]")?.dataset?.street ||
+           document.querySelector(".street-tab.active")?.dataset?.street ||
+           "preflop";
+  }
+
+  function v166CurrentStreetHigh(street){
+    const data = v166CommittedByStreet();
+    const commits = data.streetCommitted[street] || {};
+    return Math.max(0, ...Object.values(commits));
+  }
+
+  function v166CurrentStreetCommitted(pos, street){
+    const data = v166CommittedByStreet();
+    return v166Num(data.streetCommitted?.[street]?.[pos]);
+  }
+
+  function v166RequiredCall(pos, street){
+    const high = v166CurrentStreetHigh(street);
+    const mine = v166CurrentStreetCommitted(pos, street);
+    return Math.max(0, high-mine);
+  }
+
+  function v166RefreshBuilder(builder){
+    if(!builder) return;
+    const actorSel = builder.querySelector(".action-actor");
+    const typeSel = builder.querySelector(".action-type");
+    const amountInput = builder.querySelector(".action-amount");
+    if(!actorSel || !typeSel) return;
+
+    const pos = v166ActorPos(actorSel.value);
+    const street = v166CurrentStreet(builder);
+    const remain = v166Remaining(pos);
+    const callNeed = v166RequiredCall(pos, street);
+
+    // 已經全下或剩餘 0：不能再行動
+    const allInSet = v166CommittedByStreet().allIn;
+    if(pos && (allInSet.has(pos) || remain===0)){
+      [...typeSel.options].forEach(o=>o.disabled = true);
+      actorSel.disabled = false;
+      typeSel.disabled = true;
+      if(amountInput){
+        amountInput.value = "";
+        amountInput.disabled = true;
+        amountInput.placeholder = "已全下，無後手";
+      }
+      return;
+    }
+
+    typeSel.disabled = false;
+
+    // 後手不足完整跟注時：只能 棄牌 / 全下
+    [...typeSel.options].forEach(o=>{
+      if(remain!==null && callNeed>remain){
+        o.disabled = !["棄牌","全下"].includes(o.value);
+      }else{
+        o.disabled = false;
+      }
+    });
+
+    if(remain!==null && callNeed>remain && !["棄牌","全下"].includes(typeSel.value)){
+      if([...typeSel.options].some(o=>o.value==="全下")) typeSel.value = "全下";
+    }
+
+    // 選全下時自動帶入目前剩餘後手
+    if(typeSel.value==="全下" && amountInput){
+      if(remain!==null){
+        amountInput.disabled = true;
+        amountInput.value = remain;
+        amountInput.placeholder = `自動全下 ${remain}`;
+      }
+    }else if(amountInput){
+      amountInput.disabled = false;
+    }
+
+    // 跟注時若可以完整跟，金額自動顯示需要補多少
+    if(typeSel.value==="跟注" && amountInput && callNeed>0){
+      amountInput.value = callNeed;
+    }
+  }
+
+  // 攔截新增行動前，再做一次規則校正
+  document.addEventListener("click", e=>{
+    const btn = e.target.closest(".add-action-btn");
+    if(!btn) return;
+    const builder = btn.closest(".action-builder");
+    if(!builder) return;
+
+    const actorSel = builder.querySelector(".action-actor");
+    const typeSel = builder.querySelector(".action-type");
+    const amountInput = builder.querySelector(".action-amount");
+    if(!actorSel || !typeSel) return;
+
+    const pos = v166ActorPos(actorSel.value);
+    const street = v166CurrentStreet(builder);
+    const remain = v166Remaining(pos);
+    const callNeed = v166RequiredCall(pos, street);
+    const allInSet = v166CommittedByStreet().allIn;
+
+    // 已全下者直接阻止再次新增行動
+    if(pos && (allInSet.has(pos) || remain===0)){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      alert("這個位置已經全下，後續不需要再行動。");
+      return;
+    }
+
+    // 後手不足跟注時，強制轉成全下
+    if(typeSel.value==="跟注" && remain!==null && callNeed>remain){
+      typeSel.value = "全下";
+      if(amountInput){
+        amountInput.value = remain;
+        amountInput.disabled = true;
+      }
+    }
+
+    // 全下永遠自動使用剩餘後手
+    if(typeSel.value==="全下" && remain!==null && amountInput){
+      amountInput.value = remain;
+      amountInput.disabled = false; // 讓原本新增行動程式可以讀取值
+      setTimeout(()=>{ amountInput.disabled = true; },0);
+    }
+  }, true);
+
+  document.addEventListener("change", e=>{
+    if(e.target.matches(".action-actor,.action-type")){
+      v166RefreshBuilder(e.target.closest(".action-builder"));
+    }
+  });
+
+  document.addEventListener("click", e=>{
+    if(e.target.closest(".street-tab,.action-chip,.add-action-btn")){
+      setTimeout(()=>{
+        document.querySelectorAll(".action-builder").forEach(v166RefreshBuilder);
+        v166RenderSidePots();
+      },50);
+    }
+  });
+
+  // 主池 / 邊池計算
+  function v166SidePots(){
+    const {totalCommitted} = v166CommittedByStreet();
+    const entries = Object.entries(totalCommitted).filter(([,amt])=>amt>0);
+    if(entries.length===0) return [];
+
+    const levels = [...new Set(entries.map(([,amt])=>amt))].sort((a,b)=>a-b);
+    const pots = [];
+    let prev = 0;
+
+    for(const level of levels){
+      const eligible = entries.filter(([,amt])=>amt>=level).map(([p])=>p);
+      const amount = (level-prev) * eligible.length;
+      if(amount>0){
+        pots.push({amount, eligible:[...eligible]});
+      }
+      prev = level;
+    }
+    return pots;
+  }
+
+  function v166EnsurePotUI(){
+    const panel = document.getElementById("saPotStackPanel");
+    if(!panel || document.getElementById("saSidePotsV166")) return;
+    const box = document.createElement("div");
+    box.id = "saSidePotsV166";
+    box.className = "sa-side-pots-v166";
+    panel.appendChild(box);
+  }
+
+  function v166RenderSidePots(){
+    v166EnsurePotUI();
+    const box = document.getElementById("saSidePotsV166");
+    if(!box) return;
+    const pots = v166SidePots();
+    if(pots.length<=1){
+      box.innerHTML = pots.length===1
+        ? `<div><b>主池</b><span>${pots[0].amount}</span></div>`
+        : "";
+      return;
+    }
+    box.innerHTML = pots.map((p,i)=>`
+      <div>
+        <b>${i===0?"主池":`邊池 ${i}`}</b>
+        <span>${p.amount}</span>
+        <small>可爭奪：${p.eligible.join("、")}</small>
+      </div>`).join("");
+  }
+
+  window.v166RefreshBuilder = v166RefreshBuilder;
+  window.v166RenderSidePots = v166RenderSidePots;
+
+  setTimeout(()=>{
+    document.querySelectorAll(".action-builder").forEach(v166RefreshBuilder);
+    v166RenderSidePots();
+  },400);
+})();
