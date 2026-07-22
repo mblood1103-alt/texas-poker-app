@@ -1707,23 +1707,3 @@ html, body{
     font-size:16px !important;
   }
 }
-
-
-/* v159：牌局策略分析四格等高縮小 */
-.strategy-row select,
-.strategy-row input,
-.strategy-settings-row select,
-.strategy-settings-row input,
-.analysis-settings-row select,
-.analysis-settings-row input {
-  height: 38px !important;
-  min-height: 38px !important;
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
-  box-sizing: border-box !important;
-}
-
-/* 隱藏牌桌下方說明並把後方內容往上收 */
-.table-hint {
-  display: none !important;
-}
