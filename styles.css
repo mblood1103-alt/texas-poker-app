@@ -1814,3 +1814,23 @@ html, body{
   padding:3px 10px!important;
   flex:0 0 auto!important;
 }
+
+/* v165：隱藏街道標題下方多餘的小牌框，只保留下方五張公共牌 */
+.street-card-picker,
+.street-card-slot,
+.street-single-card,
+.street-board-card,
+.street-card-select,
+[data-street-card-picker],
+[data-street-card-slot]{
+  display:none!important;
+}
+
+/* 精準隱藏轉牌/河牌區塊中，位於行動面板上方的單張小牌容器 */
+.street-section .card-slot:only-child,
+.street-panel > .card-picker:first-child,
+.street-content > .card-picker:first-child{
+  display:none!important;
+}
+
+.v165-hide-street-mini-card{display:none!important;}

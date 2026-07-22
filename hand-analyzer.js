@@ -229,6 +229,23 @@ function renderReentryHintV114(street,builder){
   if(addBtn) builder.insertBefore(hint,addBtn);
 }
 
+
+/* v165：全下玩家後續不再重複行動 */
+function getAllInPositionsV165(){
+  const allIn = new Set();
+  try{
+    Object.values(actionState || {}).forEach(list=>{
+      (list || []).forEach(a=>{
+        if(a && a.action === "全下"){
+          const pos = actualActorPosition(a.actor);
+          if(pos) allIn.add(pos);
+        }
+      });
+    });
+  }catch(e){}
+  return allIn;
+}
+
 function populateActors(){
   const hero=$("saHeroPos").value;
 
@@ -248,7 +265,7 @@ function populateActors(){
     sel.disabled=false;
     sel.innerHTML="";
 
-    positions.forEach(p=>{
+    Array.from(positions).filter(pos=>!getAllInPositionsV165().has(pos)).forEach(p=>{
       const opt=document.createElement("option");
       const isHero=p===hero;
       const isFolded=folded.has(p);
