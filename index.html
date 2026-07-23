@@ -587,6 +587,27 @@ new MutationObserver(install).observe(document.body,{childList:true,subtree:true
 });
 </script>
 
+
+<style id="term-meaning-layout-fix-v201">
+.termMeaningBox{
+  display:none !important;
+  flex-basis:100% !important;
+  width:100% !important;
+  max-width:none !important;
+  box-sizing:border-box !important;
+  margin:10px 0 4px 0 !important;
+  padding:12px 14px !important;
+  background:#f5f7fb !important;
+  border-radius:12px !important;
+  color:#3e4a60 !important;
+  font-size:14px !important;
+  line-height:1.6 !important;
+}
+.termMeaningBox.open{display:block !important;}
+[data-meaning-v200="1"]{flex-wrap:wrap !important;}
+.termMeaningBtn{flex:0 0 auto !important;}
+</style>
+
 </head>
 <body>
 <header class="top">
