@@ -53,9 +53,13 @@ async function enterOwnerRoom(code){roomCode=clean(code);if(!roomCode)return ale
 async function enterViewerRoom(code,name){
   roomCode=clean(code);viewerName=name.trim();
   if(!roomCode||!viewerName)return alert("請輸入名稱與群組代碼");
-  localStorage.setItem("viewerRoom",roomCode);localStorage.setItem("viewerName",viewerName);
+
+  localStorage.setItem("viewerRoom",roomCode);
+  localStorage.setItem("viewerName",viewerName);
+
+  // v182：每次觀看者真正進入房間就記錄一次；房主本人會自動排除。
+  await recordViewerAccess();
   subscribe();
-  try{await recordViewerAccess()}catch(e){console.warn("查看紀錄寫入失敗，但不影響觀看帳目：",e)}
 }
 
 window.getPokerAppContext=()=>({
@@ -131,25 +135,60 @@ function todayKey(){
   return `${y}-${m}-${day}`;
 }
 async function recordViewerAccess(){
-  const viewerUser=auth.currentUser||user;
-  if(!viewerUser?.uid)throw new Error("匿名登入尚未完成");
-  if(!roomCode)throw new Error("群組代碼不存在");
-  const ref=doc(db,"rooms",roomCode,"viewerLogs",viewerUser.uid);
+  const viewerUser = auth.currentUser || user;
+  if(!viewerUser?.uid) throw new Error("登入尚未完成");
+  if(!roomCode) throw new Error("群組代碼不存在");
+
+  const roomRef = doc(db,"rooms",roomCode);
+  const logRef = doc(db,"rooms",roomCode,"viewerLogs",viewerUser.uid);
+
   await runTransaction(db,async tx=>{
-    const snap=await tx.get(ref),now=new Date().toISOString(),dateKey=todayKey();
+    // 先確認房間及房主身分。房主本人不列入查看紀錄。
+    const roomSnap = await tx.get(roomRef);
+    if(!roomSnap.exists()) throw new Error("找不到這個群組");
+    const room = roomSnap.data() || {};
+    if(room.ownerUid && room.ownerUid === viewerUser.uid) return;
+
+    const snap = await tx.get(logRef);
+    const now = new Date().toISOString();
+    const dateKey = todayKey();
+    const display =
+      (viewerName || "").trim() ||
+      viewerUser.displayName ||
+      viewerUser.email?.split("@")[0] ||
+      "匿名查看者";
+
     if(snap.exists()){
-      const d=snap.data(),sameDay=d.visitDateKey===dateKey;
-      const oldTimes=Array.isArray(d.accessTimes)?d.accessTimes.filter(Boolean):[];
-      const accessTimes=oldTimes.length?oldTimes:[d.lastSeen].filter(Boolean);
+      const d = snap.data() || {};
+      const sameDay = d.visitDateKey === dateKey;
+      const accessTimes = Array.isArray(d.accessTimes)
+        ? d.accessTimes.filter(Boolean).slice()
+        : [d.lastSeen].filter(Boolean);
       accessTimes.push(now);
-      tx.update(ref,{
-        displayName:viewerName,lastSeen:now,visitDateKey:dateKey,
-        visitCount:sameDay?Number(d.visitCount||0)+1:1,
-        totalCount:Number(d.totalCount||d.visitCount||accessTimes.length-1)+1,
-        accessTimes,updatedAt:serverTimestamp()
+
+      tx.update(logRef,{
+        uid: viewerUser.uid,
+        displayName: display,
+        lastSeen: now,
+        visitDateKey: dateKey,
+        visitCount: sameDay ? Number(d.visitCount||0)+1 : 1,
+        totalCount: Number(d.totalCount||0)+1,
+        accessTimes,
+        updatedAt: serverTimestamp()
       });
     }else{
-      tx.set(ref,{uid:viewerUser.uid,displayName:viewerName,firstSeen:now,lastSeen:now,visitDateKey:dateKey,visitCount:1,totalCount:1,accessTimes:[now],createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      tx.set(logRef,{
+        uid: viewerUser.uid,
+        displayName: display,
+        firstSeen: now,
+        lastSeen: now,
+        visitDateKey: dateKey,
+        visitCount: 1,
+        totalCount: 1,
+        accessTimes: [now],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
     }
   });
 }
@@ -705,74 +744,3 @@ window.addEventListener("unhandledrejection",e=>console.error(e.reason));
   new MutationObserver(render).observe(document.body,{subtree:true,childList:true});
   setTimeout(render,300);
 })();
-
-
-/* v180ViewerLogFix：一般登入與匿名查看者都可記錄；房主本人不計入 */
-async function v180RecordViewerLog(roomId, roomData, user){
-  try{
-    if(!roomId || !user) return;
-    const ownerUid = roomData?.ownerUid || "";
-    if(ownerUid && user.uid === ownerUid) return;
-
-    const viewerUid = user.uid;
-    const viewerName =
-      user.displayName ||
-      user.email?.split("@")[0] ||
-      (user.isAnonymous ? "匿名查看者" : "一般查看者");
-
-    const ref = doc(db, "rooms", roomId, "viewerLogs", viewerUid);
-    const snap = await getDoc(ref);
-    const now = new Date();
-    const today = now.toLocaleDateString("sv-SE");
-
-    if(snap.exists()){
-      const d = snap.data() || {};
-      const lastDay = d.lastViewDay || "";
-      await setDoc(ref, {
-        name: viewerName,
-        viewerName,
-        email: user.email || "",
-        deviceCode: d.deviceCode || viewerUid.slice(0,8),
-        totalViews: Number(d.totalViews || d.totalCount || 0) + 1,
-        totalCount: Number(d.totalViews || d.totalCount || 0) + 1,
-        todayViews: lastDay === today ? Number(d.todayViews || d.todayCount || 0) + 1 : 1,
-        todayCount: lastDay === today ? Number(d.todayViews || d.todayCount || 0) + 1 : 1,
-        lastViewDay: today,
-        lastViewedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      }, {merge:true});
-    }else{
-      await setDoc(ref, {
-        name: viewerName,
-        viewerName,
-        email: user.email || "",
-        deviceCode: viewerUid.slice(0,8),
-        totalViews: 1,
-        totalCount: 1,
-        todayViews: 1,
-        todayCount: 1,
-        lastViewDay: today,
-        lastViewedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      }, {merge:true});
-    }
-  }catch(err){
-    console.warn("viewer log v180:", err);
-  }
-}
-
-
-/* v180：登入完成後嘗試記錄目前房間查看；房主會由函式自動排除 */
-setTimeout(async ()=>{
-  try{
-    const user = auth.currentUser;
-    const roomId =
-      window.currentRoomId ||
-      localStorage.getItem("currentRoomId") ||
-      localStorage.getItem("roomId");
-    if(!user || !roomId) return;
-    const roomSnap = await getDoc(doc(db, "rooms", roomId));
-    if(roomSnap.exists()) await v180RecordViewerLog(roomId, roomSnap.data(), user);
-  }catch(e){ console.warn("viewer log init v180:", e); }
-}, 1500);

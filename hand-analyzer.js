@@ -1982,6 +1982,11 @@ function clearActionsOnlyV163(){
   });
 
   window.saRenderPotStacksV163?.();
+
+  // v182：清除行動後重新計算基本主池。
+  // actionState 已清空，但 v166CommittedByStreet 仍會自動加入 SB + BB。
+  try{ window.v166RenderSidePots?.(); }catch(e){}
+  try{ updateHeroChipDisplays(); }catch(e){}
 }
 
 function clearCardsOnlyV163(){
@@ -2761,89 +2766,6 @@ function getImprovementDraws(holeCards, boardCards){
 })();
 
 
-/* v168：所有仍在牌局玩家都已 All-in 時，自動視為本輪完成 */
-(function(){
-  function num(v){
-    const x = Number(String(v ?? "").replace(/,/g,""));
-    return Number.isFinite(x) ? x : null;
-  }
-
-  function activePositions(){
-    const chips = [...document.querySelectorAll(".alive-chip, .player-alive-chip, [data-alive-pos]")];
-    const fromData = chips.map(el => el.dataset.alivePos).filter(Boolean);
-    if(fromData.length) return [...new Set(fromData)];
-
-    // 依目前畫面「目前還在牌局」綠色籌碼文字取得位置
-    const box = [...document.querySelectorAll("div,section")].find(el =>
-      el.textContent?.includes("目前還在牌局") && el.querySelectorAll("span").length
-    );
-    if(box){
-      const known=["BTN","SB","BB","UTG","UTG+1","UTG+2","LJ","HJ","CO"];
-      const txt=[...box.querySelectorAll("span")].map(x=>x.textContent||"").join(" ");
-      return known.filter(p=>txt.includes(p));
-    }
-    return [];
-  }
-
-  function remaining(pos){
-    try{
-      if(typeof v166Remaining==="function"){
-        const r=v166Remaining(pos);
-        if(r!==null && r!==undefined) return Number(r);
-      }
-    }catch(e){}
-    const inp=document.querySelector(`[data-seat-start-v160="${pos}"]`);
-    const strong=inp?.closest("label")?.querySelector("span strong");
-    const t=strong?.textContent?.trim();
-    if(t && t!=="—") return num(t);
-    return null;
-  }
-
-  function allActiveAllIn(){
-    const ps=activePositions();
-    if(!ps.length) return false;
-    return ps.every(p => remaining(p) === 0);
-  }
-
-  function patchBuilders(){
-    if(!allActiveAllIn()) return;
-    document.querySelectorAll(".action-builder").forEach(builder=>{
-      // 若原本已經有完成本輪，不重複處理
-      if(builder.textContent.includes("完成本輪")) return;
-
-      // 隱藏/停用已無必要的行動輸入
-      const actor=builder.querySelector(".action-actor");
-      const type=builder.querySelector(".action-type");
-      const amount=builder.querySelector(".action-amount");
-      if(actor) actor.disabled=true;
-      if(type) type.disabled=true;
-      if(amount) amount.disabled=true;
-
-      const addBtn=[...builder.querySelectorAll("button")].find(b=>b.textContent.includes("加入這個行動"));
-      if(addBtn){
-        addBtn.disabled=true;
-        addBtn.innerHTML="✅ 完成本輪";
-      }
-
-      // 清掉「尚未加入行動」提示，避免看起來像還需要操作
-      [...builder.querySelectorAll("*")].forEach(el=>{
-        if(el.children.length===0 && el.textContent.trim()==="尚未加入行動"){
-          el.textContent="所有仍在牌局玩家皆已全下，本輪完成";
-        }
-      });
-    });
-  }
-
-  function run(){ setTimeout(patchBuilders,0); }
-
-  document.addEventListener("click",run);
-  document.addEventListener("change",run);
-  document.addEventListener("input",run);
-  new MutationObserver(run).observe(document.body,{subtree:true,childList:true,characterData:true});
-  setTimeout(patchBuilders,500);
-})();
-
-
 /* v171：只監聽真正的輸入事件更新後手，不使用 MutationObserver */
 document.addEventListener("input",e=>{
   if(e.target.matches("#saStack,[data-seat-start-v160]")){
@@ -2863,16 +2785,8 @@ document.addEventListener("change",e=>{
 /* v176：真正清除主池／邊池資料 */
 (function(){
   function clearPotDataV176(){
-    // 只清除主池／邊池顯示資料，不修改任何行動紀錄、棄牌、全下或完成本輪狀態。
-    try{
-      localStorage.removeItem("saStreetPots");
-      localStorage.removeItem("saPotSnapshots");
-      localStorage.removeItem("saSidePots");
-    }catch(e){}
-
-    const sideBox =
-      document.getElementById("saSidePotsV166") ||
-      document.getElementById("saSidePotsV173");
+    // v182：只清除主池／邊池列表，不修改行動、後手、棄牌、All-in 或完成本輪狀態。
+    const sideBox = document.getElementById("saSidePotsV166");
     if(sideBox) sideBox.innerHTML = "";
   }
 
@@ -2901,18 +2815,3 @@ document.addEventListener("change",e=>{
 })();
 
 
-/* v179：修正清除行動與清除主池邊池互不影響 */
-document.addEventListener("click", function(e){
-  const clearActionBtn = e.target.closest("#saClearActions, #saClearAction, [data-clear-actions]");
-  if(!clearActionBtn) return;
-
-  setTimeout(function(){
-    // 清除行動後重新使用目前小盲／大盲計算基本底池。
-    try{
-      if(typeof window.v166RenderSidePots === "function") window.v166RenderSidePots();
-    }catch(err){}
-    try{
-      if(typeof renderSidePotsV173 === "function") renderSidePotsV173();
-    }catch(err){}
-  }, 20);
-}, true);
