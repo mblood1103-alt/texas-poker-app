@@ -2785,9 +2785,15 @@ document.addEventListener("change",e=>{
 /* v176：真正清除主池／邊池資料 */
 (function(){
   function clearPotDataV176(){
-    // v182：只清除主池／邊池列表，不修改行動、後手、棄牌、All-in 或完成本輪狀態。
-    const sideBox = document.getElementById("saSidePotsV166");
-    if(sideBox) sideBox.innerHTML = "";
+    // v183：清除主池／邊池時，邏輯跟「清除行動」完全一致。
+    // 不刪除主池/邊池框框，只清除所有行動資料，
+    // 再恢復為只有小盲＋大盲的基本主池。
+    clearActionsOnlyV163();
+
+    // 保險重繪一次主池／邊池與底池累積。
+    try{ window.v166RenderSidePots?.(); }catch(e){}
+    try{ window.saRenderPotStacksV163?.(); }catch(e){}
+    try{ updateHeroChipDisplays(); }catch(e){}
   }
 
   document.addEventListener("click", e=>{
