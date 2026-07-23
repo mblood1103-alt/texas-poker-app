@@ -476,13 +476,25 @@
 }
 </style>
 
-<style id="term-search-compact-v196">
+
+
+
+<style id="term-search-real-compact-v198">
+/* 精準縮小術語搜尋框：input 本體與包覆層一起縮 */
 input[placeholder*="搜尋中文"] {
-  height: 48px !important;
-  min-height: 48px !important;
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  padding: 4px 12px !important;
+  line-height: 1.2 !important;
   box-sizing: border-box !important;
+}
+div:has(> input[placeholder*="搜尋中文"]),
+label:has(> input[placeholder*="搜尋中文"]) {
+  min-height: 0 !important;
+  height: auto !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 </style>
 
