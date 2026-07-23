@@ -246,6 +246,51 @@ function getAllInPositionsV165(){
   return allIn;
 }
 
+// v186：當牌局只剩 0～1 位「還有籌碼且可繼續下注」的玩家時，
+// 已經不可能再形成新的下注／跟注，當街與後續街直接顯示完成本輪。
+function autoCompleteNoOpponentRoundsV186(){
+  const allIn = getAllInPositionsV165();
+  ["preflop","flop","turn","river"].forEach(street=>{
+    const builder=document.querySelector(`.action-builder[data-builder="${street}"]`);
+    if(!builder)return;
+
+    const folded=getFoldedBeforeStreet(street);
+    const live=actionOrderForStreet(street).filter(p=>!folded.has(p));
+    const actionable=live.filter(p=>!allIn.has(p));
+    const shouldAutoComplete = live.length>0 && actionable.length<=1 && (allIn.size>0 || live.length===1);
+
+    const actorSel=builder.querySelector(".action-actor");
+    const typeSel=builder.querySelector(".action-type");
+    const amountInput=builder.querySelector(".action-amount");
+    const addBtn=builder.querySelector(".add-action-btn");
+
+    // 若使用者刪除了造成 All-in／棄牌的行動，要把之前自動完成的街重新解鎖。
+    if(!shouldAutoComplete){
+      if(addBtn?.dataset.autoNoOpponent==="1"){
+        if(actorSel) actorSel.disabled=false;
+        if(typeSel) typeSel.disabled=false;
+        if(amountInput) amountInput.disabled=false;
+        addBtn.disabled=false;
+        addBtn.textContent="＋加入這個行動";
+        delete addBtn.dataset.roundComplete;
+        delete addBtn.dataset.autoNoOpponent;
+      }
+      return;
+    }
+
+
+    if(actorSel) actorSel.disabled=true;
+    if(typeSel) typeSel.disabled=true;
+    if(amountInput) amountInput.disabled=true;
+    if(addBtn){
+      addBtn.disabled=true;
+      addBtn.textContent="✅ 完成本輪";
+      addBtn.dataset.roundComplete="1";
+      addBtn.dataset.autoNoOpponent="1";
+    }
+  });
+}
+
 function populateActors(){
   const hero=$("saHeroPos").value;
 
@@ -822,10 +867,28 @@ function initActionBuilders(){
 
       const action=type.value;
 
-      // Hero 選全下時，自動抓目前剩餘籌碼，不用自己算。
-      if(action==="全下" && isHeroActor(selectedActor)){
-        const snap=heroSnapshotBeforeNextAction(street);
-        amount.value=String(snap.committed+snap.remaining);
+      // v186：任何位置選「全下」時，都以「本街已投入 + 真正剩餘後手」作為內部目標額。
+      // 之前非 Hero 只把「剩餘後手」直接存進 amount，若本街已經先投入籌碼，
+      // 就會少扣一段，造成例如 SB 明明全下後下面仍顯示剩餘 52。
+      let allInDisplayAmount = "";
+      if(action==="全下"){
+        let remaining = null;
+        let committed = 0;
+        try{
+          if(typeof window.v166RemainingV186 === "function") remaining = window.v166RemainingV186(actualPos);
+          if(typeof window.v166StreetCommittedV186 === "function") committed = window.v166StreetCommittedV186(actualPos, street);
+        }catch(e){}
+
+        if(remaining!==null && remaining!==undefined && Number.isFinite(Number(remaining))){
+          remaining = Math.max(0, Number(remaining));
+          committed = Math.max(0, Number(committed)||0);
+          allInDisplayAmount = String(remaining);
+          amount.value = String(committed + remaining);
+        }else if(isHeroActor(selectedActor)){
+          const snap=heroSnapshotBeforeNextAction(street);
+          allInDisplayAmount = String(snap.remaining);
+          amount.value=String(snap.committed+snap.remaining);
+        }
       }
 
       const amt=amount.value.trim();
@@ -837,13 +900,19 @@ function initActionBuilders(){
       actionState[street].push({
         actor:selectedActor,
         action,
-        amount:actionNeedsAmount(action)?amt:""
+        amount:actionNeedsAmount(action)?amt:"",
+        // 顯示給使用者看的是「這次實際推入多少」，內部 amount 則維持本街目標額，
+        // 兩者分開後可同時確保畫面直覺與剩餘籌碼計算正確。
+        displayAmount:action==="全下" ? (allInDisplayAmount || amt) : ""
       });
       removeReentryPendingV114(street,actualPos);
       renderReentryHintV114(street,builder);
       amount.value="";
       amount.readOnly=false;
       renderActionSequence(street);
+      // v186：每次行動後立即檢查是否已經沒有可互相下注的對手；
+      // 若只剩一人有後手，轉牌／河牌會直接完成，不必再補按過牌。
+      setTimeout(autoCompleteNoOpponentRoundsV186,0);
 
       // 記住本次行動座位，刷新後自動跳到牌桌順序的下一位（略過已棄牌）。
       // v107：若本街所有仍在牌局的玩家都已完成回應，就停止循環跳位。
@@ -947,7 +1016,7 @@ function initActionBuilders(){
 function renderActionSequence(street){
   const box=document.querySelector(`[data-sequence="${street}"]`);
   box.innerHTML=actionState[street].length?actionState[street].map((a,i)=>`
-    <span class="action-chip">${escapeHtml(a.actor)} ${escapeHtml(a.action)}${a.amount?` ${escapeHtml(a.amount)}`:""}
+    <span class="action-chip">${escapeHtml(a.actor)} ${escapeHtml(a.action)}${(a.displayAmount||a.amount)?` ${escapeHtml(a.displayAmount||a.amount)}`:""}
       <button type="button" data-remove="${i}" aria-label="刪除">×</button>
     </span>`).join(""):`<span class="position-help">尚未加入行動</span>`;
   box.querySelectorAll("[data-remove]").forEach(btn=>btn.addEventListener("click",()=>{
@@ -975,6 +1044,7 @@ function renderActionSequence(street){
 
     renderActionSequence(street);
     populateActors();
+    setTimeout(autoCompleteNoOpponentRoundsV186,0);
   }));
   syncActionHidden(street);
   populateActors();
@@ -1901,6 +1971,7 @@ function clearCurrentHand(){
       addBtn.disabled=false;
       addBtn.textContent="＋加入這個行動";
       delete addBtn.dataset.roundComplete;
+      delete addBtn.dataset.autoNoOpponent;
     }
 
     Object.keys(builder.dataset).forEach(key=>{
@@ -2018,6 +2089,7 @@ function initStreetTabs(){
     document.querySelectorAll(".street-tab").forEach(b=>b.classList.toggle("active",b===btn));
     document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel===street));
     populateActors();
+    autoCompleteNoOpponentRoundsV186();
 
     // v120：每一街分析獨立保存。切換街道只顯示該街既有分析，不改寫其他街。
     const streetZh=activeStreet();
@@ -2581,6 +2653,10 @@ function getImprovementDraws(holeCards, boardCards){
     return Math.max(0, high-mine);
   }
 
+  // v186：提供新增行動主流程使用同一套剩餘／本街投入計算，避免不同區塊各算各的。
+  window.v166RemainingV186 = v166Remaining;
+  window.v166StreetCommittedV186 = v166CurrentStreetCommitted;
+
   function v166RefreshBuilder(builder){
     if(!builder) return;
     const actorSel = builder.querySelector(".action-actor");
@@ -2674,9 +2750,11 @@ function getImprovementDraws(holeCards, boardCards){
       }
     }
 
-    // 全下永遠自動使用剩餘後手
+    // v186：全下的內部 amount 必須是「本街目前投入 + 剩餘後手」的目標額，
+    // 不能只放 remain，否則本街先下注後再全下會少扣籌碼。
     if(typeSel.value==="全下" && remain!==null && amountInput){
-      amountInput.value = remain;
+      const committed = v166CurrentStreetCommitted(pos, street);
+      amountInput.value = Math.max(0, committed + remain);
       amountInput.disabled = false; // 讓原本新增行動程式可以讀取值
       setTimeout(()=>{ amountInput.disabled = true; },0);
     }
