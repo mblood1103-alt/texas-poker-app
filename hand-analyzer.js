@@ -2860,47 +2860,20 @@ document.addEventListener("change",e=>{
 
 
 
-let saPotDataClearedV178 = false;
 /* v176：真正清除主池／邊池資料 */
 (function(){
   function clearPotDataV176(){
-    saPotDataClearedV178 = true;
-
-    // 清除所有會形成主池／邊池的行動，只保留棄牌紀錄。
-    try{
-      Object.keys(actionState).forEach(street=>{
-        actionState[street] = (actionState[street] || []).filter(a => a?.action === "棄牌");
-      });
-    }catch(e){}
-
-    // 清除主池／邊池相關快取。
+    // 只清除主池／邊池顯示資料，不修改任何行動紀錄、棄牌、全下或完成本輪狀態。
     try{
       localStorage.removeItem("saStreetPots");
       localStorage.removeItem("saPotSnapshots");
       localStorage.removeItem("saSidePots");
     }catch(e){}
 
-    // 重新繪製行動與底池。
-    try{ Object.keys(actionState).forEach(renderActionSequence); }catch(e){}
-    try{ updateHeroChipDisplays(); }catch(e){}
-    try{ window.v166RenderSidePots?.(); }catch(e){}
-
-    // 強制清空目前主池／邊池顯示內容，不讓舊資料殘留。
-    const sideBox = document.getElementById("saSidePotsV166");
+    const sideBox =
+      document.getElementById("saSidePotsV166") ||
+      document.getElementById("saSidePotsV173");
     if(sideBox) sideBox.innerHTML = "";
-
-    const currentPot = document.getElementById("saCurrentPotV160");
-    if(currentPot) currentPot.textContent = "0";
-
-    const streetGrid = document.getElementById("saStreetPotGridV160");
-    if(streetGrid){
-      streetGrid.innerHTML = `
-        <div><span>翻牌前</span><b>0</b><small>本街 +0</small></div>
-        <div><span>翻牌</span><b>0</b><small>本街 +0</small></div>
-        <div><span>轉牌</span><b>0</b><small>本街 +0</small></div>
-        <div><span>河牌</span><b>0</b><small>本街 +0</small></div>
-      `;
-    }
   }
 
   document.addEventListener("click", e=>{
@@ -2928,47 +2901,18 @@ let saPotDataClearedV178 = false;
 })();
 
 
-/* v178：清除主池邊池後保持空白，直到新增新的下注行動 */
-const _v166RenderSidePotsOriginalV178 = window.v166RenderSidePots;
-window.v166RenderSidePots = function(){
-  if(saPotDataClearedV178){
-    const box = document.getElementById("saSidePotsV166");
-    if(box) box.innerHTML = "";
-    return;
-  }
-  return _v166RenderSidePotsOriginalV178?.apply(this, arguments);
-};
+/* v179：修正清除行動與清除主池邊池互不影響 */
+document.addEventListener("click", function(e){
+  const clearActionBtn = e.target.closest("#saClearActions, #saClearAction, [data-clear-actions]");
+  if(!clearActionBtn) return;
 
-// 新增任何會形成底池的行動時，解除清除狀態並重新計算。
-document.addEventListener("click", e=>{
-  const addBtn = e.target.closest(".add-action-btn");
-  if(!addBtn) return;
-
-  const builder = addBtn.closest(".action-builder");
-  const action = builder?.querySelector(".action-type")?.value || "";
-
-  if(["開池","下注","跟注","加注","全下"].includes(action)){
-    saPotDataClearedV178 = false;
-  }
-}, true);
-
-// 一鍵清除本手時，也一起清空主池／邊池資料。
-document.addEventListener("click", e=>{
-  const btn = e.target.closest("#saClearHandBtn, [data-clear-hand]");
-  if(!btn) return;
-
-  setTimeout(()=>{
-    saPotDataClearedV178 = true;
+  setTimeout(function(){
+    // 清除行動後重新使用目前小盲／大盲計算基本底池。
     try{
-      localStorage.removeItem("saStreetPots");
-      localStorage.removeItem("saPotSnapshots");
-      localStorage.removeItem("saSidePots");
+      if(typeof window.v166RenderSidePots === "function") window.v166RenderSidePots();
     }catch(err){}
-
-    const sideBox = document.getElementById("saSidePotsV166");
-    if(sideBox) sideBox.innerHTML = "";
-
-    const currentPot = document.getElementById("saCurrentPotV160");
-    if(currentPot) currentPot.textContent = "0";
-  }, 0);
+    try{
+      if(typeof renderSidePotsV173 === "function") renderSidePotsV173();
+    }catch(err){}
+  }, 20);
 }, true);
