@@ -327,7 +327,7 @@ function populateActors(){
     sel.disabled=false;
     sel.innerHTML="";
 
-    Array.from(positions).filter(pos=>!positionHasNoStackV187(pos)).forEach(p=>{
+    Array.from(positions).filter(pos=>!folded.has(pos) && !positionHasNoStackV187(pos)).forEach(p=>{
       const opt=document.createElement("option");
       const isHero=p===hero;
       const isFolded=folded.has(p);
@@ -351,7 +351,7 @@ function populateActors(){
     });
 
     // 優先選「待補登」中依牌桌順序最前面的那位
-    const firstPending=positions.find(p=>pending.has(p) && !folded.has(p));
+    const firstPending=positions.find(p=>pending.has(p) && !folded.has(p) && !positionHasNoStackV187(p));
     if(firstPending){
       const value=firstPending===hero?"我":firstPending;
       if([...sel.options].some(o=>o.value===value&&!o.disabled)){
