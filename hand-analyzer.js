@@ -256,7 +256,7 @@ function autoCompleteNoOpponentRoundsV186(){
 
     const folded=getFoldedBeforeStreet(street);
     const live=actionOrderForStreet(street).filter(p=>!folded.has(p));
-    const actionable=live.filter(p=>!allIn.has(p));
+    const actionable=live.filter(p=>!positionHasNoStackV187(p));
     const shouldAutoComplete = live.length>0 && actionable.length<=1 && (allIn.size>0 || live.length===1);
 
     const actorSel=builder.querySelector(".action-actor");
@@ -291,6 +291,23 @@ function autoCompleteNoOpponentRoundsV186(){
   });
 }
 
+// v187：行動選單只保留「仍有後手、且尚未棄牌」的玩家。
+// 除了明確登記過全下，也直接用統一的剩餘籌碼計算判斷，避免玩家已經剩餘 0
+// 卻因為跨街或舊紀錄狀態仍出現在「誰行動」選單。
+function positionHasNoStackV187(pos){
+  if(!pos) return false;
+  if(getAllInPositionsV165().has(pos)) return true;
+  try{
+    if(typeof window.v166RemainingV186 === "function"){
+      const remaining = window.v166RemainingV186(pos);
+      if(remaining !== null && remaining !== undefined && Number.isFinite(Number(remaining))){
+        return Number(remaining) <= 0;
+      }
+    }
+  }catch(e){}
+  return false;
+}
+
 function populateActors(){
   const hero=$("saHeroPos").value;
 
@@ -310,7 +327,7 @@ function populateActors(){
     sel.disabled=false;
     sel.innerHTML="";
 
-    Array.from(positions).filter(pos=>!getAllInPositionsV165().has(pos)).forEach(p=>{
+    Array.from(positions).filter(pos=>!positionHasNoStackV187(pos)).forEach(p=>{
       const opt=document.createElement("option");
       const isHero=p===hero;
       const isFolded=folded.has(p);
@@ -946,7 +963,7 @@ function initActionBuilders(){
 
       // livePositions 本身已排除棄牌者；
       // 再排除已 All-in 者，剩下的才是真正還能行動的人。
-      const actionableLivePositions = livePositions.filter(p => !allInNow.has(p));
+      const actionableLivePositions = livePositions.filter(p => !positionHasNoStackV187(p));
 
       // 已經沒有人可以再行動：直接完成本輪。
       if (actionableLivePositions.length === 0) {
@@ -998,7 +1015,7 @@ function initActionBuilders(){
         for(let step=1;step<=positions.length;step++){
           const nextPos=positions[(actedIndex+step)%positions.length];
           if(foldedNow.has(nextPos)) continue;
-          if(getAllInPositionsV165().has(nextPos)) continue;
+          if(positionHasNoStackV187(nextPos)) continue;
           const nextValue=nextPos===$("saHeroPos").value?"我":nextPos;
           const nextOpt=[...actor.options].find(o=>o.value===nextValue&&!o.disabled);
           if(nextOpt){ actor.value=nextValue; break; }
