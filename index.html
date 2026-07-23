@@ -498,7 +498,29 @@ label:has(> input[placeholder*="搜尋中文"]) {
 }
 </style>
 
-</head>
+<style>
+.meaning-btn{border:0;background:#eef3f9;border-radius:10px;padding:6px 9px;font-weight:700;margin-left:6px}
+.meaning-pop{display:none;padding:10px 12px;margin:6px 8px 10px;background:#f4f7fb;border-radius:12px;line-height:1.55;color:#344158}
+.meaning-pop.open{display:block}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const M={"Cooler": "雙方都拿到非常強、正常情況下很難棄掉的牌，因此其中一方幾乎無法避免輸掉大底池。例：KK 對上 AA。", "VPIP": "玩家在翻牌前自願投入籌碼參與底池的比例，用來觀察玩家玩牌範圍的鬆緊。", "PFR": "玩家在翻牌前主動加注的比例，用來觀察翻牌前的進攻程度。", "AF": "衡量玩家下注、加注相對於跟注的積極程度。", "WTSD": "玩家看到翻牌後，最後一路打到攤牌的比例。", "WSD": "玩家進入攤牌後實際贏得底池的比例。", "Slow Roll": "明明幾乎確定自己是贏家，卻故意拖延亮牌，通常被視為不禮貌的牌桌行為。", "Royal Flush": "同一花色的 A、K、Q、J、10，是德州撲克最大的牌型。", "Straight Flush": "五張連續點數而且全部同一花色的牌。", "Four of a Kind": "四張相同點數的牌，再搭配一張其他牌。", "Full House": "三張相同點數加上一對。", "Flush": "五張同一花色但點數不必連續的牌。", "Straight": "五張點數連續、花色不限的牌。", "All-in": "把自己目前剩下的全部籌碼投入底池。", "Check": "目前無人下注時選擇不下注，把行動交給下一位玩家。", "Call": "投入與目前下注額相同的籌碼，繼續留在牌局中。", "Raise": "在目前下注額之上再提高下注金額。", "Fold": "放棄目前手牌以及爭奪這個底池的資格。", "Bluff": "牌力不強時透過下注或加注，試圖讓更好的牌棄牌。", "Value Bet": "認為自己的牌領先，下注希望較差的牌願意跟注。", "Pot Odds": "比較跟注成本與底池大小的比例，用來判斷跟注是否划算。", "Equity": "在目前牌面與可能後續牌之下，這手牌平均能贏得底池的比例。", "Outs": "能讓你的牌明顯改善並有機會成為勝牌的剩餘牌張。", "Set": "手上有口袋對子，公共牌再出現一張相同點數形成的暗三條。", "Trips": "公共牌有一對，你手上有第三張相同點數形成的明三條。", "Bad Beat": "原本勝率非常高的強牌，被低機率的後續牌逆轉輸掉。", "Small Blind": "莊家左手邊第一位玩家，發牌前必須投入較小的強制盲注。", "Big Blind": "小盲左手邊的玩家，發牌前必須投入完整的大盲注。", "Button": "莊家位，翻牌後通常最後行動，是最有利的位置之一。", "Under the Gun": "槍口位，翻牌前第一個行動的位置。", "Cutoff": "莊家位右手邊的位置，常見縮寫 CO。", "Hijack": "Cutoff 右手邊的位置，常見縮寫 HJ。"};
+function add(){
+ document.querySelectorAll('button').forEach(play=>{
+  if(!play.textContent.includes('▶'))return;
+  let row=play.parentElement;if(!row||row.dataset.meaning)return;
+  let txt=row.innerText, key=Object.keys(M).find(k=>txt.includes(k));if(!key)return;
+  row.dataset.meaning='1';
+  let b=document.createElement('button');b.type='button';b.className='meaning-btn';b.textContent='📖 意思';
+  let d=document.createElement('div');d.className='meaning-pop';d.textContent=M[key];
+  b.onclick=e=>{e.preventDefault();e.stopPropagation();d.classList.toggle('open')};
+  row.insertBefore(b,play);row.appendChild(d);
+ });
+}
+add();new MutationObserver(add).observe(document.body,{childList:true,subtree:true});
+});
+</script></head>
 <body>
 <header class="top">
 <div>
