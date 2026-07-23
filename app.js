@@ -705,3 +705,74 @@ window.addEventListener("unhandledrejection",e=>console.error(e.reason));
   new MutationObserver(render).observe(document.body,{subtree:true,childList:true});
   setTimeout(render,300);
 })();
+
+
+/* v180ViewerLogFix：一般登入與匿名查看者都可記錄；房主本人不計入 */
+async function v180RecordViewerLog(roomId, roomData, user){
+  try{
+    if(!roomId || !user) return;
+    const ownerUid = roomData?.ownerUid || "";
+    if(ownerUid && user.uid === ownerUid) return;
+
+    const viewerUid = user.uid;
+    const viewerName =
+      user.displayName ||
+      user.email?.split("@")[0] ||
+      (user.isAnonymous ? "匿名查看者" : "一般查看者");
+
+    const ref = doc(db, "rooms", roomId, "viewerLogs", viewerUid);
+    const snap = await getDoc(ref);
+    const now = new Date();
+    const today = now.toLocaleDateString("sv-SE");
+
+    if(snap.exists()){
+      const d = snap.data() || {};
+      const lastDay = d.lastViewDay || "";
+      await setDoc(ref, {
+        name: viewerName,
+        viewerName,
+        email: user.email || "",
+        deviceCode: d.deviceCode || viewerUid.slice(0,8),
+        totalViews: Number(d.totalViews || d.totalCount || 0) + 1,
+        totalCount: Number(d.totalViews || d.totalCount || 0) + 1,
+        todayViews: lastDay === today ? Number(d.todayViews || d.todayCount || 0) + 1 : 1,
+        todayCount: lastDay === today ? Number(d.todayViews || d.todayCount || 0) + 1 : 1,
+        lastViewDay: today,
+        lastViewedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, {merge:true});
+    }else{
+      await setDoc(ref, {
+        name: viewerName,
+        viewerName,
+        email: user.email || "",
+        deviceCode: viewerUid.slice(0,8),
+        totalViews: 1,
+        totalCount: 1,
+        todayViews: 1,
+        todayCount: 1,
+        lastViewDay: today,
+        lastViewedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, {merge:true});
+    }
+  }catch(err){
+    console.warn("viewer log v180:", err);
+  }
+}
+
+
+/* v180：登入完成後嘗試記錄目前房間查看；房主會由函式自動排除 */
+setTimeout(async ()=>{
+  try{
+    const user = auth.currentUser;
+    const roomId =
+      window.currentRoomId ||
+      localStorage.getItem("currentRoomId") ||
+      localStorage.getItem("roomId");
+    if(!user || !roomId) return;
+    const roomSnap = await getDoc(doc(db, "rooms", roomId));
+    if(roomSnap.exists()) await v180RecordViewerLog(roomId, roomSnap.data(), user);
+  }catch(e){ console.warn("viewer log init v180:", e); }
+}, 1500);
