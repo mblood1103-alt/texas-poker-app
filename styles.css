@@ -1966,3 +1966,17 @@ section,details,.card{position:relative;z-index:2}
  .poker-cards-decor{right:-38px!important;opacity:.68!important}
  body::before,body::after{font-size:31px!important}
 }
+/* v206 術語按鈕底色統一：收藏與發音改為「意思」按鈕同款淺色 */
+#pokerTermsCard .term-fav,
+#pokerTermsCard .term-speak{
+  background:#eef3f9 !important;
+  color:#0f172a !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+#pokerTermsCard .term-fav:hover,
+#pokerTermsCard .term-speak:hover,
+#pokerTermsCard .term-fav:active,
+#pokerTermsCard .term-speak:active{
+  background:#e7edf5 !important;
+}
