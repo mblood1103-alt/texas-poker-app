@@ -1980,3 +1980,20 @@ section,details,.card{position:relative;z-index:2}
 #pokerTermsCard .term-speak:active{
   background:#e7edf5 !important;
 }
+
+/* v207：參考示意圖的滿版德州元素背景 */
+body{background:#fffdf9!important;background-image:radial-gradient(circle at 20% 12%,rgba(224,173,74,.08),transparent 25%),radial-gradient(circle at 85% 70%,rgba(216,68,68,.05),transparent 28%)!important}
+.poker-bg-decor{position:fixed!important;inset:0!important;overflow:hidden!important;pointer-events:none!important;z-index:0!important}
+.poker-bg-decor::after{content:"✦   ♠       ✧        ♥\A      ♦     ✦       ♣\A ✧       ♠         ♦      ✦\A      ♥       ✧       ♣";white-space:pre;position:absolute;inset:3% 2%;font:700 30px/7 Georgia,serif;color:rgba(185,137,52,.16);transform:rotate(-3deg)}
+.poker-chip{width:88px!important;height:88px!important;border:10px dashed rgba(255,255,255,.95)!important;box-shadow:0 8px 18px rgba(15,23,42,.20),inset 0 0 0 5px rgba(255,255,255,.8)!important;opacity:.92!important}
+.poker-chip::after{inset:12px!important;font-size:28px!important}
+.poker-chip.red{left:-45px!important;top:7%!important;background:#cf554c!important;color:#cf554c!important}
+.poker-chip.blue{left:-48px!important;top:54%!important;background:#315e9c!important;color:#315e9c!important}
+.poker-chip.black{left:auto!important;right:-48px!important;top:76%!important;background:#252b34!important;color:#252b34!important}
+.poker-cards-decor{right:-24px!important;top:5%!important;width:155px!important;height:205px!important;opacity:.96!important;transform:rotate(8deg)!important;filter:drop-shadow(0 10px 12px rgba(24,35,55,.18))!important}
+.poker-card-decor{width:96px!important;height:142px!important;border:1px solid #d8d3c9!important;border-radius:12px!important;font-size:31px!important;padding:10px!important;background:#fffdf9!important}
+.poker-card-decor:first-child{left:0!important;top:42px!important}.poker-card-decor:last-child{right:0!important;top:0!important}
+/* 底部再增加一組像示意圖的牌 */
+.poker-bg-decor:before{content:"A♥   A♣";position:absolute;right:-18px;bottom:-28px;width:190px;height:120px;padding:18px 10px;border-radius:13px 0 0 0;background:linear-gradient(110deg,transparent 0 12%,#fff 13% 55%,transparent 56%),linear-gradient(70deg,transparent 0 42%,#fff 43% 82%,transparent 83%);font:700 30px Georgia,serif;color:#b92f36;transform:rotate(-8deg);filter:drop-shadow(0 6px 8px rgba(20,30,45,.15));opacity:.9}
+.app,.container,main{position:relative!important;z-index:1!important}
+@media(max-width:600px){.poker-chip{width:70px!important;height:70px!important}.poker-chip.red{left:-40px!important}.poker-chip.blue{left:-40px!important}.poker-chip.black{right:-42px!important}.poker-cards-decor{right:-48px!important;transform:scale(.82) rotate(8deg)!important;transform-origin:top right!important}.poker-bg-decor:before{transform:scale(.82) rotate(-8deg);transform-origin:bottom right}.poker-bg-decor::after{font-size:24px}}
