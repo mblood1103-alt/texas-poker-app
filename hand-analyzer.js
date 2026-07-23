@@ -246,8 +246,36 @@ function getAllInPositionsV165(){
   return allIn;
 }
 
-// v186：當牌局只剩 0～1 位「還有籌碼且可繼續下注」的玩家時，
-// 已經不可能再形成新的下注／跟注，當街與後續街直接顯示完成本輪。
+// v189：判斷某一街是否還有人「欠回應」最後一筆下注／加注／全下。
+// 重要：即使進攻者已經 All-in 且後手為 0，只要仍有玩家尚未對該下注做出
+// 跟注、棄牌或全下等回應，本輪就不能自動完成。
+function streetHasPendingResponseV189(street){
+  const streetActions = actionState[street] || [];
+  const foldedNow = getFoldedBeforeStreet(street);
+  const livePositions = actionOrderForStreet(street).filter(p => !foldedNow.has(p));
+  const actionableLivePositions = livePositions.filter(p => !positionHasNoStackV187(p));
+  const heroPosNow = $("saHeroPos").value;
+
+  const normalizedActor = a => {
+    const p = actualActorPosition(a.actor);
+    return p || (a.actor === "我" ? heroPosNow : a.actor);
+  };
+
+  let lastAggressive = -1;
+  streetActions.forEach((a, i) => {
+    if (["開池", "下注", "加注", "加註", "全下"].includes(a.action)) lastAggressive = i;
+  });
+  if(lastAggressive < 0) return false;
+
+  const aggressor = normalizedActor(streetActions[lastAggressive]);
+  const responded = new Set(streetActions.slice(lastAggressive + 1).map(normalizedActor));
+  const needResponse = actionableLivePositions.filter(p => p !== aggressor);
+  return needResponse.some(p => !responded.has(p));
+}
+
+// v189：當牌局只剩 0～1 位「還有籌碼且可繼續下注」的玩家時，
+// 只有在當街已經沒有人欠回應時，才能自動完成本輪。
+// 這樣像「HJ 過牌 → CO 全下 → HJ 尚未回應」時，HJ 仍可跟注／棄牌／全下。
 function autoCompleteNoOpponentRoundsV186(){
   const allIn = getAllInPositionsV165();
   ["preflop","flop","turn","river"].forEach(street=>{
@@ -257,7 +285,8 @@ function autoCompleteNoOpponentRoundsV186(){
     const folded=getFoldedBeforeStreet(street);
     const live=actionOrderForStreet(street).filter(p=>!folded.has(p));
     const actionable=live.filter(p=>!positionHasNoStackV187(p));
-    const shouldAutoComplete = live.length>0 && actionable.length<=1 && (allIn.size>0 || live.length===1);
+    const hasPendingResponse = streetHasPendingResponseV189(street);
+    const shouldAutoComplete = live.length>0 && actionable.length<=1 && !hasPendingResponse && (allIn.size>0 || live.length===1);
 
     const actorSel=builder.querySelector(".action-actor");
     const typeSel=builder.querySelector(".action-type");
