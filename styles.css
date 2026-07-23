@@ -2012,3 +2012,18 @@ body{background:#fffdf9!important;background-image:radial-gradient(circle at 50%
 .poker-card-decor:first-child::after{font-size:58px!important}.poker-card-decor:last-child::after{font-size:54px!important}
 .poker-bg-decor:before{content:"A♥     A♣";position:absolute;right:-24px;bottom:-18px;width:250px;height:155px;padding:24px 18px;border-radius:16px 0 0 0;background:linear-gradient(105deg,transparent 0 9%,#fff 10% 52%,transparent 53%),linear-gradient(72deg,transparent 0 39%,#fff 40% 82%,transparent 83%);font:700 39px Georgia,serif;color:#bd3037;transform:rotate(-7deg);filter:drop-shadow(0 8px 10px rgba(20,30,45,.18));opacity:1}
 @media(max-width:600px){.poker-chip{width:92px!important;height:92px!important}.poker-chip.red{left:-52px!important}.poker-chip.blue{left:-54px!important}.poker-chip.black{right:-54px!important}.poker-cards-decor{right:-65px!important;transform:scale(.88) rotate(7deg)!important;transform-origin:top right!important}.poker-bg-decor:before{right:-55px!important;transform:scale(.86) rotate(-7deg);transform-origin:bottom right}.poker-bg-decor::after{font-size:22px!important}}
+
+
+/* v210：直接採用示意圖的邊緣美術，不再用 CSS 假畫籌碼與撲克牌 */
+body{background:#fffdf9 url("./poker_mockup_edge_background.jpg") center top/100% auto repeat-y fixed!important}
+.poker-bg-decor{display:none!important}
+details.card.collapsible-card{overflow:hidden}
+details.card.collapsible-card>summary{position:relative;z-index:1}
+details.card.collapsible-card>summary::after{position:absolute;right:7%;top:50%;transform:translateY(-50%);font:700 52px/1 Georgia,serif;opacity:.055;pointer-events:none}
+details.stats-details>summary::after{content:"♠";color:#27364d}
+details.history-details>summary::after{content:"♥";color:#d74c59}
+#handAnalyzerCard>summary::after{content:"♦";color:#d74c59}
+#pokerJudgeCard>summary::after{content:"♣";color:#27364d}
+#beginnerGuideCard>summary::after{content:"♠";color:#27364d}
+#pokerTermsCard>summary::after{content:"♥";color:#d74c59}
+@media(max-width:600px){body{background-size:auto 100vh!important;background-position:center top!important}details.card.collapsible-card>summary::after{font-size:42px;right:5%}}
