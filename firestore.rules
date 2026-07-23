@@ -29,16 +29,24 @@ service cloud.firestore {
         allow create, update: if request.auth != null
                               && request.auth.uid == viewerUid;
 
-        allow read, delete: if request.auth != null
-                            && get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerUid == request.auth.uid;
+        allow read: if request.auth != null
+                    && (request.auth.uid == viewerUid
+                        || get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerUid == request.auth.uid);
+
+        allow delete: if request.auth != null
+                      && get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerUid == request.auth.uid;
       }
 
       match /analysisLogs/{logId} {
         allow create: if request.auth != null
                       && request.resource.data.uid == request.auth.uid;
 
-        allow read, delete: if request.auth != null
-                            && get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerUid == request.auth.uid;
+        allow read: if request.auth != null
+                    && (request.auth.uid == viewerUid
+                        || get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerUid == request.auth.uid);
+
+        allow delete: if request.auth != null
+                      && get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerUid == request.auth.uid;
 
         allow update: if false;
       }
