@@ -1197,7 +1197,10 @@ document.addEventListener("DOMContentLoaded", () => {
 #pokerTermsCard .poker-terms-body{line-height:1.45}.term-category{border:1px solid #d8e1ec;border-radius:12px;margin:7px 0;overflow:hidden}.term-category>summary{cursor:pointer;padding:9px 11px;font-weight:800;display:flex;align-items:center;justify-content:space-between;min-height:24px}.term-count{font-size:12px;opacity:.6}.term-list{padding:0 9px 8px}.term-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 2px;border-top:1px solid rgba(128,128,128,.16)}.term-row>div{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}.term-en{font-size:13px;opacity:.75}.term-speak{width:36px;min-width:36px;height:30px;padding:0;border-radius:9px;font-size:14px}.term-category:not([open]){margin:5px 0}
 </style>
 <script>
-document.addEventListener('click',function(e){const b=e.target.closest('.term-speak');if(!b)return;const text=b.dataset.speak;if(!text||!('speechSynthesis'in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.82;speechSynthesis.speak(u);});
+document.addEventListener('click',function(e){const b=e.target.closest('.term-speak');if(!b)return;const text=b.dataset.speak;if(!text||!('speechSynthesis'in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(({
+"VPIP":"V P I P","PFR":"P F R","AF":"A F","WTSD":"W T S D","WSD":"W S D",
+"SB":"S B","BB":"B B","UTG":"U T G","BTN":"B T N","CO":"C O","HJ":"H J"
+}[String(text).trim().toUpperCase()] || text));u.lang='en-US';u.rate=.82;speechSynthesis.speak(u);});
 </script>
 </body>
 </html>
