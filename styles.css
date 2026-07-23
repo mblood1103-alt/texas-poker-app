@@ -1944,3 +1944,25 @@ body::after{content:"♥\A ♣\A ♠\A ♦";white-space:pre;font-size:48px;right
 .poker-card-decor{position:absolute;width:70px;height:100px;border:1px solid #ccd4df;border-radius:9px;background:#fff;box-shadow:0 5px 15px rgba(15,23,42,.12);font:700 25px Georgia;padding:8px}
 .poker-card-decor:first-child{left:0;top:25px;transform:rotate(-14deg);color:#172033}.poker-card-decor:last-child{right:0;top:0;color:#c43f3f}
 @media(max-width:600px){.poker-chip{width:48px;height:48px}.poker-cards-decor{opacity:.14;right:-45px}.poker-chip{opacity:.25}}
+
+/* v205：精緻德州撲克主題背景（依使用者指定樣式） */
+body{background:linear-gradient(180deg,#fbfcff 0%,#f5f7fc 55%,#fbfcff 100%)!important}
+.poker-bg-decor{z-index:0!important}
+.poker-bg-decor::before{content:"";position:absolute;inset:0;background:
+ radial-gradient(circle at 7% 9%,rgba(221,169,68,.20) 0 2px,transparent 3px),
+ radial-gradient(circle at 92% 36%,rgba(221,169,68,.18) 0 2px,transparent 3px),
+ radial-gradient(circle at 8% 62%,rgba(221,169,68,.16) 0 2px,transparent 3px),
+ radial-gradient(circle at 91% 83%,rgba(221,169,68,.18) 0 2px,transparent 3px);opacity:.9}
+body::before{content:"♠\A ♥\A ♦\A ♣\A ♠";left:8px;top:17%;font-size:38px;color:#24334c;opacity:.075;line-height:4.7}
+body::after{content:"♥\A ♠\A ♣\A ♦\A ♥";right:8px;top:23%;font-size:36px;color:#c84a55;opacity:.07;line-height:4.8}
+.poker-chip{opacity:.78!important;width:64px!important;height:64px!important;border-width:8px!important;filter:drop-shadow(0 5px 7px rgba(24,35,55,.16))}
+.poker-chip.red{left:-32px!important;top:19%!important}.poker-chip.blue{right:auto!important;left:-33px!important;top:54%!important}.poker-chip.black{left:auto!important;right:-33px!important;top:80%!important}
+.poker-cards-decor{opacity:.78!important;right:-24px!important;top:10%!important;width:120px!important;height:155px!important;filter:drop-shadow(0 8px 10px rgba(24,35,55,.12))}
+.poker-card-decor{width:78px!important;height:112px!important;border-radius:10px!important;background:linear-gradient(145deg,#fff,#faf8f4)!important}
+.poker-card-decor:first-child::after{content:"♠";display:block;font-size:42px;text-align:center;margin-top:8px}.poker-card-decor:last-child::after{content:"♥";display:block;font-size:38px;text-align:center;margin-top:8px}
+section,details,.card{position:relative;z-index:2}
+@media(max-width:600px){
+ .poker-chip{width:54px!important;height:54px!important;opacity:.72!important}
+ .poker-cards-decor{right:-38px!important;opacity:.68!important}
+ body::before,body::after{font-size:31px!important}
+}
