@@ -2012,35 +2012,3 @@ body{background:#fffdf9!important;background-image:radial-gradient(circle at 50%
 .poker-card-decor:first-child::after{font-size:58px!important}.poker-card-decor:last-child::after{font-size:54px!important}
 .poker-bg-decor:before{content:"A♥     A♣";position:absolute;right:-24px;bottom:-18px;width:250px;height:155px;padding:24px 18px;border-radius:16px 0 0 0;background:linear-gradient(105deg,transparent 0 9%,#fff 10% 52%,transparent 53%),linear-gradient(72deg,transparent 0 39%,#fff 40% 82%,transparent 83%);font:700 39px Georgia,serif;color:#bd3037;transform:rotate(-7deg);filter:drop-shadow(0 8px 10px rgba(20,30,45,.18));opacity:1}
 @media(max-width:600px){.poker-chip{width:92px!important;height:92px!important}.poker-chip.red{left:-52px!important}.poker-chip.blue{left:-54px!important}.poker-chip.black{right:-54px!important}.poker-cards-decor{right:-65px!important;transform:scale(.88) rotate(7deg)!important;transform-origin:top right!important}.poker-bg-decor:before{right:-55px!important;transform:scale(.86) rotate(-7deg);transform-origin:bottom right}.poker-bg-decor::after{font-size:22px!important}}
-
-/* v209：重新製作，貼近參考圖：米白底、整塔籌碼、真實卡片與每個功能卡淡花色 */
-body{background:#fdfbf7!important;background-image:none!important}
-.poker-bg-decor::after{content:""!important;background:none!important;text-shadow:none!important}
-/* 隱藏舊三顆圓形籌碼，改用多層堆疊 */
-.poker-chip{border-radius:50%!important;width:96px!important;height:96px!important;border:10px dashed #f7f2e9!important;box-shadow:0 5px 12px rgba(31,41,55,.22),inset 0 0 0 5px rgba(255,255,255,.78)!important}
-.poker-chip::after{inset:13px!important;background:#fffaf2!important;font-size:30px!important}
-.poker-chip.red{left:-55px!important;top:7%!important;box-shadow:0 5px 12px rgba(31,41,55,.22),0 86px 0 -2px #30343b,0 172px 0 -4px #315f9e,0 258px 0 -6px #c84c43,0 344px 0 -8px #315f9e!important}
-.poker-chip.blue{left:-58px!important;top:48%!important;box-shadow:0 5px 12px rgba(31,41,55,.22),0 82px 0 -2px #252b32,0 164px 0 -4px #c84c43,0 246px 0 -6px #315f9e,0 328px 0 -8px #c84c43!important}
-.poker-chip.black{right:-58px!important;top:72%!important;box-shadow:0 5px 12px rgba(31,41,55,.22),0 82px 0 -2px #252b32,0 164px 0 -4px #c84c43,0 246px 0 -6px #315f9e!important}
-/* 右上 AK 卡片更像參考圖 */
-.poker-cards-decor{right:-42px!important;top:4%!important;width:175px!important;height:220px!important;transform:rotate(8deg)!important}
-.poker-card-decor{width:105px!important;height:160px!important;background:#fff!important;border:1px solid #ded8cf!important;box-shadow:0 8px 18px rgba(31,41,55,.18)!important}
-.poker-card-decor:first-child{top:42px!important;left:0!important}.poker-card-decor:last-child{top:0!important;right:0!important}
-.poker-card-decor:first-child::after{content:"♠"!important;color:#151a22!important}.poker-card-decor:last-child::after{content:"♥"!important;color:#bd3037!important}
-/* 底部雙 A */
-.poker-bg-decor:before{content:"A♥        A♣"!important;right:-38px!important;bottom:-18px!important;width:255px!important;height:150px!important;background:linear-gradient(105deg,transparent 0 8%,#fff 9% 52%,transparent 53%),linear-gradient(72deg,transparent 0 38%,#fff 39% 83%,transparent 84%)!important;font-size:36px!important}
-/* 每個主功能卡右側都有淡淡撲克牌花色點綴 */
-#statsCard,#sessionsCard,#strategyCard,#handPracticeCard,#beginnerGuideCard,#pokerTermsCard{overflow:hidden!important}
-#statsCard::after,#sessionsCard::after,#strategyCard::after,#handPracticeCard::after,#beginnerGuideCard::after,#pokerTermsCard::after{position:absolute;right:28px;top:50%;transform:translateY(-50%);font:700 58px Georgia,serif;opacity:.055;pointer-events:none;z-index:0}
-#statsCard::after{content:"♠";color:#24334c}#sessionsCard::after{content:"♥";color:#c84a55}#strategyCard::after{content:"♦";color:#c84a55}#handPracticeCard::after{content:"♣";color:#24334c}#beginnerGuideCard::after{content:"♠";color:#24334c}#pokerTermsCard::after{content:"♥";color:#c84a55}
-#statsCard>*,#sessionsCard>*,#strategyCard>*,#handPracticeCard>*,#beginnerGuideCard>*,#pokerTermsCard>*{position:relative;z-index:1}
-/* 米白空隙中的淡花色與金色小星點 */
-main{background-image:radial-gradient(circle at 5% 28%,rgba(207,157,62,.32) 0 2px,transparent 3px),radial-gradient(circle at 94% 46%,rgba(207,157,62,.28) 0 2px,transparent 3px),radial-gradient(circle at 8% 73%,rgba(207,157,62,.25) 0 2px,transparent 3px)!important}
-@media(max-width:600px){
- .poker-chip{width:82px!important;height:82px!important}
- .poker-chip.red{left:-49px!important;box-shadow:0 5px 12px rgba(31,41,55,.22),0 72px 0 -2px #30343b,0 144px 0 -4px #315f9e,0 216px 0 -6px #c84c43,0 288px 0 -8px #315f9e!important}
- .poker-chip.blue{left:-50px!important;box-shadow:0 5px 12px rgba(31,41,55,.22),0 70px 0 -2px #252b32,0 140px 0 -4px #c84c43,0 210px 0 -6px #315f9e,0 280px 0 -8px #c84c43!important}
- .poker-chip.black{right:-50px!important;box-shadow:0 5px 12px rgba(31,41,55,.22),0 70px 0 -2px #252b32,0 140px 0 -4px #c84c43,0 210px 0 -6px #315f9e!important}
- .poker-cards-decor{right:-62px!important;transform:scale(.84) rotate(8deg)!important;transform-origin:top right!important}
- #statsCard::after,#sessionsCard::after,#strategyCard::after,#handPracticeCard::after,#beginnerGuideCard::after,#pokerTermsCard::after{right:22px;font-size:48px}
-}
