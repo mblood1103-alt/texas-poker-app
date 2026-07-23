@@ -1927,3 +1927,20 @@ html, body{
   padding:3px 9px!important;
   font-size:12px!important;
 }
+
+/* v204：德州撲克背景插圖裝飾 */
+body::before, body::after{
+  content:"";position:fixed;z-index:0;pointer-events:none;opacity:.10;
+  font-family:Georgia,serif;font-weight:900;line-height:1;
+}
+body::before{content:"♠\A ♥\A ♦\A ♣";white-space:pre;font-size:52px;left:-12px;top:20%;color:#1c3153;transform:rotate(-8deg)}
+body::after{content:"♥\A ♣\A ♠\A ♦";white-space:pre;font-size:48px;right:-10px;top:48%;color:#b64040;transform:rotate(8deg)}
+.app,.container,main{position:relative;z-index:1}
+.poker-bg-decor{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.poker-chip{position:absolute;width:58px;height:58px;border-radius:50%;border:7px dashed rgba(255,255,255,.9);box-shadow:0 5px 14px rgba(15,23,42,.13),inset 0 0 0 4px rgba(255,255,255,.75);opacity:.34}
+.poker-chip::after{content:"♠";position:absolute;inset:8px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;font:700 20px Georgia;color:inherit}
+.poker-chip.red{background:#c94d4d;color:#c94d4d;left:-28px;top:35%}.poker-chip.blue{background:#365f96;color:#365f96;right:-30px;top:68%}.poker-chip.black{background:#26313f;color:#26313f;left:-29px;top:78%}
+.poker-cards-decor{position:absolute;right:-32px;top:16%;width:105px;height:138px;opacity:.20;transform:rotate(12deg)}
+.poker-card-decor{position:absolute;width:70px;height:100px;border:1px solid #ccd4df;border-radius:9px;background:#fff;box-shadow:0 5px 15px rgba(15,23,42,.12);font:700 25px Georgia;padding:8px}
+.poker-card-decor:first-child{left:0;top:25px;transform:rotate(-14deg);color:#172033}.poker-card-decor:last-child{right:0;top:0;color:#c43f3f}
+@media(max-width:600px){.poker-chip{width:48px;height:48px}.poker-cards-decor{opacity:.14;right:-45px}.poker-chip{opacity:.25}}
