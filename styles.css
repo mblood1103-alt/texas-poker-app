@@ -2027,3 +2027,32 @@ details.history-details>summary::after{content:"♥";color:#d74c59}
 #beginnerGuideCard>summary::after{content:"♠";color:#27364d}
 #pokerTermsCard>summary::after{content:"♥";color:#d74c59}
 @media(max-width:600px){body{background-size:auto 100vh!important;background-position:center top!important}details.card.collapsible-card>summary::after{font-size:42px;right:5%}}
+
+/* v212 — 使用指定示意圖的實際德州美術邊緣作為 App 背景 */
+body{
+  background-color:#fffdf8 !important;
+  background-image:url("./poker_background_v212.jpg") !important;
+  background-position:center top !important;
+  background-size:100% auto !important;
+  background-repeat:repeat-y !important;
+  background-attachment:scroll !important;
+}
+.poker-bg-decor{display:none!important}
+
+/* 功能卡片右側淡花色 */
+details.card.collapsible-card{overflow:hidden}
+details.card.collapsible-card>summary{position:relative;z-index:1}
+details.card.collapsible-card>summary::after{
+  position:absolute;right:6%;top:50%;transform:translateY(-50%);
+  font:700 48px/1 Georgia,serif;opacity:.055;pointer-events:none
+}
+details.stats-details>summary::after{content:"♠";color:#26344a}
+details.history-details>summary::after{content:"♥";color:#d8505d}
+#handAnalyzerCard>summary::after{content:"♦";color:#d8505d}
+#pokerJudgeCard>summary::after{content:"♣";color:#26344a}
+#beginnerGuideCard>summary::after{content:"♠";color:#26344a}
+#pokerTermsCard>summary::after{content:"♥";color:#d8505d}
+@media(max-width:600px){
+  body{background-size:100% auto!important;background-position:center top!important}
+  details.card.collapsible-card>summary::after{font-size:40px}
+}
