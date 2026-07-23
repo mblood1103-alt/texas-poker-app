@@ -1980,16 +1980,3 @@ section,details,.card{position:relative;z-index:2}
 #pokerTermsCard .term-speak:active{
   background:#e7edf5 !important;
 }
-
-
-/* v207：參考圖同款縮窄版面＋左右撲克裝飾 */
-html{background:#fffdf9}
-body{position:relative;background:radial-gradient(circle at 15% 8%,rgba(255,245,230,.72),transparent 28%),radial-gradient(circle at 85% 30%,rgba(245,248,255,.7),transparent 30%),#fffdf9}
-body::before,body::after{content:"";position:fixed;top:0;bottom:0;width:clamp(72px,14vw,150px);z-index:0;pointer-events:none;background-repeat:no-repeat;background-size:100% 100%;opacity:.98}
-body::before{left:0;background-image:url("assets/poker-decor-left.webp")}
-body::after{right:0;background-image:url("assets/poker-decor-right.webp")}
-.top,main{position:relative;z-index:1}
-main{max-width:660px!important;padding-left:18px!important;padding-right:18px!important}
-.card{border:1px solid rgba(226,214,194,.72);box-shadow:0 7px 20px rgba(93,69,38,.10)!important}
-@media(max-width:760px){main{max-width:82vw!important}body::before,body::after{width:11vw;opacity:.94}}
-@media(max-width:520px){main{max-width:84vw!important;padding-left:8px!important;padding-right:8px!important}body::before,body::after{width:10vw}.card{border-radius:16px}}
