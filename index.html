@@ -915,6 +915,74 @@ document.addEventListener('click',function(e){
 <p class="hint judge-tap-hint">點任何一個公牌或手牌空格，牌組就會自動跳出供你選擇。</p>
 </div>
 </details>
+
+<details class="card collapsible-card" id="pokerOddsCard">
+  <summary class="section-summary">📊 牌型機率大全</summary>
+  <div class="collapsible-body poker-odds-body">
+    <p class="hint">用中文查看翻牌前、翻牌後、轉牌與河牌的成牌機率。機率依「尚未看見的牌」計算；不知道的燒牌與其他玩家手牌，不會改變理論機率。</p>
+    <div class="odds-stage-tabs" role="tablist" aria-label="選擇發牌階段">
+      <button class="odds-stage-tab active" data-odds-stage="preflop" type="button">翻牌前</button>
+      <button class="odds-stage-tab" data-odds-stage="flop" type="button">翻牌後</button>
+      <button class="odds-stage-tab" data-odds-stage="turn" type="button">轉牌</button>
+      <button class="odds-stage-tab" data-odds-stage="river" type="button">河牌</button>
+    </div>
+
+    <section class="odds-stage-panel active" data-odds-panel="preflop">
+      <div class="odds-note">翻牌前：以你的兩張手牌為起點，計算翻牌三張或一路到河牌的常見結果。</div>
+      <div class="odds-grid">
+        <article class="odds-item"><div class="odds-title">手上一對，翻牌中三條以上</div><div class="odds-cards"><span>A♠</span><span class="red">A♥</span><b>＋</b><span>?</span><span>?</span><span>?</span></div><div class="odds-percent">11.76%</div><div class="odds-bar"><i style="width:11.76%"></i></div><small>約 8.5 次中 1 次</small></article>
+        <article class="odds-item"><div class="odds-title">手上一對，到河牌至少中三條</div><div class="odds-cards"><span>K♣</span><span class="red">K♦</span><b>＋</b><span>?</span><span>?</span><span>?</span><span>?</span><span>?</span></div><div class="odds-percent">19.18%</div><div class="odds-bar"><i style="width:19.18%"></i></div><small>約 5.2 次中 1 次</small></article>
+        <article class="odds-item"><div class="odds-title">兩張不同點數，翻牌至少中一對</div><div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>＋</b><span>?</span><span>?</span><span>?</span></div><div class="odds-percent">32.43%</div><div class="odds-bar"><i style="width:32.43%"></i></div><small>包含一對、兩對、三條以上</small></article>
+        <article class="odds-item"><div class="odds-title">兩張同花，翻牌出同花聽牌</div><div class="odds-cards"><span>A♠</span><span>J♠</span><b>＋</b><span>♠?</span><span>♠?</span><span>?</span></div><div class="odds-percent">10.94%</div><div class="odds-bar"><i style="width:10.94%"></i></div><small>翻牌剛好再出兩張同花色</small></article>
+        <article class="odds-item"><div class="odds-title">兩張同花，翻牌直接成同花</div><div class="odds-cards"><span>A♠</span><span>J♠</span><b>＋</b><span>♠?</span><span>♠?</span><span>♠?</span></div><div class="odds-percent">0.84%</div><div class="odds-bar"><i style="width:.84%"></i></div><small>約 119 次中 1 次</small></article>
+        <article class="odds-item"><div class="odds-title">相連手牌，翻牌直接成順子</div><div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>＋</b><span>?</span><span>?</span><span>?</span></div><div class="odds-percent">約 1.3%</div><div class="odds-bar"><i style="width:1.3%"></i></div><small>依手牌間隔略有不同</small></article>
+      </div>
+    </section>
+
+    <section class="odds-stage-panel" data-odds-panel="flop">
+      <div class="odds-note">翻牌後還有轉牌、河牌兩張可看。常用快速算法：出路數 × 4，約等於到河牌機率。</div>
+      <div class="odds-grid">
+        <article class="odds-item"><div class="odds-title">同花聽牌（9 張出路）</div><div class="odds-cards"><span>A♠</span><span>7♠</span><b>｜</b><span>K♠</span><span>3♠</span><span class="red">9♦</span></div><div class="odds-split"><b>轉牌 19.15%</b><b>到河牌 34.97%</b></div><div class="odds-bar"><i style="width:34.97%"></i></div><small>約 2.9 次中 1 次</small></article>
+        <article class="odds-item"><div class="odds-title">雙頭順聽牌（8 張出路）</div><div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>10♠</span><span class="red">J♦</span><span>2♣</span></div><div class="odds-split"><b>轉牌 17.02%</b><b>到河牌 31.45%</b></div><div class="odds-bar"><i style="width:31.45%"></i></div><small>兩端都能補成順子</small></article>
+        <article class="odds-item"><div class="odds-title">卡洞順聽牌（4 張出路）</div><div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>J♠</span><span class="red">Q♦</span><span>2♣</span></div><div class="odds-split"><b>轉牌 8.51%</b><b>到河牌 16.47%</b></div><div class="odds-bar"><i style="width:16.47%"></i></div><small>只有中間一個點數能補順</small></article>
+        <article class="odds-item"><div class="odds-title">一對升級成三條（2 張出路）</div><div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">7♦</span><span>2♠</span></div><div class="odds-split"><b>轉牌 4.26%</b><b>到河牌 8.42%</b></div><div class="odds-bar"><i style="width:8.42%"></i></div><small>剩下兩張 A 可幫你</small></article>
+        <article class="odds-item"><div class="odds-title">已中三條，升級葫蘆或鐵枝</div><div class="odds-cards"><span>K♣</span><span class="red">K♥</span><b>｜</b><span>K♠</span><span class="red">7♦</span><span>2♣</span></div><div class="odds-split"><b>轉牌 14.89%</b><b>到河牌 33.40%</b></div><div class="odds-bar"><i style="width:33.4%"></i></div><small>公牌配對或補最後一張 K</small></article>
+        <article class="odds-item"><div class="odds-title">兩對升級葫蘆（4 張出路）</div><div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">K♦</span><span>2♠</span></div><div class="odds-split"><b>轉牌 8.51%</b><b>到河牌 16.47%</b></div><div class="odds-bar"><i style="width:16.47%"></i></div><small>任一剩餘 A 或 K 都能成葫蘆</small></article>
+      </div>
+    </section>
+
+    <section class="odds-stage-panel" data-odds-panel="turn">
+      <div class="odds-note">轉牌後只剩河牌一張。常用快速算法：出路數 × 2，約等於河牌命中率。</div>
+      <div class="odds-table-wrap"><table class="odds-table"><thead><tr><th>目前聽牌</th><th>出路</th><th>河牌命中</th><th>約幾次中一次</th></tr></thead><tbody>
+        <tr><td>同花聽牌</td><td>9</td><td>19.57%</td><td>5.1 次</td></tr>
+        <tr><td>雙頭順聽牌</td><td>8</td><td>17.39%</td><td>5.8 次</td></tr>
+        <tr><td>卡洞順聽牌</td><td>4</td><td>8.70%</td><td>11.5 次</td></tr>
+        <tr><td>一對升三條</td><td>2</td><td>4.35%</td><td>23 次</td></tr>
+        <tr><td>兩對升葫蘆</td><td>4</td><td>8.70%</td><td>11.5 次</td></tr>
+        <tr><td>三條升葫蘆或鐵枝</td><td>10</td><td>21.74%</td><td>4.6 次</td></tr>
+        <tr><td>15 張複合聽牌</td><td>15</td><td>32.61%</td><td>3.1 次</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section class="odds-stage-panel" data-odds-panel="river">
+      <div class="odds-note">河牌已發完，不再有成牌機率；此頁用來快速確認最終牌型大小與全部 5 張牌型的稀有度。</div>
+      <div class="hand-rank-list">
+        <div><b>1　皇家同花順</b><span>約 0.000154%</span><small>同花色 10、J、Q、K、A</small></div>
+        <div><b>2　同花順</b><span>約 0.00139%</span><small>同花色的五張連續牌</small></div>
+        <div><b>3　鐵枝</b><span>約 0.0240%</span><small>四張相同點數</small></div>
+        <div><b>4　葫蘆</b><span>約 0.1441%</span><small>三條加一對</small></div>
+        <div><b>5　同花</b><span>約 0.1965%</span><small>五張同花色，不連續</small></div>
+        <div><b>6　順子</b><span>約 0.3925%</span><small>五張連續，花色不限</small></div>
+        <div><b>7　三條</b><span>約 2.1128%</span><small>三張相同點數</small></div>
+        <div><b>8　兩對</b><span>約 4.7539%</span><small>兩組不同對子</small></div>
+        <div><b>9　一對</b><span>約 42.2569%</span><small>一組相同點數</small></div>
+        <div><b>10　高牌</b><span>約 50.1177%</span><small>沒有組成以上牌型</small></div>
+      </div>
+      <p class="odds-footnote">上方稀有度是隨機抽 5 張牌的標準機率；德州撲克實戰會從 7 張牌中選最強 5 張，因此最終牌型分布不同。</p>
+    </section>
+  </div>
+</details>
+
 <div aria-labelledby="pokerPickerTitle" aria-modal="true" class="poker-picker-modal hidden" id="pokerPickerModal" role="dialog">
 <button aria-label="關閉選牌視窗" class="poker-picker-backdrop" id="pokerPickerBackdrop" type="button"></button>
 <section class="poker-picker-sheet">
@@ -1237,5 +1305,23 @@ document.addEventListener('click',function(e){const b=e.target.closest('.term-sp
 "SB":"S B","BB":"B B","UTG":"U T G","BTN":"B T N","CO":"C O","HJ":"H J"
 }[String(text).trim().toUpperCase()] || text));u.lang='en-US';u.rate=.82;speechSynthesis.speak(u);});
 </script>
+
+<style id="poker-odds-v216">
+#pokerOddsCard .poker-odds-body{display:grid;gap:12px}.odds-stage-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;position:sticky;top:0;z-index:3;padding:6px;background:var(--card,#fff);border-radius:12px}.odds-stage-tab{padding:9px 5px;border-radius:10px;font-size:14px;font-weight:800}.odds-stage-tab.active{background:#9d241f;color:#fff;box-shadow:0 3px 10px rgba(157,36,31,.28)}.odds-stage-panel{display:none}.odds-stage-panel.active{display:block}.odds-note{padding:10px 12px;border-radius:11px;background:rgba(197,145,35,.12);border:1px solid rgba(197,145,35,.35);font-size:13px;line-height:1.55;margin-bottom:10px}.odds-grid{display:grid;grid-template-columns:1fr;gap:10px}.odds-item{padding:12px;border:1px solid rgba(128,128,128,.24);border-radius:14px;background:rgba(255,255,255,.035)}.odds-title{font-weight:900;font-size:15px;margin-bottom:8px}.odds-cards{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:8px}.odds-cards span{display:inline-flex;align-items:center;justify-content:center;min-width:31px;height:42px;padding:0 4px;background:#f7f7f4;color:#171717;border:1px solid #c8c8c8;border-radius:6px;font-weight:900;box-shadow:0 2px 4px rgba(0,0,0,.15)}.odds-cards span.red{color:#c52828}.odds-cards b{padding:0 3px}.odds-percent{font-size:25px;font-weight:950;color:#c79322;line-height:1}.odds-split{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:#c79322}.odds-bar{height:8px;background:rgba(128,128,128,.25);border-radius:999px;overflow:hidden;margin:8px 0}.odds-bar i{display:block;height:100%;background:linear-gradient(90deg,#b27b12,#e0b63b);border-radius:999px}.odds-item small{opacity:.72}.odds-table-wrap{overflow:auto;border:1px solid rgba(128,128,128,.25);border-radius:13px}.odds-table{width:100%;border-collapse:collapse;min-width:520px}.odds-table th,.odds-table td{padding:11px 10px;text-align:center;border-bottom:1px solid rgba(128,128,128,.18)}.odds-table th{background:rgba(157,36,31,.9);color:white;position:sticky;top:0}.odds-table td:first-child{text-align:left;font-weight:800}.hand-rank-list{display:grid;gap:7px}.hand-rank-list>div{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 12px;border:1px solid rgba(128,128,128,.22);border-radius:11px}.hand-rank-list b{font-size:14px}.hand-rank-list span{font-weight:900;color:#c79322}.hand-rank-list small{grid-column:1/-1;opacity:.7}.odds-footnote{font-size:12px;opacity:.7;line-height:1.55;margin:10px 2px 0}@media(min-width:760px){.odds-grid{grid-template-columns:1fr 1fr}}@media(max-width:390px){.odds-stage-tab{font-size:12px;padding:8px 2px}.odds-split{font-size:12px}.odds-cards span{min-width:28px;height:39px}}
+</style>
+
+<script id="poker-odds-tabs-v216">
+document.addEventListener('DOMContentLoaded',()=>{
+  const card=document.getElementById('pokerOddsCard'); if(!card)return;
+  const tabs=[...card.querySelectorAll('[data-odds-stage]')];
+  const panels=[...card.querySelectorAll('[data-odds-panel]')];
+  tabs.forEach(tab=>tab.addEventListener('click',()=>{
+    const stage=tab.dataset.oddsStage;
+    tabs.forEach(x=>x.classList.toggle('active',x===tab));
+    panels.forEach(x=>x.classList.toggle('active',x.dataset.oddsPanel===stage));
+  }));
+});
+</script>
+
 </body>
 </html>
