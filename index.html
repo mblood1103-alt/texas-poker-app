@@ -919,7 +919,7 @@ document.addEventListener('click',function(e){
 <details class="card collapsible-card" id="pokerOddsCard">
   <summary class="section-summary">📊 牌型機率大全</summary>
   <div class="collapsible-body poker-odds-body">
-    <p class="hint">用中文查看翻牌前、翻牌後、轉牌與河牌的成牌機率。機率依「尚未看見的牌」計算；不知道的燒牌與其他玩家手牌，不會改變理論機率。</p>
+    <p class="hint">用中文查看翻牌前、翻牌後、轉牌與河牌的成牌機率。機率依「尚未看見的牌」計算；不知道的燒牌與其他玩家手牌，不會改變理論機率。一般 2 人、7 人或 9 人桌，只要其他人的牌沒有亮出，這些機率都相同。</p>
     <div class="odds-stage-tabs" role="tablist" aria-label="選擇發牌階段">
       <button class="odds-stage-tab active" data-odds-stage="preflop" type="button">翻牌前</button>
       <button class="odds-stage-tab" data-odds-stage="flop" type="button">翻牌後</button>
@@ -940,32 +940,82 @@ document.addEventListener('click',function(e){
     </section>
 
     <section class="odds-stage-panel" data-odds-panel="flop">
-      <div class="odds-note">翻牌後還有轉牌、河牌兩張可看。常用快速算法：出路數 × 4，約等於到河牌機率。</div>
+      <div class="odds-note"><strong>翻牌後還有兩張公牌：</strong><br>「下一張命中」＝轉牌這一張就補中；「兩張內命中」＝轉牌或河牌至少有一張補中。兩個百分比不能相加。常用快速算法：出路數 × 4，約等於兩張內命中率。</div>
       <div class="odds-grid">
-        <article class="odds-item"><div class="odds-title">同花聽牌（9 張出路）</div><div class="odds-cards"><span>A♠</span><span>7♠</span><b>｜</b><span>K♠</span><span>3♠</span><span class="red">9♦</span></div><div class="odds-split"><b>轉牌 19.15%</b><b>到河牌 34.97%</b></div><div class="odds-bar"><i style="width:34.97%"></i></div><small>約 2.9 次中 1 次</small></article>
-        <article class="odds-item"><div class="odds-title">雙頭順聽牌（8 張出路）</div><div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>10♠</span><span class="red">J♦</span><span>2♣</span></div><div class="odds-split"><b>轉牌 17.02%</b><b>到河牌 31.45%</b></div><div class="odds-bar"><i style="width:31.45%"></i></div><small>兩端都能補成順子</small></article>
-        <article class="odds-item"><div class="odds-title">卡洞順聽牌（4 張出路）</div><div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>J♠</span><span class="red">Q♦</span><span>2♣</span></div><div class="odds-split"><b>轉牌 8.51%</b><b>到河牌 16.47%</b></div><div class="odds-bar"><i style="width:16.47%"></i></div><small>只有中間一個點數能補順</small></article>
-        <article class="odds-item"><div class="odds-title">一對升級成三條（2 張出路）</div><div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">7♦</span><span>2♠</span></div><div class="odds-split"><b>轉牌 4.26%</b><b>到河牌 8.42%</b></div><div class="odds-bar"><i style="width:8.42%"></i></div><small>剩下兩張 A 可幫你</small></article>
-        <article class="odds-item"><div class="odds-title">已中三條，升級葫蘆或鐵枝</div><div class="odds-cards"><span>K♣</span><span class="red">K♥</span><b>｜</b><span>K♠</span><span class="red">7♦</span><span>2♣</span></div><div class="odds-split"><b>轉牌 14.89%</b><b>到河牌 33.40%</b></div><div class="odds-bar"><i style="width:33.4%"></i></div><small>公牌配對或補最後一張 K</small></article>
-        <article class="odds-item"><div class="odds-title">兩對升級葫蘆（4 張出路）</div><div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">K♦</span><span>2♠</span></div><div class="odds-split"><b>轉牌 8.51%</b><b>到河牌 16.47%</b></div><div class="odds-bar"><i style="width:16.47%"></i></div><small>任一剩餘 A 或 K 都能成葫蘆</small></article>
+        <article class="odds-item"><div class="odds-title">同花聽牌（9 張出路）</div><div class="odds-cards"><span>A♠</span><span>7♠</span><b>｜</b><span>K♠</span><span>3♠</span><span class="red">9♦</span></div><div class="odds-split"><b>下一張命中 19.15%</b><b>兩張內命中 34.97%</b></div><div class="odds-bar"><i style="width:34.97%"></i></div><small>約 2.9 次中 1 次</small></article>
+        <article class="odds-item"><div class="odds-title">雙頭順聽牌（8 張出路）</div><div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>10♠</span><span class="red">J♦</span><span>2♣</span></div><div class="odds-split"><b>下一張命中 17.02%</b><b>兩張內命中 31.45%</b></div><div class="odds-bar"><i style="width:31.45%"></i></div><small>兩端都能補成順子</small></article>
+        <article class="odds-item"><div class="odds-title">卡洞順聽牌（4 張出路）</div><div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>J♠</span><span class="red">Q♦</span><span>2♣</span></div><div class="odds-split"><b>下一張命中 8.51%</b><b>兩張內命中 16.47%</b></div><div class="odds-bar"><i style="width:16.47%"></i></div><small>只有中間一個點數能補順</small></article>
+        <article class="odds-item"><div class="odds-title">一對升級成三條（2 張出路）</div><div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">7♦</span><span>2♠</span></div><div class="odds-split"><b>下一張命中 4.26%</b><b>兩張內命中 8.42%</b></div><div class="odds-bar"><i style="width:8.42%"></i></div><small>剩下兩張 A 可幫你</small></article>
+        <article class="odds-item"><div class="odds-title">已中三條，升級葫蘆或鐵枝</div><div class="odds-cards"><span>K♣</span><span class="red">K♥</span><b>｜</b><span>K♠</span><span class="red">7♦</span><span>2♣</span></div><div class="odds-split"><b>下一張命中 14.89%</b><b>兩張內命中 33.40%</b></div><div class="odds-bar"><i style="width:33.4%"></i></div><small>公牌配對或補最後一張 K</small></article>
+        <article class="odds-item"><div class="odds-title">兩對升級葫蘆（4 張出路）</div><div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">K♦</span><span>2♠</span></div><div class="odds-split"><b>下一張命中 8.51%</b><b>兩張內命中 16.47%</b></div><div class="odds-bar"><i style="width:16.47%"></i></div><small>任一剩餘 A 或 K 都能成葫蘆</small></article>
       </div>
     </section>
 
     <section class="odds-stage-panel" data-odds-panel="turn">
-      <div class="odds-note">轉牌後只剩河牌一張。以下全部用「尚未看見的 46 張牌」計算；常用快速算法是出路數 × 2。</div>
+      <div class="odds-note"><strong>轉牌已經翻開，現在只剩河牌一張。</strong><br>下方百分比就是「河牌開出能幫你的牌」的機率。例如同花聽牌 19.57%，意思是河牌開出任一張剩餘黑桃的機率為 19.57%。</div>
       <div class="odds-grid">
-        <article class="odds-item"><div class="odds-title">同花聽牌（9 張出路）</div><div class="odds-cards"><span>A♠</span><span>7♠</span><b>｜</b><span>K♠</span><span>3♠</span><span class="red">9♦</span><span class="red">2♥</span><b>→</b><span>♠?</span></div><div class="odds-percent">19.57%</div><div class="odds-bar"><i style="width:19.57%"></i></div><small>河牌再出任一張黑桃即可完成同花，約 5.1 次中 1 次</small></article>
-        <article class="odds-item"><div class="odds-title">雙頭順聽牌（8 張出路）</div><div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>10♠</span><span class="red">J♦</span><span>2♣</span><span class="red">A♥</span><b>→</b><span>7?</span><span>Q?</span></div><div class="odds-percent">17.39%</div><div class="odds-bar"><i style="width:17.39%"></i></div><small>任一張 7 或 Q 都能完成順子，約 5.8 次中 1 次</small></article>
-        <article class="odds-item"><div class="odds-title">卡洞順聽牌（4 張出路）</div><div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>J♠</span><span class="red">Q♦</span><span>2♣</span><span class="red">A♥</span><b>→</b><span>10?</span></div><div class="odds-percent">8.70%</div><div class="odds-bar"><i style="width:8.7%"></i></div><small>只有四張 10 能補順，約 11.5 次中 1 次</small></article>
-        <article class="odds-item"><div class="odds-title">一對升三條（2 張出路）</div><div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">7♦</span><span>2♠</span><span class="red">9♥</span><b>→</b><span>A?</span></div><div class="odds-percent">4.35%</div><div class="odds-bar"><i style="width:4.35%"></i></div><small>剩餘兩張 A 能讓一對升成三條，約 23 次中 1 次</small></article>
-        <article class="odds-item"><div class="odds-title">兩對升葫蘆（4 張出路）</div><div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">K♦</span><span>2♠</span><span class="red">9♥</span><b>→</b><span>A?</span><span>K?</span></div><div class="odds-percent">8.70%</div><div class="odds-bar"><i style="width:8.7%"></i></div><small>剩餘兩張 A 或兩張 K 都能完成葫蘆，約 11.5 次中 1 次</small></article>
-        <article class="odds-item"><div class="odds-title">三條升葫蘆或鐵枝（10 張出路）</div><div class="odds-cards"><span>K♣</span><span class="red">K♥</span><b>｜</b><span>K♠</span><span class="red">7♦</span><span>2♣</span><span class="red">9♥</span><b>→</b><span>K?</span><span>配對?</span></div><div class="odds-percent">21.74%</div><div class="odds-bar"><i style="width:21.74%"></i></div><small>最後一張 K 成鐵枝；公牌 7、2、9 配對則成葫蘆</small></article>
-        <article class="odds-item"><div class="odds-title">同花＋順子複合聽牌（15 張出路）</div><div class="odds-cards"><span>8♠</span><span>9♠</span><b>｜</b><span>10♠</span><span class="red">J♦</span><span>2♠</span><span class="red">A♥</span><b>→</b><span>♠?</span><span>7?</span><span>Q?</span></div><div class="odds-percent">32.61%</div><div class="odds-bar"><i style="width:32.61%"></i></div><small>扣除重複出路後共 15 張，約 3.1 次中 1 次</small></article>
+        <article class="odds-item">
+          <div class="odds-title">同花聽牌（9 張出路）</div>
+          <div class="odds-cards"><span>A♠</span><span>7♠</span><b>｜</b><span>K♠</span><span>3♠</span><span class="red">9♦</span><span class="red">2♥</span></div>
+          <div class="odds-hit-label">河牌完成同花</div>
+          <div class="odds-percent">19.57%</div>
+          <div class="odds-outs-title">河牌可開這 9 張：</div>
+          <div class="odds-outs"><span>2♠</span><span>4♠</span><span>5♠</span><span>6♠</span><span>8♠</span><span>9♠</span><span>10♠</span><span>J♠</span><span>Q♠</span></div>
+          <div class="odds-bar"><i style="width:19.57%"></i></div><small>9 ÷ 46＝19.57%，約 5.1 次中 1 次</small>
+        </article>
+        <article class="odds-item">
+          <div class="odds-title">雙頭順聽牌（8 張出路）</div>
+          <div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>10♠</span><span class="red">J♦</span><span>2♣</span><span class="red">A♥</span></div>
+          <div class="odds-hit-label">河牌完成順子</div><div class="odds-percent">17.39%</div>
+          <div class="odds-outs-title">河牌可開這 8 張：</div>
+          <div class="odds-outs"><span>7♠</span><span class="red">7♥</span><span class="red">7♦</span><span>7♣</span><span>Q♠</span><span class="red">Q♥</span><span class="red">Q♦</span><span>Q♣</span></div>
+          <div class="odds-bar"><i style="width:17.39%"></i></div><small>8 ÷ 46＝17.39%，約 5.8 次中 1 次</small>
+        </article>
+        <article class="odds-item">
+          <div class="odds-title">卡洞順聽牌（4 張出路）</div>
+          <div class="odds-cards"><span>8♣</span><span class="red">9♥</span><b>｜</b><span>J♠</span><span class="red">Q♦</span><span>2♣</span><span class="red">A♥</span></div>
+          <div class="odds-hit-label">河牌完成順子</div><div class="odds-percent">8.70%</div>
+          <div class="odds-outs-title">河牌可開這 4 張：</div>
+          <div class="odds-outs"><span>10♠</span><span class="red">10♥</span><span class="red">10♦</span><span>10♣</span></div>
+          <div class="odds-bar"><i style="width:8.7%"></i></div><small>4 ÷ 46＝8.70%，約 11.5 次中 1 次</small>
+        </article>
+        <article class="odds-item">
+          <div class="odds-title">一對升三條（2 張出路）</div>
+          <div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">7♦</span><span>2♠</span><span class="red">9♥</span></div>
+          <div class="odds-hit-label">河牌升成三條</div><div class="odds-percent">4.35%</div>
+          <div class="odds-outs-title">河牌可開這 2 張：</div>
+          <div class="odds-outs"><span class="red">A♥</span><span class="red">A♦</span></div>
+          <div class="odds-bar"><i style="width:4.35%"></i></div><small>2 ÷ 46＝4.35%，約 23 次中 1 次</small>
+        </article>
+        <article class="odds-item">
+          <div class="odds-title">兩對升葫蘆（4 張出路）</div>
+          <div class="odds-cards"><span>A♠</span><span class="red">K♥</span><b>｜</b><span>A♣</span><span class="red">K♦</span><span>2♠</span><span class="red">9♥</span></div>
+          <div class="odds-hit-label">河牌完成葫蘆</div><div class="odds-percent">8.70%</div>
+          <div class="odds-outs-title">河牌可開這 4 張：</div>
+          <div class="odds-outs"><span class="red">A♥</span><span class="red">A♦</span><span>K♠</span><span>K♣</span></div>
+          <div class="odds-bar"><i style="width:8.7%"></i></div><small>4 ÷ 46＝8.70%，約 11.5 次中 1 次</small>
+        </article>
+        <article class="odds-item">
+          <div class="odds-title">三條升葫蘆或鐵枝（10 張出路）</div>
+          <div class="odds-cards"><span>K♣</span><span class="red">K♥</span><b>｜</b><span>K♠</span><span class="red">7♦</span><span>2♣</span><span class="red">9♥</span></div>
+          <div class="odds-hit-label">河牌升級成葫蘆或鐵枝</div><div class="odds-percent">21.74%</div>
+          <div class="odds-outs-title">河牌可開：最後 1 張 K，或剩餘的 7、2、9（共 9 張）</div>
+          <div class="odds-outs"><span class="red">K♦</span><span>7♠</span><span class="red">7♥</span><span>7♣</span><span>2♠</span><span class="red">2♥</span><span class="red">2♦</span><span>9♠</span><span class="red">9♦</span><span>9♣</span></div>
+          <div class="odds-bar"><i style="width:21.74%"></i></div><small>10 ÷ 46＝21.74%，約 4.6 次中 1 次</small>
+        </article>
+        <article class="odds-item">
+          <div class="odds-title">同花＋順子複合聽牌（15 張不重複出路）</div>
+          <div class="odds-cards"><span>8♠</span><span>9♠</span><b>｜</b><span>10♠</span><span class="red">J♦</span><span>2♠</span><span class="red">A♥</span></div>
+          <div class="odds-hit-label">河牌完成同花或順子</div><div class="odds-percent">32.61%</div>
+          <div class="odds-outs-title">黑桃、7、Q 的重複牌只算一次，共 15 張：</div>
+          <div class="odds-outs compact"><span>A♠</span><span>K♠</span><span>Q♠</span><span>J♠</span><span>7♠</span><span>6♠</span><span>5♠</span><span>4♠</span><span>3♠</span><span class="red">7♥</span><span class="red">7♦</span><span>7♣</span><span class="red">Q♥</span><span class="red">Q♦</span><span>Q♣</span></div>
+          <div class="odds-bar"><i style="width:32.61%"></i></div><small>15 ÷ 46＝32.61%，約 3.1 次中 1 次</small>
+        </article>
       </div>
     </section>
 
     <section class="odds-stage-panel" data-odds-panel="river">
-      <div class="odds-note">河牌已發完，不再計算下一張牌。這裡用完整牌面示意圖，依牌型由大到小排列，並顯示隨機 5 張牌的稀有度。</div>
+      <div class="odds-note"><strong>河牌已經發完，不會再有下一張牌。</strong><br>所以這一頁不是「河牌會開什麼的機率」，而是用牌面圖示快速確認最終牌型大小；右側百分比是隨機抽 5 張牌時該牌型的稀有度。</div>
       <div class="odds-grid river-rank-grid">
         <article class="odds-item river-rank"><div class="rank-head"><b>1　皇家同花順</b><span>約 0.000154%</span></div><div class="odds-cards"><span class="red">10♥</span><span class="red">J♥</span><span class="red">Q♥</span><span class="red">K♥</span><span class="red">A♥</span></div><small>同一花色的 10、J、Q、K、A，最大牌型</small></article>
         <article class="odds-item river-rank"><div class="rank-head"><b>2　同花順</b><span>約 0.00139%</span></div><div class="odds-cards"><span>5♠</span><span>6♠</span><span>7♠</span><span>8♠</span><span>9♠</span></div><small>同一花色的五張連續牌</small></article>
@@ -1183,7 +1233,7 @@ document.addEventListener('click',function(e){
 #seatPickerTitleRowV130.is-collapsed .seat-collapse-arrow-v130{
   transform:rotate(-90deg);
 }
-</style>
+.odds-hit-label{margin-top:4px;font-size:14px;font-weight:900;color:#9d241f}.odds-outs-title{margin-top:10px;margin-bottom:6px;font-size:13px;font-weight:800}.odds-outs{display:flex;flex-wrap:wrap;gap:5px;max-width:100%;overflow:hidden}.odds-outs span{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:42px;padding:0 5px;background:#f7f7f4;color:#171717;border:1px solid #c8c8c8;border-radius:6px;font-weight:900;box-shadow:0 2px 4px rgba(0,0,0,.12)}.odds-outs span.red{color:#c52828}.odds-outs.compact span{min-width:35px;height:39px}@media(max-width:390px){.odds-outs span{min-width:34px;height:39px;padding:0 4px}.odds-outs.compact span{min-width:31px;font-size:13px}}</style>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const section = document.querySelector(".seat-picker-section");
