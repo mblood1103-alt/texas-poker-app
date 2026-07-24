@@ -2024,6 +2024,7 @@ details.stats-details>summary::after{content:"♠";color:#27364d}
 details.history-details>summary::after{content:"♥";color:#d74c59}
 #handAnalyzerCard>summary::after{content:"♦";color:#d74c59}
 #pokerJudgeCard>summary::after{content:"♣";color:#27364d}
+#pokerOddsCard>summary::after{content:"♦";color:#d74c59}
 #beginnerGuideCard>summary::after{content:"♠";color:#27364d}
 #pokerTermsCard>summary::after{content:"♥";color:#d74c59}
 @media(max-width:600px){body{background-size:auto 100vh!important;background-position:center top!important}details.card.collapsible-card>summary::after{font-size:42px;right:5%}}
