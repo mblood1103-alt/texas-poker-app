@@ -365,7 +365,13 @@ function render(){
     root.querySelector(".player-full-content")?.classList.toggle("hidden",collapsedSettled);
     root.querySelectorAll(".owner-control").forEach(x=>x.classList.toggle("hidden",!editable));
     root.querySelectorAll("button,input,select").forEach(el=>{if(el.closest(".owner-control"))el.disabled=!editable});
-    root.querySelectorAll("[data-buy]").forEach(btn=>btn.onclick=()=>addBuyin(p.id,Number(btn.dataset.buy)));
+    const gameDefaultBuyin=Math.max(0,Number(g?.defaultBuyin??100));
+    const defaultBuyinBtn=root.querySelector(".defaultBuyinBtn");
+    if(defaultBuyinBtn){
+      defaultBuyinBtn.dataset.buy=String(gameDefaultBuyin);
+      defaultBuyinBtn.textContent=`+${gameDefaultBuyin}`;
+      defaultBuyinBtn.onclick=()=>gameDefaultBuyin>0&&addBuyin(p.id,gameDefaultBuyin);
+    }
     root.querySelector(".minus100Btn").onclick=()=>subtractBuyin100(p.id);
     root.querySelector(".customBtn").onclick=()=>{const a=Number(prompt("輸入買入金額"));if(a>0)addBuyin(p.id,a)};
     root.querySelector(".cashInput").value=p.cashout?Number(p.cashout):"";
