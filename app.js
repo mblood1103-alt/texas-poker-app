@@ -40,7 +40,7 @@ async function createOrOpenOwnerRoom(code){
   await runTransaction(db,async tx=>{
     const snap=await tx.get(ref);
     if(!snap.exists()){
-      const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};
+      const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[],defaultBuyin:100};
       tx.set(ref,{code,ownerEmail:user?.email||"",ownerUid:user?.uid||"",currentGameId:g.id,games:[g],favorites:[],createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
       return;
     }
@@ -250,7 +250,7 @@ async function addPlayer(){
   if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
   const n=$("playerName").value.trim()||$("favoriteSelect").value;
   if(!n)return alert("請先選擇或輸入玩家名稱");
-  const initialAmount=Math.max(0,Number($("initialBuyinAmount").value||0));
+  const initialAmount=Math.max(0,Number(currentGame()?.defaultBuyin ?? $("initialBuyinAmount").value ?? 100));
   const tableNoRaw=$("newPlayerTableNo")?.value||"";
   const tableNo=tableNoRaw===""?null:Number(tableNoRaw);
   try{
@@ -265,7 +265,8 @@ async function addPlayer(){
     });
     $("playerName").value="";
     $("favoriteSelect").value="";
-    setInitialBuyin(100);
+    // 保留本局預設買入，新增下一位玩家時直接沿用，不再跳回 $100。
+    setInitialBuyin(currentGame()?.defaultBuyin ?? initialAmount);
     if($("newPlayerTableNo"))$("newPlayerTableNo").value="";
     const tableBtn=$("newPlayerTableNoBtn");if(tableBtn)tableBtn.textContent="桌號";
   }catch(e){alert(e.message)}
@@ -318,6 +319,8 @@ function render(){
   document.querySelectorAll(".owner-only").forEach(x=>x.classList.toggle("hidden",!isOwner));if(isOwner)subscribeViewerLogs();
   $("roomTitle").textContent=`群組：${roomCode}`;
   const g=currentGame(),completed=!!g?.endedAt,editable=canEditCurrent();
+  // 每次同步畫面都沿用這一局儲存的預設買入。
+  setInitialBuyin(g?.defaultBuyin??100);
   // 已完成且未進入修改模式時，整個玩家操作版面收起，避免誤觸。
   $("currentGameCard").classList.toggle("hidden",completed&&!isEditing());
   $("gameDate").textContent=g?new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false}):"";
@@ -473,7 +476,7 @@ function rangeLabel(range,now){
 }
 async function editGame(gameId){if(!isOwner)return alert("只有房主可以修改牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return alert("找不到這一局");editingGameId=gameId;sessionStorage.setItem("editingGameId",gameId);await mutate(d=>{d.currentGameId=gameId});window.scrollTo({top:0,behavior:"smooth"})}
 function finishEditing(){editingGameId="";sessionStorage.removeItem("editingGameId");render();alert("修改已完成，這一局已重新鎖定。")}
-function deleteGame(gameId){if(!isOwner)return alert("只有房主可以刪除牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return;const when=new Date(target.startedAt).toLocaleString("zh-TW",{hour12:false});if(!confirm(`確定永久刪除 ${when} 的牌局嗎？\n\n刪除後無法復原，該局也會從日／週／月／年排行榜移除。`))return;mutate(d=>{d.games=(d.games||[]).filter(g=>g.id!==gameId);if(editingGameId===gameId){editingGameId="";sessionStorage.removeItem("editingGameId")}if(d.currentGameId===gameId){const remaining=d.games||[];if(remaining.length)d.currentGameId=remaining[remaining.length-1].id;else{const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[]};d.games=[g];d.currentGameId=g.id}}}).catch(e=>alert(e.message))}
+function deleteGame(gameId){if(!isOwner)return alert("只有房主可以刪除牌局");const target=(roomData.games||[]).find(g=>g.id===gameId);if(!target)return;const when=new Date(target.startedAt).toLocaleString("zh-TW",{hour12:false});if(!confirm(`確定永久刪除 ${when} 的牌局嗎？\n\n刪除後無法復原，該局也會從日／週／月／年排行榜移除。`))return;mutate(d=>{d.games=(d.games||[]).filter(g=>g.id!==gameId);if(editingGameId===gameId){editingGameId="";sessionStorage.removeItem("editingGameId")}if(d.currentGameId===gameId){const remaining=d.games||[];if(remaining.length)d.currentGameId=remaining[remaining.length-1].id;else{const g={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[],defaultBuyin:100};d.games=[g];d.currentGameId=g.id}}}).catch(e=>alert(e.message))}
 function localDateKey(value){
   const d=new Date(value);if(Number.isNaN(d.getTime()))return "";
   const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");
@@ -624,9 +627,28 @@ function setInitialBuyin(amount){
   $("initialBuyinHint").textContent=value>0?`新增玩家時會直接記錄第 1 次買入 ${money(value)}`:"只新增玩家，暫時不記錄買入";
   $("addPlayerBtn").textContent=value>0?`新增玩家＋買入 ${money(value)}`:"只新增玩家";
 }
-document.querySelectorAll(".initial-buyin-btn").forEach(btn=>btn.onclick=()=>setInitialBuyin(btn.dataset.amount));
+async function saveGameDefaultBuyin(amount){
+  const value=Math.max(0,Number(amount||0));
+  if(value<=0)return;
+  setInitialBuyin(value);
+  try{
+    await mutate(d=>{
+      const g=assertEditable(d);
+      g.defaultBuyin=value;
+      g.updatedAt=new Date().toISOString();
+    });
+  }catch(e){
+    alert(e.message||"無法儲存本局預設買入");
+    setInitialBuyin(currentGame()?.defaultBuyin??100);
+  }
+}
+document.querySelectorAll(".initial-buyin-btn").forEach(btn=>btn.onclick=()=>saveGameDefaultBuyin(btn.dataset.amount));
 const initialBuyinCustomBtn=$("initialBuyinCustomBtn");
-if(initialBuyinCustomBtn)initialBuyinCustomBtn.onclick=()=>{const amount=Number(prompt("輸入初始買入金額"));if(amount>0)setInitialBuyin(amount)};
+if(initialBuyinCustomBtn)initialBuyinCustomBtn.onclick=async()=>{
+  const current=Number(currentGame()?.defaultBuyin??$("initialBuyinAmount").value??100);
+  const amount=Number(prompt("輸入本局每位玩家的預設買入金額",String(current)));
+  if(amount>0)await saveGameDefaultBuyin(amount);
+};
 const newPlayerTableNoBtn=$("newPlayerTableNoBtn");
 if(newPlayerTableNoBtn)newPlayerTableNoBtn.onclick=()=>{
   const current=$("newPlayerTableNo")?.value||"";
@@ -659,7 +681,7 @@ $("finishBtn").onclick=async()=>{
   }catch(e){alert(`完成本局失敗：${e.message}`)}
 };
 $("editCurrentBtn").onclick=()=>currentGame()&&editGame(currentGame().id);$("finishEditBtn").onclick=finishEditing;
-$("newGameBtn").onclick=()=>{if(!isOwner)return;const g=currentGame();if(g&&!g.endedAt&&isGameEmpty(g))return alert("目前已經是空白新局，不需要再開一局。");clearEditingMode();mutate(d=>{const previousId=d.currentGameId||null;const ng={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[],openedFromGameId:previousId};d.games=d.games||[];d.games.push(ng);d.currentGameId=ng.id})};
+$("newGameBtn").onclick=()=>{if(!isOwner)return;const g=currentGame();if(g&&!g.endedAt&&isGameEmpty(g))return alert("目前已經是空白新局，不需要再開一局。");clearEditingMode();mutate(d=>{const previousId=d.currentGameId||null;const ng={id:makeId(),startedAt:new Date().toISOString(),endedAt:null,players:[],defaultBuyin:100,openedFromGameId:previousId};d.games=d.games||[];d.games.push(ng);d.currentGameId=ng.id})};
 $("cancelNewGameBtn").onclick=async()=>{
   if(!isOwner)return;
   const g=currentGame();
