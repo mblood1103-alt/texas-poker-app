@@ -128,7 +128,58 @@ async function mutate(fn){
 
 async function addFavorite(){const n=$("favoriteName").value.trim();if(!n)return alert("請輸入常用玩家名稱");try{await mutate(d=>{d.favorites=d.favorites||[];if(d.favorites.includes(n))throw new Error("這位玩家已在常用名單");d.favorites.push(n)});$("favoriteName").value=""}catch(e){alert(e.message)}}
 async function removeFavorite(name){if(!confirm(`確定將「${name}」從常用玩家移除嗎？\n\n過去牌局與統計不會被刪除。`))return;await mutate(d=>{d.favorites=(d.favorites||[]).filter(n=>n!==name)})}
-function renderFavorites(){const list=$("favoriteList");if(!list)return;const names=[...(roomData?.favorites||[])].sort((a,b)=>a.localeCompare(b,"zh-Hant"));list.innerHTML=names.map(n=>`<div class="favorite-chip"><span>${escapeHtml(n)}</span><button class="danger tiny remove-favorite" data-name="${escapeHtml(n)}">移除</button></div>`).join("")||"<p class='muted'>尚未設定常用玩家</p>";list.querySelectorAll(".remove-favorite").forEach(btn=>btn.onclick=()=>removeFavorite(btn.dataset.name))}
+async function saveFavoriteOrder(order){
+  await mutate(d=>{
+    const current=d.favorites||[];
+    if(order.length!==current.length)return;
+    const currentSet=new Set(current);
+    if(order.some(name=>!currentSet.has(name)))return;
+    d.favorites=[...order];
+  });
+}
+function enableFavoriteDrag(list){
+  let dragging=null,startOrder="";
+  const finish=async()=>{
+    if(!dragging)return;
+    dragging.classList.remove("is-dragging");
+    dragging=null;
+    document.body.classList.remove("favorite-drag-active");
+    const order=[...list.querySelectorAll(".favorite-chip .favorite-name")].map(el=>el.textContent);
+    const next=JSON.stringify(order);
+    if(next!==startOrder){
+      list.classList.add("is-saving-order");
+      try{await saveFavoriteOrder(order)}catch(e){console.error(e);alert("排序儲存失敗，請再試一次");renderFavorites()}
+      finally{list.classList.remove("is-saving-order")}
+    }
+  };
+  list.querySelectorAll(".favorite-drag-handle").forEach(handle=>{
+    handle.onpointerdown=e=>{
+      if(e.button!==undefined&&e.button!==0)return;
+      e.preventDefault();
+      dragging=handle.closest(".favorite-chip");
+      startOrder=JSON.stringify([...list.querySelectorAll(".favorite-chip .favorite-name")].map(el=>el.textContent));
+      dragging.classList.add("is-dragging");
+      document.body.classList.add("favorite-drag-active");
+      handle.setPointerCapture?.(e.pointerId);
+    };
+    handle.onpointermove=e=>{
+      if(!dragging)return;
+      e.preventDefault();
+      const chips=[...list.querySelectorAll(".favorite-chip:not(.is-dragging)")];
+      const before=chips.find(chip=>e.clientY<chip.getBoundingClientRect().top+chip.offsetHeight/2);
+      if(before)list.insertBefore(dragging,before);else list.appendChild(dragging);
+    };
+    handle.onpointerup=finish;
+    handle.onpointercancel=finish;
+  });
+}
+function renderFavorites(){
+  const list=$("favoriteList");if(!list)return;
+  const names=[...(roomData?.favorites||[])];
+  list.innerHTML=names.map((n,i)=>`<div class="favorite-chip"><button class="favorite-drag-handle" type="button" aria-label="拖曳排列 ${escapeHtml(n)}"><span aria-hidden="true">☰</span></button><span class="favorite-name">${escapeHtml(n)}</span><button class="danger tiny remove-favorite" data-index="${i}">移除</button></div>`).join("")||"<p class='muted'>尚未設定常用玩家</p>";
+  list.querySelectorAll(".remove-favorite").forEach(btn=>btn.onclick=()=>removeFavorite(names[Number(btn.dataset.index)]));
+  enableFavoriteDrag(list);
+}
 
 function todayKey(){
   const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");
@@ -334,7 +385,7 @@ function render(){
   $("liveBuyinNotice").classList.toggle("hidden",isOwner||completed);
   $("playerAddArea").classList.toggle("hidden",!editable);
   $("favoriteManager").classList.toggle("hidden",!editable);
-  $("favoriteSelect").innerHTML='<option value="">常用玩家</option>'+[...(roomData.favorites||[])].sort().map(n=>`<option>${escapeHtml(n)}</option>`).join("");
+  $("favoriteSelect").innerHTML='<option value="">常用玩家</option>'+[...(roomData.favorites||[])].map(n=>`<option>${escapeHtml(n)}</option>`).join("");
   renderFavorites();
   const wrap=$("players");wrap.innerHTML="";
   // 已結算玩家優先排在最上方；同一狀態內再依桌號由小到大排列，未填桌號者排最後。
