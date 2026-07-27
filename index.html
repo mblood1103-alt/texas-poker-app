@@ -559,6 +559,7 @@ document.addEventListener('click',function(e){
 <div>
 <h2 id="roomTitle"></h2>
 <p class="muted" id="gameDate"></p>
+<div class="game-rule-summary" id="gameRuleSummary">本局：買入 $200｜盲注 1/2</div>
 <p class="game-state active" id="gameState"></p>
 <p class="live-buyin-notice hidden" id="liveBuyinNotice">🔴 即時買入：房主新增買入後，這裡會自動更新。</p>
 <button class="danger small cancel-new-game hidden" id="cancelNewGameBtn">取消開新局</button>
@@ -571,16 +572,20 @@ document.addEventListener('click',function(e){
 </select>
 <input id="playerName" placeholder="請輸入名稱"/>
 <div class="initial-buyin-box">
-<span class="initial-buyin-label">本局預設買入</span>
-<div class="initial-buyin-options">
+<span class="initial-buyin-label">本局桌規</span>
+<div class="initial-buyin-options table-rule-options">
+<button class="secondary table-rule-btn" data-buyin="200" data-sb="1" data-bb="2" type="button">200（1/2）</button>
+<button class="secondary table-rule-btn" data-buyin="500" data-sb="2" data-bb="5" type="button">500（2/5）</button>
 <button class="secondary" id="initialBuyinCustomBtn" type="button">自訂</button>
 <button class="secondary" id="newPlayerTableNoBtn" type="button">桌號</button>
 </div>
 <input id="newPlayerTableNo" type="hidden" value=""/>
-<input id="initialBuyinAmount" type="hidden" value="100"/>
-<small class="muted" id="initialBuyinHint">設定一次後，本局每位新增玩家都會直接記錄第 1 次買入 $100</small>
+<input id="initialBuyinAmount" type="hidden" value="200"/>
+<input id="smallBlindAmount" type="hidden" value="1"/>
+<input id="bigBlindAmount" type="hidden" value="2"/>
+<small class="muted" id="initialBuyinHint">本局買入 $200｜小盲 $1｜大盲 $2</small>
 </div>
-<button id="addPlayerBtn">新增玩家＋買入 $100</button>
+<button id="addPlayerBtn">新增玩家＋買入 $200</button>
 </div>
 <details class="owner-only favorite-manager" id="favoriteManager">
 <summary>管理常用玩家</summary>

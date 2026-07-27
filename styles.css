@@ -2038,3 +2038,9 @@ body{
   background-repeat:repeat-y !important;
   background-attachment:scroll !important;
 }
+
+/* v223 本局桌規 */
+.game-rule-summary{display:inline-flex;align-items:center;margin-top:8px;padding:7px 12px;border-radius:999px;background:#ecfdf5;color:#047857;font-weight:800;font-size:.92rem;border:1px solid #a7f3d0}
+.table-rule-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+.table-rule-options .table-rule-btn.selected{background:#0f172a;color:#fff;border-color:#0f172a}
+@media(max-width:560px){.table-rule-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
