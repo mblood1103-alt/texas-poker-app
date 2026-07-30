@@ -2056,3 +2056,21 @@ body{
 .favorite-list.is-saving-order{opacity:.72;pointer-events:none}
 body.favorite-drag-active{overscroll-behavior:none}
 @media(max-width:560px){.favorite-chip{width:100%;display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center}.favorite-chip .remove-favorite{width:auto!important;min-width:72px!important;flex:none!important}}
+
+
+/* v226 完整四街分析紀錄 */
+.full-hand-history-v226{align-items:flex-start!important}
+.full-hand-history-v226 .history-row-main{min-width:0;flex:1}
+.history-detail-v226{margin-top:10px;border:1px solid #dbe4ef;border-radius:14px;background:#fff;overflow:hidden}
+.history-detail-v226>summary{cursor:pointer;padding:12px 14px;font-weight:800;color:#0f172a;background:#f8fafc}
+.history-street-v226{padding:12px 14px;border-top:1px solid #e5e7eb;display:grid;gap:6px}
+.history-street-title-v226{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.history-street-title-v226 strong{white-space:nowrap;color:#0f766e}
+.history-percent-v226{font-weight:800;color:#334155}
+.history-actions-v226{line-height:1.45;color:#1e293b;word-break:break-word}
+.history-muted-v226{color:#64748b;font-size:14px}
+.history-reason-v226{margin-top:3px;padding:9px 10px;border-radius:10px;background:#f8fafc;color:#475569;font-size:14px;line-height:1.5;white-space:pre-wrap}
+@media(max-width:600px){
+  .history-street-title-v226{display:grid;gap:4px}
+  .full-hand-history-v226{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important}
+}

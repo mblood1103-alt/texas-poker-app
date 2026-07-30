@@ -1948,14 +1948,72 @@ function renderResult(r){
 }
 
 function loadHistory(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")}catch{return []}}
+
+// v226：把同一手牌的翻牌前／翻牌／轉牌／河牌分析綁成一筆完整復盤紀錄。
+function setStreetForAnalysisV226(key){
+  document.querySelectorAll(".street-tab").forEach(b=>b.classList.toggle("active",b.dataset.street===key));
+  document.querySelectorAll(".street-panel").forEach(p=>p.classList.toggle("active",p.dataset.panel===key));
+}
+function availableStreetKeysV226(){
+  const keys=["preflop"];
+  const flop=[selectedCards.flop0,selectedCards.flop1,selectedCards.flop2].filter(Boolean);
+  if(flop.length===3) keys.push("flop");
+  if(flop.length===3 && selectedCards.turn) keys.push("turn");
+  if(flop.length===3 && selectedCards.turn && selectedCards.river) keys.push("river");
+  return keys;
+}
+function analyzeAllAvailableStreetsV226(){
+  const activeKey=({"翻牌前":"preflop","翻牌":"flop","轉牌":"turn","河牌":"river"})[activeStreet()]||"preflop";
+  const keys=availableStreetKeysV226();
+  for(const key of keys){
+    setStreetForAnalysisV226(key);
+    analyze(true);
+  }
+  setStreetForAnalysisV226(activeKey);
+  const activeZh=({preflop:"翻牌前",flop:"翻牌",turn:"轉牌",river:"河牌"})[activeKey];
+  lastAnalysis=analysisByStreet[activeZh]||analysisByStreet[({preflop:"翻牌前",flop:"翻牌",turn:"轉牌",river:"河牌"})[keys[keys.length-1]]]||lastAnalysis;
+  if(lastAnalysis) renderResult(lastAnalysis);
+  try{populateActors();}catch(e){}
+}
+function cloneJsonV226(v){try{return JSON.parse(JSON.stringify(v))}catch{return v}}
+function fullHandRecordV226(){
+  const streetOrder=["翻牌前","翻牌","轉牌","河牌"];
+  const analyses={};
+  streetOrder.forEach(k=>{if(analysisByStreet[k]) analyses[k]=cloneJsonV226(analysisByStreet[k]);});
+  const latest=analyses["河牌"]||analyses["轉牌"]||analyses["翻牌"]||analyses["翻牌前"]||lastAnalysis;
+  return {
+    recordVersion:226,
+    recordType:"full-hand-analysis",
+    historyId:`${Date.now()}-${Math.random()}`,
+    at:new Date().toISOString(),
+    hand:latest?.hand||normalizeHand($("saHand").value),
+    heroNames:latest?.heroNames||[selectedCards.hero0,selectedCards.hero1].filter(Boolean).map(c=>cardDisplay(c)?.name).join("、"),
+    pos:latest?.pos||$("saHeroPos").value,
+    mode:latest?.mode||"一般分析",
+    blinds:`${$("saSB").value}/${$("saBB").value}`,
+    tableSize:Number($("saTableSize").value)||6,
+    remainingChips:Number($("saStack").value)||0,
+    cards:cloneJsonV226(selectedCards),
+    actions:cloneJsonV226(actionState),
+    analyses
+  };
+}
 function saveCurrent(){
-  if(!lastAnalysis)analyze();
-  if(!lastAnalysis)return;
+  const hand=normalizeHand($("saHand").value);
+  if(!hand){alert("請先點選你的兩張手牌。");return;}
+  if(!$("saHeroPos").value){alert("請先直接點牌桌上的座位，選擇你的位置。");return;}
+
+  // 儲存時自動重新分析所有「已經有完整牌面」的街道，避免只存當下那一街。
+  analyzeAllAvailableStreetsV226();
+  const record=fullHandRecordV226();
+  if(!Object.keys(record.analyses||{}).length)return;
+
   const rows=loadHistory();
-  rows.unshift({...lastAnalysis,historyId:lastAnalysis.historyId||`${Date.now()}-${Math.random()}`});
+  rows.unshift(record);
   localStorage.setItem(HISTORY_KEY,JSON.stringify(rows.slice(0,100)));
   renderHistory();
-  alert("已儲存這筆分析紀錄");
+  const count=Object.keys(record.analyses).length;
+  alert(`已儲存完整牌局分析紀錄（${count} 街）`);
 }
 function deleteHistoryItem(historyId){
   if(!confirm("確定要刪除這筆分析紀錄嗎？"))return;
@@ -1963,11 +2021,47 @@ function deleteHistoryItem(historyId){
   localStorage.setItem(HISTORY_KEY,JSON.stringify(rows));
   renderHistory();
 }
+function historyStreetBlockV226(label,r){
+  if(!r)return `<div class="history-street-v226"><b>${label}</b><div class="history-muted-v226">尚無分析（此手可能尚未進到這一街）</div></div>`;
+  const board = label==="翻牌" ? (r.flopCards?formatCardListV121(r.flopCards):"未選牌面")
+    : label==="轉牌" ? (r.turnCard?formatCardListV121(r.turnCard):"未選")
+    : label==="河牌" ? (r.riverCard?formatCardListV121(r.riverCard):"未選") : "";
+  const action = label==="翻牌前" ? (r.preflop||"尚未加入行動")
+    : label==="翻牌" ? (r.flopAction||"尚未加入行動")
+    : label==="轉牌" ? (r.turnAction||"尚未加入行動")
+    : (r.riverAction||"尚未加入行動");
+  return `<div class="history-street-v226">
+    <div class="history-street-title-v226"><b>${label}${board?`｜${escapeHtml(board)}`:""}</b><strong>${escapeHtml(r.best||"—")}</strong></div>
+    <div class="history-percent-v226">加注 ${r.raise??"—"}%・跟注 ${r.call??"—"}%・棄牌 ${r.fold??"—"}%</div>
+    <div class="history-actions-v226"><b>行動：</b>${escapeHtml(action)}</div>
+    ${r.madeHandName?`<div class="history-muted-v226">目前牌型：${escapeHtml(r.madeHandName)}</div>`:""}
+    ${r.reason?`<div class="history-reason-v226">${escapeHtml(r.reason)}</div>`:""}
+  </div>`;
+}
 function renderHistory(){
   const box=$("saHistory");if(!box)return;
   const rows=loadHistory();
   box.innerHTML=rows.length?rows.map((r,i)=>{
     const id=escapeHtml(String(r.historyId||r.at||i));
+    if(r.recordType==="full-hand-analysis" && r.analyses){
+      const a=r.analyses;
+      const streetCount=Object.keys(a).length;
+      return `<div class="strategy-history-item history-row-v91 full-hand-history-v226">
+        <div class="history-row-main">
+          <b>${escapeHtml(r.heroNames||r.hand)}｜${escapeHtml(r.pos)}｜完整復盤 ${streetCount} 街</b>
+          <small>盲注 ${escapeHtml(r.blinds||"")}｜${new Date(r.at).toLocaleString("zh-TW",{hour12:false})}</small>
+          <details class="history-detail-v226">
+            <summary>查看翻牌前・翻牌・轉牌・河牌完整分析</summary>
+            ${historyStreetBlockV226("翻牌前",a["翻牌前"])}
+            ${historyStreetBlockV226("翻牌",a["翻牌"])}
+            ${historyStreetBlockV226("轉牌",a["轉牌"])}
+            ${historyStreetBlockV226("河牌",a["河牌"])}
+          </details>
+        </div>
+        <button type="button" class="delete-history-v91" data-history-id="${id}">刪除</button>
+      </div>`;
+    }
+    // 舊版紀錄仍可正常顯示。
     return `<div class="strategy-history-item history-row-v91">
       <div class="history-row-main">
         <b>${escapeHtml(r.heroNames||r.hand)}｜${escapeHtml(r.pos)}｜${escapeHtml(r.mode||"一般分析")}｜${escapeHtml(r.best)}</b>
