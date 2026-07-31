@@ -667,6 +667,16 @@ document.addEventListener('click',function(e){
     <button class="secondary small" id="rankingThisMonthBtn" type="button">本月</button>
   </div>
 </div>
+<div class="ranking-month-picker hidden" id="rankingWeekPicker">
+  <span class="ranking-month-label">查詢週別</span>
+  <div class="ranking-month-controls">
+    <button aria-label="上一週排行" class="secondary small" id="rankingPrevWeekBtn" type="button">‹</button>
+    <input aria-label="選擇週排行榜日期" id="rankingWeekDate" type="date"/>
+    <button aria-label="下一週排行" class="secondary small" id="rankingNextWeekBtn" type="button">›</button>
+    <button class="secondary small" id="rankingThisWeekBtn" type="button">本週</button>
+  </div>
+  <small class="hint" id="rankingWeekLabel"></small>
+</div>
 <details class="ranking-block ranking-collapse">
 <summary class="ranking-heading">盈虧排行榜</summary>
 <p class="hint ranking-note">依綜合分數排序：總盈虧 50%＋報酬率 50%，並同步顯示出勤率。</p>
