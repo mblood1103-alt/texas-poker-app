@@ -13,6 +13,7 @@ let user=null,roomData=null,roomCode="",isOwner=false,unsubscribe=null,viewerLog
 let editingGameId=sessionStorage.getItem("editingGameId")||"";
 let historyDateFilter="";
 let calendarMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+let rankingMonthDate=new Date(new Date().getFullYear(),new Date().getMonth(),1);
 let pendingCashoutScrollFrom="";
 const expandedSettledPlayers=new Set();
 
@@ -626,8 +627,33 @@ function renderGameHistory(){
   box.querySelectorAll(".view-game").forEach(btn=>btn.onclick=()=>{const detail=document.getElementById(`detail-${btn.dataset.gameId}`);const opening=detail.classList.contains("hidden");detail.classList.toggle("hidden",!opening);btn.textContent=opening?"收起明細":"查看明細"});
   box.querySelectorAll(".edit-game").forEach(btn=>btn.onclick=()=>editGame(btn.dataset.gameId));box.querySelectorAll(".delete-game").forEach(btn=>btn.onclick=()=>deleteGame(btn.dataset.gameId));
 }
+function rankingMonthValue(date){
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`;
+}
+function syncRankingMonthPicker(){
+  const picker=$("rankingMonthPicker"),input=$("rankingMonth");
+  if(!picker||!input)return;
+  const isMonth=$("range").value==="month";
+  picker.classList.toggle("hidden",!isMonth);
+  input.value=rankingMonthValue(rankingMonthDate);
+}
+function setRankingMonth(value){
+  const match=String(value||"").match(/^(\d{4})-(\d{2})$/);
+  if(!match)return;
+  const year=Number(match[1]),month=Number(match[2]);
+  if(!year||month<1||month>12)return;
+  rankingMonthDate=new Date(year,month-1,1);
+  syncRankingMonthPicker();
+  renderReport();
+}
+function shiftRankingMonth(months){
+  rankingMonthDate=new Date(rankingMonthDate.getFullYear(),rankingMonthDate.getMonth()+months,1);
+  syncRankingMonthPicker();
+  renderReport();
+}
 function renderReport(){
-  const range=$("range").value,now=new Date(),map=new Map();
+  const range=$("range").value,now=range==="month"?new Date(rankingMonthDate):new Date(),map=new Map();
+  syncRankingMonthPicker();
   const periodGames=(roomData.games||[]).filter(g=>g.endedAt&&gameMatchesRange(g,range,now)&&!isGameEmpty(g));
   const totalGames=periodGames.length;
   $("reportPeriod").textContent=`${rangeLabel(range,now)}｜共 ${totalGames} 局已完成牌局`;
@@ -782,7 +808,12 @@ $("cancelNewGameBtn").onclick=async()=>{
     window.scrollTo({top:0,behavior:"smooth"});
   }catch(e){alert(`取消開新局失敗：${e.message}`)}
 };
-$("range").onchange=()=>{renderReport();renderGameHistory()};
+$("range").onchange=()=>{syncRankingMonthPicker();renderReport();renderGameHistory()};
+$("rankingMonth").onchange=e=>setRankingMonth(e.target.value);
+$("rankingPrevMonthBtn").onclick=()=>shiftRankingMonth(-1);
+$("rankingNextMonthBtn").onclick=()=>shiftRankingMonth(1);
+$("rankingThisMonthBtn").onclick=()=>{const now=new Date();rankingMonthDate=new Date(now.getFullYear(),now.getMonth(),1);syncRankingMonthPicker();renderReport()};
+syncRankingMonthPicker();
 $("historyPrevBtn").onclick=()=>shiftHistoryDate(-1);
 $("historyTodayBtn").onclick=()=>{const now=new Date();historyDateFilter=localDateKey(now);calendarMonth=new Date(now.getFullYear(),now.getMonth(),1);$("historyDate").value=historyDateFilter;renderGameHistory()};
 $("historyNextBtn").onclick=()=>shiftHistoryDate(1);

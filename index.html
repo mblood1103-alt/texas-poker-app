@@ -12,7 +12,7 @@
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <title>德州帳本</title>
 <link href="manifest.webmanifest?v=28" rel="manifest"/>
-<link href="styles.css?v=158" rel="stylesheet"/>
+<link href="styles.css?v=159" rel="stylesheet"/>
 <style id="v61-reference-match">
 .verify-icon{width:30px!important;height:30px!important;flex:0 0 30px!important;display:block;stroke-linecap:round;stroke-linejoin:round}
 </style>
@@ -658,6 +658,15 @@ document.addEventListener('click',function(e){
 </select>
 </div>
 <p class="hint ranking-period" id="reportPeriod"></p>
+<div class="ranking-month-picker" id="rankingMonthPicker">
+  <span class="ranking-month-label">查詢月份</span>
+  <div class="ranking-month-controls">
+    <button aria-label="上一個月排行" class="secondary small" id="rankingPrevMonthBtn" type="button">‹</button>
+    <input aria-label="選擇月排行榜月份" id="rankingMonth" type="month"/>
+    <button aria-label="下一個月排行" class="secondary small" id="rankingNextMonthBtn" type="button">›</button>
+    <button class="secondary small" id="rankingThisMonthBtn" type="button">本月</button>
+  </div>
+</div>
 <details class="ranking-block ranking-collapse">
 <summary class="ranking-heading">盈虧排行榜</summary>
 <p class="hint ranking-note">依綜合分數排序：總盈虧 50%＋報酬率 50%，並同步顯示出勤率。</p>
@@ -1221,7 +1230,7 @@ document.addEventListener('click',function(e){
 </div>
 </article>
 </template>
-<script src="app.js?v=41" type="module"></script>
+<script src="app.js?v=42" type="module"></script>
 <script src="hand-analyzer.js?v=226" type="module"></script>
 <script src="poker-judge.js?v=35" type="module"></script>
 <style>
