@@ -15,6 +15,7 @@ let historyDateFilter="";
 let calendarMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
 let rankingMonthDate=new Date(new Date().getFullYear(),new Date().getMonth(),1);
 let rankingWeekDate=startOfWeek(new Date());
+let rankingYearDate=new Date(new Date().getFullYear(),0,1);
 let pendingCashoutScrollFrom="";
 const expandedSettledPlayers=new Set();
 
@@ -659,6 +660,23 @@ function shiftRankingWeek(weeks){
   const d=startOfWeek(rankingWeekDate);d.setDate(d.getDate()+weeks*7);rankingWeekDate=d;
   syncRankingWeekPicker();renderReport();
 }
+function syncRankingYearPicker(){
+  const picker=$("rankingYearPicker"),input=$("rankingYear");
+  if(!picker||!input)return;
+  const isYear=$("range").value==="year";
+  picker.classList.toggle("hidden",!isYear);
+  input.value=String(rankingYearDate.getFullYear());
+}
+function setRankingYear(value){
+  const year=Number(value);
+  if(!Number.isInteger(year)||year<2000||year>2100)return;
+  rankingYearDate=new Date(year,0,1);
+  syncRankingYearPicker();renderReport();
+}
+function shiftRankingYear(years){
+  rankingYearDate=new Date(rankingYearDate.getFullYear()+years,0,1);
+  syncRankingYearPicker();renderReport();
+}
 function setRankingMonth(value){
   const match=String(value||"").match(/^(\d{4})-(\d{2})$/);
   if(!match)return;
@@ -674,9 +692,10 @@ function shiftRankingMonth(months){
   renderReport();
 }
 function renderReport(){
-  const range=$("range").value,now=range==="month"?new Date(rankingMonthDate):range==="week"?new Date(rankingWeekDate):new Date(),map=new Map();
+  const range=$("range").value,now=range==="month"?new Date(rankingMonthDate):range==="week"?new Date(rankingWeekDate):range==="year"?new Date(rankingYearDate):new Date(),map=new Map();
   syncRankingMonthPicker();
   syncRankingWeekPicker();
+  syncRankingYearPicker();
   const periodGames=(roomData.games||[]).filter(g=>g.endedAt&&gameMatchesRange(g,range,now)&&!isGameEmpty(g));
   const totalGames=periodGames.length;
   $("reportPeriod").textContent=`${rangeLabel(range,now)}｜共 ${totalGames} 局已完成牌局`;
@@ -831,7 +850,7 @@ $("cancelNewGameBtn").onclick=async()=>{
     window.scrollTo({top:0,behavior:"smooth"});
   }catch(e){alert(`取消開新局失敗：${e.message}`)}
 };
-$("range").onchange=()=>{syncRankingMonthPicker();syncRankingWeekPicker();renderReport();renderGameHistory()};
+$("range").onchange=()=>{syncRankingMonthPicker();syncRankingWeekPicker();syncRankingYearPicker();renderReport();renderGameHistory()};
 $("rankingMonth").onchange=e=>setRankingMonth(e.target.value);
 $("rankingPrevMonthBtn").onclick=()=>shiftRankingMonth(-1);
 $("rankingNextMonthBtn").onclick=()=>shiftRankingMonth(1);
@@ -840,8 +859,13 @@ $("rankingWeekDate").onchange=e=>setRankingWeek(e.target.value);
 $("rankingPrevWeekBtn").onclick=()=>shiftRankingWeek(-1);
 $("rankingNextWeekBtn").onclick=()=>shiftRankingWeek(1);
 $("rankingThisWeekBtn").onclick=()=>{rankingWeekDate=startOfWeek(new Date());syncRankingWeekPicker();renderReport()};
+$("rankingYear").onchange=e=>setRankingYear(e.target.value);
+$("rankingPrevYearBtn").onclick=()=>shiftRankingYear(-1);
+$("rankingNextYearBtn").onclick=()=>shiftRankingYear(1);
+$("rankingThisYearBtn").onclick=()=>{rankingYearDate=new Date(new Date().getFullYear(),0,1);syncRankingYearPicker();renderReport()};
 syncRankingMonthPicker();
 syncRankingWeekPicker();
+syncRankingYearPicker();
 $("historyPrevBtn").onclick=()=>shiftHistoryDate(-1);
 $("historyTodayBtn").onclick=()=>{const now=new Date();historyDateFilter=localDateKey(now);calendarMonth=new Date(now.getFullYear(),now.getMonth(),1);$("historyDate").value=historyDateFilter;renderGameHistory()};
 $("historyNextBtn").onclick=()=>shiftHistoryDate(1);

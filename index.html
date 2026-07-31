@@ -677,6 +677,15 @@ document.addEventListener('click',function(e){
   </div>
   <small class="hint" id="rankingWeekLabel"></small>
 </div>
+<div class="ranking-month-picker hidden" id="rankingYearPicker">
+  <span class="ranking-month-label">查詢年份</span>
+  <div class="ranking-month-controls">
+    <button aria-label="上一年排行" class="secondary small" id="rankingPrevYearBtn" type="button">‹</button>
+    <input aria-label="選擇年排行榜年份" id="rankingYear" type="number" min="2000" max="2100" step="1" inputmode="numeric"/>
+    <button aria-label="下一年排行" class="secondary small" id="rankingNextYearBtn" type="button">›</button>
+    <button class="secondary small" id="rankingThisYearBtn" type="button">今年</button>
+  </div>
+</div>
 <details class="ranking-block ranking-collapse">
 <summary class="ranking-heading">盈虧排行榜</summary>
 <p class="hint ranking-note">依綜合分數排序：總盈虧 50%＋報酬率 50%，並同步顯示出勤率。</p>
