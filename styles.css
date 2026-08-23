@@ -2082,3 +2082,17 @@ body.favorite-drag-active{overscroll-behavior:none}
 .ranking-month-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .ranking-month-controls input[type="month"]{min-height:40px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:11px;background:#fff;color:#0f172a;font:inherit;font-weight:700}
 @media(max-width:560px){.ranking-month-picker{align-items:flex-start;flex-direction:column}.ranking-month-controls{width:100%;justify-content:flex-start}.ranking-month-controls input[type="month"]{flex:1;min-width:150px}}
+
+
+/* v230：桌號改用自訂數字輸入視窗，iPhone 點開直接顯示數字鍵盤 */
+.table-no-modal{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:18px}
+.table-no-modal.hidden{display:none!important}
+.table-no-backdrop{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:0;background:rgba(15,23,42,.62);box-shadow:none}
+.table-no-dialog{position:relative;z-index:1;width:min(430px,100%);padding:22px;border-radius:22px;background:#fff;box-shadow:0 20px 55px rgba(15,23,42,.3)}
+.table-no-dialog h3{margin:0 0 4px;font-size:24px}
+.table-no-dialog p{margin:0 0 14px}
+#tableNoInput{width:100%;box-sizing:border-box;min-height:58px;font-size:28px;font-weight:800;text-align:center;letter-spacing:.04em}
+.table-no-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.table-no-actions button{min-height:50px;font-size:18px}
+body.table-no-open{overflow:hidden}
+@media(max-width:560px){.table-no-modal{align-items:flex-start;padding-top:15vh}.table-no-dialog{border-radius:20px;padding:18px}}

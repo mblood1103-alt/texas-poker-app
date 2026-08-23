@@ -281,12 +281,41 @@ async function renamePlayer(oldName){
   const applyAll=confirm(`要把「${oldName}」在所有過去牌局、統計與常用玩家中都改成「${newName}」嗎？\n\n按「好」＝全部一起改\n按「取消」＝只改目前牌局`);
   await mutate(d=>{assertEditable(d);const targets=applyAll?(d.games||[]):[(d.games||[]).find(g=>g.id===d.currentGameId)].filter(Boolean);for(const g of targets)for(const p of(g.players||[]))if(p.name===oldName)p.name=newName;if(applyAll){d.favorites=(d.favorites||[]).map(n=>n===oldName?newName:n);d.favorites=[...new Set(d.favorites)]}});
 }
+function askTableNo(current=""){
+  const modal=$("tableNoModal"),input=$("tableNoInput"),ok=$("tableNoOk"),cancel=$("tableNoCancel"),backdrop=$("tableNoBackdrop");
+  if(!modal||!input||!ok||!cancel)return Promise.resolve(null);
+  input.value=current||"";
+  modal.classList.remove("hidden");
+  document.body.classList.add("table-no-open");
+  setTimeout(()=>{input.focus();input.select();},40);
+  return new Promise(resolve=>{
+    let done=false;
+    const finish=value=>{
+      if(done)return;done=true;
+      modal.classList.add("hidden");
+      document.body.classList.remove("table-no-open");
+      ok.removeEventListener("click",submit);
+      cancel.removeEventListener("click",close);
+      backdrop?.removeEventListener("click",close);
+      input.removeEventListener("keydown",onKey);
+      resolve(value);
+    };
+    const close=()=>finish(null);
+    const submit=()=>finish(input.value);
+    const onKey=e=>{if(e.key==="Enter"){e.preventDefault();submit()}else if(e.key==="Escape")close()};
+    ok.addEventListener("click",submit);
+    cancel.addEventListener("click",close);
+    backdrop?.addEventListener("click",close);
+    input.addEventListener("keydown",onKey);
+  });
+}
+
 async function setPlayerTableNo(pid){
   if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
   const player=currentGame()?.players?.find(x=>x.id===pid);
   if(!player)return alert("找不到玩家");
   const current=player.tableNo==null||player.tableNo===""?"":String(player.tableNo);
-  const proposed=prompt("請輸入桌號（可先留空，之後再補）",current);
+  const proposed=await askTableNo(current);
   if(proposed===null)return;
   const value=proposed.trim();
   if(value!==""&&!/^\d+$/.test(value))return alert("桌號請輸入數字");
@@ -798,9 +827,9 @@ if(initialBuyinCustomBtn)initialBuyinCustomBtn.onclick=async()=>{
   await saveGameTableRule(Number(buyinText),Number(sbText),Number(bbText));
 };
 const newPlayerTableNoBtn=$("newPlayerTableNoBtn");
-if(newPlayerTableNoBtn)newPlayerTableNoBtn.onclick=()=>{
+if(newPlayerTableNoBtn)newPlayerTableNoBtn.onclick=async()=>{
   const current=$("newPlayerTableNo")?.value||"";
-  const value=prompt("輸入桌號（可以先不填，之後再補）",current);
+  const value=await askTableNo(current);
   if(value===null)return;
   const trimmed=value.trim();
   if(trimmed===""){

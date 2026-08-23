@@ -12,7 +12,7 @@
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <title>德州帳本</title>
 <link href="manifest.webmanifest?v=28" rel="manifest"/>
-<link href="styles.css?v=159" rel="stylesheet"/>
+<link href="styles.css?v=160" rel="stylesheet"/>
 <style id="v61-reference-match">
 .verify-icon{width:30px!important;height:30px!important;flex:0 0 30px!important;display:block;stroke-linecap:round;stroke-linejoin:round}
 </style>
@@ -1249,7 +1249,7 @@ document.addEventListener('click',function(e){
 </div>
 </article>
 </template>
-<script src="app.js?v=42" type="module"></script>
+<script src="app.js?v=43" type="module"></script>
 <script src="hand-analyzer.js?v=226" type="module"></script>
 <script src="poker-judge.js?v=35" type="module"></script>
 <style>
@@ -1404,6 +1404,19 @@ document.addEventListener('DOMContentLoaded',()=>{
   }));
 });
 </script>
+
+<div aria-labelledby="tableNoModalTitle" aria-modal="true" class="table-no-modal hidden" id="tableNoModal" role="dialog">
+  <button aria-label="關閉桌號輸入" class="table-no-backdrop" id="tableNoBackdrop" type="button"></button>
+  <section class="table-no-dialog">
+    <h3 id="tableNoModalTitle">輸入桌號</h3>
+    <p class="muted">可以先不填，之後再補</p>
+    <input id="tableNoInput" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="桌號" aria-label="桌號"/>
+    <div class="table-no-actions">
+      <button class="secondary" id="tableNoCancel" type="button">取消</button>
+      <button id="tableNoOk" type="button">好</button>
+    </div>
+  </section>
+</div>
 
 </body>
 </html>
