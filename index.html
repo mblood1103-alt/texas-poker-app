@@ -1405,6 +1405,18 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 
+<div aria-labelledby="buyinModalTitle" aria-modal="true" class="table-no-modal hidden" id="buyinModal" role="dialog">
+  <button aria-label="關閉買入金額輸入" class="table-no-backdrop" id="buyinBackdrop" type="button"></button>
+  <section class="table-no-dialog">
+    <h3 id="buyinModalTitle">輸入買入金額</h3>
+    <input id="buyinAmountInput" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="金額" aria-label="買入金額"/>
+    <div class="table-no-actions">
+      <button class="secondary" id="buyinCancel" type="button">取消</button>
+      <button id="buyinOk" type="button">好</button>
+    </div>
+  </section>
+</div>
+
 <div aria-labelledby="tableNoModalTitle" aria-modal="true" class="table-no-modal hidden" id="tableNoModal" role="dialog">
   <button aria-label="關閉桌號輸入" class="table-no-backdrop" id="tableNoBackdrop" type="button"></button>
   <section class="table-no-dialog">

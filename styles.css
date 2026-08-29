@@ -2096,3 +2096,6 @@ body.favorite-drag-active{overscroll-behavior:none}
 .table-no-actions button{min-height:50px;font-size:18px}
 body.table-no-open{overflow:hidden}
 @media(max-width:560px){.table-no-modal{align-items:flex-start;padding-top:15vh}.table-no-dialog{border-radius:20px;padding:18px}}
+
+/* v231：自訂買入金額改為純數字鍵盤 */
+#buyinAmountInput{width:100%;box-sizing:border-box;min-height:58px;font-size:28px;font-weight:800;text-align:center;letter-spacing:.04em}

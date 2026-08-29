@@ -310,6 +310,38 @@ function askTableNo(current=""){
   });
 }
 
+function askBuyinAmount(current=""){
+  const modal=$("buyinModal"),input=$("buyinAmountInput"),ok=$("buyinOk"),cancel=$("buyinCancel"),backdrop=$("buyinBackdrop");
+  if(!modal||!input||!ok||!cancel)return Promise.resolve(null);
+  input.value=current||"";
+  modal.classList.remove("hidden");
+  document.body.classList.add("table-no-open");
+  setTimeout(()=>{input.focus();input.select();},40);
+  return new Promise(resolve=>{
+    let done=false;
+    const finish=value=>{
+      if(done)return;done=true;
+      modal.classList.add("hidden");
+      document.body.classList.remove("table-no-open");
+      ok.removeEventListener("click",submit);
+      cancel.removeEventListener("click",close);
+      backdrop?.removeEventListener("click",close);
+      input.removeEventListener("keydown",onKey);
+      input.removeEventListener("input",digitsOnly);
+      resolve(value);
+    };
+    const close=()=>finish(null);
+    const submit=()=>finish(input.value);
+    const onKey=e=>{if(e.key==="Enter"){e.preventDefault();submit()}else if(e.key==="Escape")close()};
+    const digitsOnly=()=>{input.value=input.value.replace(/\D/g,"")};
+    ok.addEventListener("click",submit);
+    cancel.addEventListener("click",close);
+    backdrop?.addEventListener("click",close);
+    input.addEventListener("keydown",onKey);
+    input.addEventListener("input",digitsOnly);
+  });
+}
+
 async function setPlayerTableNo(pid){
   if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");
   const player=currentGame()?.players?.find(x=>x.id===pid);
@@ -457,7 +489,7 @@ function render(){
       defaultBuyinBtn.onclick=()=>gameDefaultBuyin>0&&addBuyin(p.id,gameDefaultBuyin);
     }
     root.querySelector(".minus100Btn").onclick=()=>subtractBuyin100(p.id);
-    root.querySelector(".customBtn").onclick=()=>{const a=Number(prompt("輸入買入金額"));if(a>0)addBuyin(p.id,a)};
+    root.querySelector(".customBtn").onclick=async()=>{const value=await askBuyinAmount();if(value===null)return;const a=Number(value);if(a>0)addBuyin(p.id,a)};
     root.querySelector(".cashInput").value=p.cashout?Number(p.cashout):"";
     root.querySelector(".saveBtn").onclick=()=>saveCashout(p.id,root.querySelector(".cashInput").value).catch(e=>alert(e.message));
     root.querySelector(".editSettlementBtn")?.addEventListener("click",()=>expandSettledPlayer(p.id));
