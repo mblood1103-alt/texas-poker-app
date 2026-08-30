@@ -285,6 +285,7 @@ function askTableNo(current=""){
   const modal=$("tableNoModal"),input=$("tableNoInput"),ok=$("tableNoOk"),cancel=$("tableNoCancel"),backdrop=$("tableNoBackdrop");
   if(!modal||!input||!ok||!cancel)return Promise.resolve(null);
   input.value=current||"";
+  if(titleEl)titleEl.textContent=title;
   modal.classList.remove("hidden");
   document.body.classList.add("table-no-open");
   setTimeout(()=>{input.focus();input.select();},40);
@@ -310,8 +311,8 @@ function askTableNo(current=""){
   });
 }
 
-function askBuyinAmount(current=""){
-  const modal=$("buyinModal"),input=$("buyinAmountInput"),ok=$("buyinOk"),cancel=$("buyinCancel"),backdrop=$("buyinBackdrop");
+function askBuyinAmount(current="",title="輸入買入金額"){
+  const modal=$("buyinModal"),input=$("buyinAmountInput"),ok=$("buyinOk"),cancel=$("buyinCancel"),backdrop=$("buyinBackdrop"),titleEl=$("buyinModalTitle");
   if(!modal||!input||!ok||!cancel)return Promise.resolve(null);
   input.value=current||"";
   modal.classList.remove("hidden");
@@ -850,11 +851,11 @@ if(initialBuyinCustomBtn)initialBuyinCustomBtn.onclick=async()=>{
   const currentBuyin=Number(g?.defaultBuyin??$("initialBuyinAmount").value??200);
   const currentSb=Number(g?.smallBlind??$("smallBlindAmount").value??1);
   const currentBb=Number(g?.bigBlind??$("bigBlindAmount").value??2);
-  const buyinText=prompt("輸入本局買入金額",String(currentBuyin));
+  const buyinText=await askBuyinAmount(String(currentBuyin),"輸入本局買入金額");
   if(buyinText===null)return;
-  const sbText=prompt("輸入小盲金額",String(currentSb));
+  const sbText=await askBuyinAmount(String(currentSb),"輸入小盲金額");
   if(sbText===null)return;
-  const bbText=prompt("輸入大盲金額",String(currentBb));
+  const bbText=await askBuyinAmount(String(currentBb),"輸入大盲金額");
   if(bbText===null)return;
   await saveGameTableRule(Number(buyinText),Number(sbText),Number(bbText));
 };
