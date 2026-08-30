@@ -285,7 +285,6 @@ function askTableNo(current=""){
   const modal=$("tableNoModal"),input=$("tableNoInput"),ok=$("tableNoOk"),cancel=$("tableNoCancel"),backdrop=$("tableNoBackdrop");
   if(!modal||!input||!ok||!cancel)return Promise.resolve(null);
   input.value=current||"";
-  if(titleEl)titleEl.textContent=title;
   modal.classList.remove("hidden");
   document.body.classList.add("table-no-open");
   setTimeout(()=>{input.focus();input.select();},40);
@@ -315,6 +314,7 @@ function askBuyinAmount(current="",title="輸入買入金額"){
   const modal=$("buyinModal"),input=$("buyinAmountInput"),ok=$("buyinOk"),cancel=$("buyinCancel"),backdrop=$("buyinBackdrop"),titleEl=$("buyinModalTitle");
   if(!modal||!input||!ok||!cancel)return Promise.resolve(null);
   input.value=current||"";
+  if(titleEl)titleEl.textContent=title;
   modal.classList.remove("hidden");
   document.body.classList.add("table-no-open");
   setTimeout(()=>{input.focus();input.select();},40);
