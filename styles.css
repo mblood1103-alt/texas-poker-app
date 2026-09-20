@@ -2099,3 +2099,42 @@ body.table-no-open{overflow:hidden}
 
 /* v231：自訂買入金額改為純數字鍵盤 */
 #buyinAmountInput{width:100%;box-sizing:border-box;min-height:58px;font-size:28px;font-weight:800;text-align:center;letter-spacing:.04em}
+
+/* 人員個人資料 v1 */
+.people-heading-row{margin-bottom:12px}
+.people-count{font-size:13px;font-weight:800;color:#64748b;background:#f1f5f9;border-radius:999px;padding:7px 10px;white-space:nowrap}
+.people-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.person-chip{width:100%;min-height:72px;background:#fff;color:#0f172a;border:1px solid #e2e8f0;border-radius:16px;padding:10px 12px;display:flex;align-items:center;text-align:left;gap:10px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+.person-chip:hover{border-color:#94a3b8}
+.person-chip.selected{border-color:#0f172a;box-shadow:0 0 0 2px rgba(15,23,42,.08)}
+.person-chip-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#f1f5f9;font-size:19px;flex:0 0 38px}
+.person-chip-main{min-width:0;flex:1}
+.person-chip-main b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person-chip-main small{display:block;color:#64748b;margin-top:3px;font-size:12px}
+.person-chip-arrow{font-size:25px;color:#94a3b8;line-height:1}
+.people-empty{text-align:center;padding:26px 12px;border:1px dashed #cbd5e1;border-radius:16px;color:#64748b;display:flex;flex-direction:column;align-items:center;gap:6px}
+.people-empty span{font-size:30px}
+.people-empty b{color:#334155}
+.person-detail{margin-top:16px;border-top:1px solid #e2e8f0;padding-top:16px}
+.person-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.person-detail-head h2{margin-bottom:4px}
+.person-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.person-stat{background:#f8fafc;border-radius:14px;padding:12px;text-align:center;min-width:0}
+.person-stat span{display:block;color:#64748b;font-size:12px}
+.person-stat strong{display:block;margin-top:5px;font-size:18px;overflow:hidden;text-overflow:ellipsis}
+.person-mini-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}
+.person-mini-grid>div{background:#f8fafc;border-radius:12px;padding:9px 5px;text-align:center;min-width:0}
+.person-mini-grid span{display:block;color:#64748b;font-size:11px;white-space:nowrap}
+.person-mini-grid b{display:block;margin-top:3px;font-size:14px;overflow:hidden;text-overflow:ellipsis}
+.person-history-title{margin:18px 0 8px}
+.person-game-list{border:1px solid #e2e8f0;border-radius:14px;overflow:hidden}
+.person-game-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border-bottom:1px solid #e2e8f0}
+.person-game-row:last-child{border-bottom:0}
+.person-game-row small{display:block;color:#64748b;margin-top:3px;font-size:12px}
+.person-game-row strong{white-space:nowrap}
+@media(max-width:560px){
+  .people-list{grid-template-columns:1fr}
+  .person-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .person-mini-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .person-game-row{align-items:flex-start}
+}

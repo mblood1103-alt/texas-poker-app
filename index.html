@@ -12,7 +12,7 @@
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <title>德州帳本</title>
 <link href="manifest.webmanifest?v=28" rel="manifest"/>
-<link href="styles.css?v=160" rel="stylesheet"/>
+<link href="styles.css?v=161" rel="stylesheet"/>
 <style id="v61-reference-match">
 .verify-icon{width:30px!important;height:30px!important;flex:0 0 30px!important;display:block;stroke-linecap:round;stroke-linejoin:round}
 </style>
@@ -568,7 +568,7 @@ document.addEventListener('click',function(e){
 </div>
 <div class="owner-only player-add" id="playerAddArea">
 <select id="favoriteSelect">
-<option value="">常用玩家</option>
+<option value="">選擇人員</option>
 </select>
 <input id="playerName" placeholder="請輸入名稱"/>
 <div class="initial-buyin-box">
@@ -588,13 +588,13 @@ document.addEventListener('click',function(e){
 <button id="addPlayerBtn">新增玩家＋買入 $200</button>
 </div>
 <details class="owner-only favorite-manager" id="favoriteManager">
-<summary>管理常用玩家</summary>
+<summary>管理人員名單</summary>
 <div class="favorite-add-row">
-<input id="favoriteName" placeholder="輸入常用玩家名稱"/>
-<button class="secondary" id="addFavoriteBtn">加入常用</button>
+<input id="favoriteName" placeholder="輸入人員名稱"/>
+<button class="secondary" id="addFavoriteBtn">加入人員</button>
 </div>
 <div class="favorite-list" id="favoriteList"></div>
-<p class="hint">按住左側「☰」上下拖曳即可排列；放開後會自動儲存，常用玩家選單也會同步更新。刪除只會從名單移除，不會刪除過去牌局或統計。</p>
+<p class="hint">按住左側「☰」上下拖曳即可排列；放開後會自動儲存，人員名單與選單也會同步更新。刪除只會從名單移除，不會刪除過去牌局或統計。</p>
 </details>
 <div id="players"></div>
 <div class="owner-only actions audit-actions player-finish-actions">
@@ -701,6 +701,46 @@ document.addEventListener('click',function(e){
 <p class="hint ranking-note">出勤率＝玩家參加的已完成牌局數 ÷ 該期間全部已完成牌局數。</p>
 <div class="ranking-list" id="attendanceReport"></div>
 </details>
+</div>
+</details>
+
+<details class="card people-details collapsible-card" id="peopleCard">
+<summary class="section-summary">👥 人員</summary>
+<div class="collapsible-body">
+  <div class="between people-heading-row">
+    <div>
+      <h2>人員</h2>
+      <p class="hint">點自己的名字，就可以查看自己的累積資料與牌局紀錄。</p>
+    </div>
+    <span class="people-count" id="peopleCount"></span>
+  </div>
+  <div class="people-list" id="peopleList"></div>
+  <div class="person-detail hidden" id="personDetail">
+    <div class="person-detail-head">
+      <div>
+        <h2 id="personDetailName">我的資料</h2>
+        <p class="hint" id="personDetailPeriod"></p>
+      </div>
+      <button class="secondary small" id="closePersonDetailBtn" type="button">收起</button>
+    </div>
+    <div class="person-stat-grid">
+      <div class="person-stat"><span>累積盈虧</span><strong id="personProfit">$0</strong></div>
+      <div class="person-stat"><span>完成牌局</span><strong id="personGames">0 局</strong></div>
+      <div class="person-stat"><span>總買入</span><strong id="personBuyin">$0</strong></div>
+      <div class="person-stat"><span>總拿回</span><strong id="personCashout">$0</strong></div>
+      <div class="person-stat"><span>報酬率</span><strong id="personRoi">0%</strong></div>
+      <div class="person-stat"><span>平均每局</span><strong id="personAvg">$0</strong></div>
+    </div>
+    <div class="person-mini-grid">
+      <div><span>贏</span><b id="personWins">0</b></div>
+      <div><span>輸</span><b id="personLosses">0</b></div>
+      <div><span>平</span><b id="personTies">0</b></div>
+      <div><span>最大單局</span><b id="personBest">$0</b></div>
+      <div><span>最大單局虧損</span><b id="personWorst">$0</b></div>
+    </div>
+    <h3 class="person-history-title">📅 我的牌局紀錄</h3>
+    <div class="person-game-list" id="personGameList"></div>
+  </div>
 </div>
 </details>
 <details class="card history-details collapsible-card">
@@ -1249,7 +1289,7 @@ document.addEventListener('click',function(e){
 </div>
 </article>
 </template>
-<script src="app.js?v=43" type="module"></script>
+<script src="app.js?v=44" type="module"></script>
 <script src="hand-analyzer.js?v=226" type="module"></script>
 <script src="poker-judge.js?v=35" type="module"></script>
 <style>

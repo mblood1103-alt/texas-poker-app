@@ -428,6 +428,105 @@ function expandSettledPlayer(pid){expandedSettledPlayers.add(pid);render();reque
 function deleteBuyin(pid,tid){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");if(!confirm("確定刪除這筆買入紀錄嗎？\n\n刪除後會重新計算該玩家與本局統計。"))return;mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid);p.transactions=(p.transactions||[]).filter(t=>t.id!==tid);p.cashoutCompleted=false;g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
 function editBuyin(pid,tid,oldAmount){if(!canEditCurrent())return alert("本局已完成，請先按「修改此局」");const v=prompt("請輸入正確的買入金額",String(oldAmount));if(v===null)return;const amount=Number(v);if(!Number.isFinite(amount)||amount<=0)return alert("請輸入大於 0 的金額");mutate(d=>{const g=assertEditable(d),p=g.players.find(x=>x.id===pid),t=(p.transactions||[]).find(x=>x.id===tid);if(!t)throw new Error("找不到這筆買入紀錄");t.amount=amount;t.editedAt=new Date().toISOString();t.editedBy=actorName();p.cashoutCompleted=false;g.updatedAt=new Date().toISOString()}).catch(e=>alert(e.message))}
 
+
+let selectedPersonName="";
+
+function personnelNames(){
+  const names=[];
+  const seen=new Set();
+  const add=name=>{
+    const n=String(name||"").trim();
+    if(!n||seen.has(n))return;
+    seen.add(n);names.push(n);
+  };
+  (roomData?.favorites||[]).forEach(add);
+  (roomData?.games||[]).forEach(g=>(g.players||[]).forEach(p=>add(p.name)));
+  return names;
+}
+
+function personHistory(name){
+  const target=String(name||"").trim();
+  if(!target)return [];
+  return (roomData?.games||[])
+    .filter(g=>g?.endedAt&&!isGameEmpty(g))
+    .map(g=>{
+      const p=(g.players||[]).find(x=>String(x.name||"").trim()===target);
+      if(!p)return null;
+      const buy=buyinTotal(p),cash=Number(p.cashout||0),profit=cash-buy;
+      return {g,p,buy,cash,profit};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>new Date(b.g.startedAt)-new Date(a.g.startedAt));
+}
+
+function renderPeople(){
+  const list=$("peopleList"),detail=$("personDetail");
+  if(!list||!detail)return;
+  const names=personnelNames();
+  $("peopleCount").textContent=`${names.length} 人`;
+  if(!selectedPersonName||!names.includes(selectedPersonName)){
+    selectedPersonName="";
+  }
+
+  list.innerHTML=names.map(n=>{
+    const active=n===selectedPersonName;
+    const rows=personHistory(n);
+    const profit=rows.reduce((s,x)=>s+x.profit,0);
+    return `<button type="button" class="person-chip${active?" selected":""}" data-person-name="${escapeHtml(n)}">
+      <span class="person-chip-avatar" aria-hidden="true">👤</span>
+      <span class="person-chip-main"><b>${escapeHtml(n)}</b><small>${rows.length} 局・${profit>=0?"+":""}${money(profit)}</small></span>
+      <span class="person-chip-arrow" aria-hidden="true">›</span>
+    </button>`;
+  }).join("")||`<div class="people-empty"><span>👥</span><b>還沒有建立人員</b><small>房主可以在「管理人員名單」加入名字。</small></div>`;
+
+  list.querySelectorAll(".person-chip").forEach(btn=>{
+    btn.onclick=()=>{
+      selectedPersonName=btn.dataset.personName||"";
+      renderPeople();
+      requestAnimationFrame(()=>detail.scrollIntoView({behavior:"smooth",block:"nearest"}));
+    };
+  });
+
+  detail.classList.toggle("hidden",!selectedPersonName);
+  if(!selectedPersonName)return;
+
+  const rows=personHistory(selectedPersonName);
+  const buyin=rows.reduce((s,x)=>s+x.buy,0);
+  const cashout=rows.reduce((s,x)=>s+x.cash,0);
+  const profit=cashout-buyin;
+  const roi=buyin>0?(profit/buyin)*100:0;
+  const wins=rows.filter(x=>x.profit>0).length;
+  const losses=rows.filter(x=>x.profit<0).length;
+  const ties=rows.filter(x=>x.profit===0).length;
+  const best=rows.length?Math.max(...rows.map(x=>x.profit)):0;
+  const worst=rows.length?Math.min(...rows.map(x=>x.profit)):0;
+
+  $("personDetailName").textContent=selectedPersonName;
+  $("personDetailPeriod").textContent=`已完成牌局・共 ${rows.length} 局`;
+  $("personProfit").textContent=`${profit>=0?"+":""}${money(profit)}`;
+  $("personProfit").className=profit>=0?"pos":"neg";
+  $("personGames").textContent=`${rows.length} 局`;
+  $("personBuyin").textContent=money(buyin);
+  $("personCashout").textContent=money(cashout);
+  $("personRoi").textContent=formatRate(roi);
+  $("personAvg").textContent=rows.length?`${profit>=0?"+":""}${money(Math.round(profit/rows.length))}`:money(0);
+  $("personWins").textContent=String(wins);
+  $("personLosses").textContent=String(losses);
+  $("personTies").textContent=String(ties);
+  $("personBest").textContent=rows.length?`${best>=0?"+":""}${money(best)}`:"$0";
+  $("personWorst").textContent=rows.length?`${worst>=0?"+":""}${money(worst)}`:"$0";
+
+  $("personGameList").innerHTML=rows.map(x=>{
+    const d=new Date(x.g.startedAt);
+    const date=d.toLocaleString("zh-TW",{hour12:false});
+    const blinds=`${Number(x.g.smallBlind??1)}/${Number(x.g.bigBlind??2)}`;
+    return `<div class="person-game-row">
+      <div><b>${date}</b><small>${blinds}・買入 ${money(x.buy)}・拿回 ${money(x.cash)}</small></div>
+      <strong class="${x.profit>=0?"pos":"neg"}">${x.profit>=0?"+":""}${money(x.profit)}</strong>
+    </div>`;
+  }).join("")||"<p class='muted'>這個人目前沒有已完成的牌局紀錄。</p>";
+}
+
 function render(){
   if(!roomData)return;
   $("loginCard").classList.add("hidden");$("appArea").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");
@@ -452,6 +551,7 @@ function render(){
   $("favoriteManager").classList.toggle("hidden",!editable);
   $("favoriteSelect").innerHTML='<option value="">常用玩家</option>'+[...(roomData.favorites||[])].map(n=>`<option>${escapeHtml(n)}</option>`).join("");
   renderFavorites();
+  renderPeople();
   const wrap=$("players");wrap.innerHTML="";
   // 已結算玩家優先排在最上方；同一狀態內再依桌號由小到大排列，未填桌號者排最後。
   const displayPlayers=[...(g?.players||[])].sort((a,b)=>{
@@ -799,6 +899,7 @@ function renderReport(){
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 }
 
+$("closePersonDetailBtn")?.addEventListener("click",()=>{selectedPersonName="";renderPeople()});
 $("googleBtn").onclick=async()=>{const provider=new GoogleAuthProvider();try{const r=await signInWithPopup(auth,provider),c=prompt("請輸入妳要管理的群組代碼");if(c)await enterOwnerRoom(c)}catch(e){if(e.code?.includes("popup"))await signInWithRedirect(auth,provider);else alert(e.message)}};
 $("viewerBtn").onclick=async()=>{try{
   if(!auth.currentUser){const credential=await signInAnonymously(auth);user=credential.user}else user=auth.currentUser;
