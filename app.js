@@ -515,6 +515,7 @@ function renderPeople(){
   $("personTies").textContent=String(ties);
   $("personBest").textContent=rows.length?`${best>=0?"+":""}${money(best)}`:"$0";
   $("personWorst").textContent=rows.length?`${worst>=0?"+":""}${money(worst)}`:"$0";
+  if($("personHistoryCount")) $("personHistoryCount").textContent=`（${rows.length} 局）`;
 
   $("personGameList").innerHTML=rows.map(x=>{
     const d=new Date(x.g.startedAt);

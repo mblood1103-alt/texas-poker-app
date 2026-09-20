@@ -738,8 +738,10 @@ document.addEventListener('click',function(e){
       <div><span>最大單局</span><b id="personBest">$0</b></div>
       <div><span>最大單局虧損</span><b id="personWorst">$0</b></div>
     </div>
-    <h3 class="person-history-title">📅 我的牌局紀錄</h3>
-    <div class="person-game-list" id="personGameList"></div>
+    <details class="person-history-details">
+      <summary class="person-history-title">📅 我的牌局紀錄 <span id="personHistoryCount">（0 局）</span></summary>
+      <div class="person-game-list" id="personGameList"></div>
+    </details>
   </div>
 </div>
 </details>

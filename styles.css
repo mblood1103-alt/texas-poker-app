@@ -2138,3 +2138,19 @@ body.table-no-open{overflow:hidden}
   .person-mini-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
   .person-game-row{align-items:flex-start}
 }
+
+.person-history-details{margin-top:18px}
+.person-history-details .person-history-title{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;font-size:1.17em;font-weight:800;margin:0;padding:8px 0}
+.person-history-details .person-history-title::-webkit-details-marker{display:none}
+.person-history-details .person-history-title::before{content:"▶";font-size:.72em;transition:transform .18s ease}
+.person-history-details[open] .person-history-title::before{transform:rotate(90deg)}
+.person-history-details .person-game-list{margin-top:8px}
+#personHistoryCount{font-size:.78em;font-weight:600;color:var(--muted,#718096)}
+
+.person-history-details{margin-top:18px}
+.person-history-details>.person-history-title{margin:0;padding:8px 0;cursor:pointer;list-style:none;font-weight:800}
+.person-history-details>.person-history-title::-webkit-details-marker{display:none}
+.person-history-details>.person-history-title::before{content:"▶";display:inline-block;margin-right:10px;font-size:.78em;transition:transform .15s ease}
+.person-history-details[open]>.person-history-title::before{transform:rotate(90deg)}
+.person-history-details>.person-game-list{margin-top:8px}
+#personHistoryCount{font-size:.72em;font-weight:600;color:#64748b}
