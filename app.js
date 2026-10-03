@@ -642,25 +642,34 @@ if(diffCard){
 }
 
 
-function buildCompositeRanking(entries){
+function buildCompositeRanking(entries,totalGames=null){
   const rows=entries.map(([name,r])=>{
     const buyin=Number(r.buyin??r.buy??0);
     const cashout=Number(r.cashout??r.cash??0);
     const profit=cashout-buyin;
     const roi=buyin>0?(profit/buyin)*100:0;
-    return {name,r,buyin,cashout,profit,roi,score:0};
+    const games=Math.max(0,Number(r.games||0));
+    const credibility=games/(games+5);
+    const effectiveRoi=roi*credibility;
+    const attendance=totalGames>0?Math.min(1,games/totalGames):0;
+    return {name,r,buyin,cashout,profit,roi,credibility,effectiveRoi,attendance,score:0};
   });
   if(!rows.length)return rows;
-  const profits=rows.map(x=>x.profit),rois=rows.map(x=>x.roi);
+  const profits=rows.map(x=>x.profit),rois=rows.map(x=>totalGames===null?x.roi:x.effectiveRoi);
   const minProfit=Math.min(...profits),maxProfit=Math.max(...profits);
   const minRoi=Math.min(...rois),maxRoi=Math.max(...rois);
   const normalize=(value,min,max)=>max===min?50:((value-min)/(max-min))*100;
   rows.forEach(x=>{
     const profitScore=normalize(x.profit,minProfit,maxProfit);
-    const roiScore=normalize(x.roi,minRoi,maxRoi);
-    x.score=(profitScore*0.5)+(roiScore*0.5);
+    const roiScore=normalize(totalGames===null?x.roi:x.effectiveRoi,minRoi,maxRoi);
+    // 單局對帳保留原計分；歷史／期間排行採用場次修正與出勤。
+    x.score=totalGames===null?(profitScore*0.5)+(roiScore*0.5)
+      :(profitScore*0.45)+(roiScore*0.35)+(x.attendance*100*0.20);
   });
   return rows.sort((a,b)=>b.score-a.score||b.profit-a.profit||b.roi-a.roi||b.cashout-a.cashout||a.name.localeCompare(b.name,"zh-Hant"));
+}
+function compositeRankingRulesHtml(){
+  return `<p class="hint ranking-note">綜合分數＝盈虧 45%＋有效 ROI 35%＋出勤 20%</p><details class="ranking-score-rules"><summary>ⓘ 計分規則</summary><div class="hint"><p>盈虧＝總拿回－總買入；原始 ROI＝盈虧 ÷ 總買入 × 100%。總買入為 0 時，ROI 計為 0%。</p><p>場次可信度＝參賽場次 ÷（參賽場次＋5）；有效 ROI＝原始 ROI × 場次可信度。此修正只用於排名，原始 ROI 仍照實顯示。</p><p>同期間玩家的盈虧、有效 ROI 各自換算成 0～100 分：分數＝（數值－最低值）÷（最高值－最低值）× 100；全部相同時該項為 50 分。</p><p>出勤分數＝參加的已完成牌局數 ÷ 該期間全部已完成牌局數 × 100。綜合分數＝盈虧分數 × 45%＋有效 ROI 分數 × 35%＋出勤分數 × 20%。計算使用未四捨五入數值。</p><p>新人第一場即可排名，沒有出勤門檻。買入僅供顯示，不另計分；同名玩家在同一局只計一次出勤。這是本桌的計分規則，場次可信度是排名修正係數。</p></div></details>`;
 }
 function formatRate(value){
   const rounded=Math.round(value*10)/10;
@@ -776,16 +785,21 @@ function renderGameHistory(){
   $("historySummary").textContent=label;
 
   const rankingMap=new Map();
-  completedGames.forEach(g=>(g.players||[]).forEach(p=>{
-    const r=rankingMap.get(p.name)||{games:0,buyin:0,cashout:0};
-    r.games++;r.buyin+=buyinTotal(p);r.cashout+=Number(p.cashout||0);rankingMap.set(p.name,r);
-  }));
-  const rankingRows=buildCompositeRanking([...rankingMap]);
+  completedGames.forEach(g=>{
+    const seenInGame=new Set();
+    (g.players||[]).forEach(p=>{
+      const name=String(p.name||"").trim();if(!name)return;
+      const r=rankingMap.get(name)||{games:0,buyin:0,cashout:0};
+      if(!seenInGame.has(name)){r.games++;seenInGame.add(name)}
+      r.buyin+=buyinTotal(p);r.cashout+=Number(p.cashout||0);rankingMap.set(name,r);
+    });
+  });
+  const rankingRows=buildCompositeRanking([...rankingMap],completed);
   const rankingTitle=historyDateFilter?`${historyDateFilter.replaceAll("-","/")} 當日排名`:`全部歷史排名`;
   const historyRanks=denseRankLabels(rankingRows);
-  $("historyRanking").innerHTML=`<h3>${rankingTitle}</h3><p class="hint">綜合排名＝總盈虧 50%＋報酬率 50%（同期間玩家標準化後計算）</p><div class="ranking-list">${rankingRows.map((x,i)=>{
+  $("historyRanking").innerHTML=`<h3>${rankingTitle}</h3>${compositeRankingRulesHtml()}<div class="ranking-list">${rankingRows.map((x,i)=>{
     const {name:n,r,profit,roi,score}=x,medal=rankBadge(historyRanks[i]);
-    return `<div class="ranking-row ${profit>0?"profit-win":profit<0?"profit-loss":"profit-even"}"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+    return `<div class="ranking-row ${profit>0?"profit-win":profit<0?"profit-loss":"profit-even"}"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small><small>有效 ROI ${formatRate(x.effectiveRoi)}・場次可信度 ${(x.credibility*100).toFixed(1)}%</small><small class="attendance-meta">出勤 ${r.games}/${completed} 局・${Math.round(x.attendance*100)}%</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
   }).join("")||"<p class='muted'>這個日期尚無已完成牌局可排名</p>"}</div>`;
 
   box.innerHTML=games.map(g=>{const {buy,cash}=gameTotals(g),diff=cash-buy,isCurrent=g.id===roomData.currentGameId,state=g.endedAt?"已完成":"進行中";return `<article class="game-history-item"><div class="game-row"><div><b>${new Date(g.startedAt).toLocaleString("zh-TW",{hour12:false})}</b><br><small>${g.players?.length||0} 位玩家・投入 ${money(buy)}・拿回 ${money(cash)}・差額 ${diff>=0?"+":""}${money(diff)}・${state}${isCurrent?"・目前顯示":""}</small></div><div class="game-actions"><button class="secondary small view-game" data-game-id="${g.id}" type="button">查看明細</button>${isOwner&&g.endedAt?`<button class="secondary small edit-game" data-game-id="${g.id}">修改此局</button>`:""}${isOwner?`<button class="danger small delete-game" data-game-id="${g.id}">刪除此局</button>`:""}</div></div><div id="detail-${g.id}" class="hidden">${gameDetailHtml(g)}</div></article>`}).join("")||`<p class='muted'>${historyDateFilter?"這一天沒有牌局紀錄":"尚無牌局紀錄"}</p>`;
@@ -873,11 +887,12 @@ function renderReport(){
     });
   });
 
-  const profitRows=buildCompositeRanking([...map]);
+  $("compositeRankingRules").innerHTML=compositeRankingRulesHtml();
+  const profitRows=buildCompositeRanking([...map],totalGames);
   const profitRanks=denseRankLabels(profitRows);
   $("report").innerHTML=profitRows.map((x,i)=>{
     const {name:n,r,profit,roi,score}=x,attendance=totalGames?Math.round(r.games/totalGames*100):0,medal=rankBadge(profitRanks[i]);
-    return `<div class="ranking-row ${profit<0?"profit-loss":"profit-win"}"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small><small class="attendance-meta">出勤 ${r.games}/${totalGames} 局・${attendance}%</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
+    return `<div class="ranking-row ${profit<0?"profit-loss":"profit-win"}"><div class="rank-badge">${medal}</div><div class="rank-main"><b>${escapeHtml(n)}</b><small>${r.games} 場・總投入 ${money(r.buyin)}・總拿回 ${money(r.cashout)}</small><small>報酬率 ${formatRate(roi)}・綜合分數 ${score.toFixed(1)}</small><small>有效 ROI ${formatRate(x.effectiveRoi)}・場次可信度 ${(x.credibility*100).toFixed(1)}%</small><small class="attendance-meta">出勤 ${r.games}/${totalGames} 局・${attendance}%</small></div><b class="rank-profit ${profit>=0?"pos":"neg"}">${profit>=0?"+":""}${money(profit)}</b></div>`;
   }).join("")||"<p class='muted'>這個期間尚無已完成牌局</p>";
 
   const buyinRows=[...map].map(([n,r])=>({
